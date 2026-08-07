@@ -1,0 +1,6 @@
+{"item_id":"lowres_00_original","source_path":"data/raw/pilot/download.jpg","display_name_zh":"原始低清图","category":"lowres_variant","parent_item_id":"pilot_009_lowres_ocr_poster"}
+{"item_id":"lowres_01_2x_lanczos","source_path":"data/processed/lowres_variants/lowres_01_2x_lanczos.png","display_name_zh":"2倍Lanczos","category":"lowres_variant","parent_item_id":"pilot_009_lowres_ocr_poster"}
+{"item_id":"lowres_02_4x_lanczos","source_path":"data/processed/lowres_variants/lowres_02_4x_lanczos.png","display_name_zh":"4倍Lanczos","category":"lowres_variant","parent_item_id":"pilot_009_lowres_ocr_poster"}
+{"item_id":"lowres_03_4x_unsharp","source_path":"data/processed/lowres_variants/lowres_03_4x_unsharp.png","display_name_zh":"4倍Lanczos加锐化","category":"lowres_variant","parent_item_id":"pilot_009_lowres_ocr_poster"}
+{"item_id":"lowres_04_4x_clahe","source_path":"data/processed/lowres_variants/lowres_04_4x_clahe.png","display_name_zh":"4倍Lanczos加CLAHE","category":"lowres_variant","parent_item_id":"pilot_009_lowres_ocr_poster"}
+{"item_id":"lowres_05_4x_adaptive_threshold","source_path":"data/processed/lowres_variants/lowres_05_4x_adaptive_threshold.png","display_name_zh":"4倍Lanczos加自适应二值化","category":"lowres_variant","parent_item_id":"pilot_009_lowres_ocr_poster"}

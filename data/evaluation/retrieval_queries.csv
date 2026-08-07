@@ -1,0 +1,13 @@
+query_id,query,expected_item_id,query_type,review_status
+q001,哪张图片包含北京理工大学成绩单和课程分数？,pilot_001_transcript,text_explicit,已确认
+q002,哪份文档包含ImageNet-1K实验设置和消融实验结果？,pilot_002_paper_page_02,semantic,已确认
+q003,哪张照片中出现图灵程序设计丛书和深度学习书籍？,pilot_003_bookshelf,scene_text,已确认
+q004,哪张图片介绍了卷积层、池化层和全连接层？,pilot_004_cnn_slide,text_explicit,已确认
+q005,哪份文档综述深度学习图像识别算法并包含摘要和关键词？,pilot_005_paper_page_01,semantic,已确认
+q006,哪张截图展示训练损失、验证准确率和学习率曲线？,pilot_006_training_dashboard,semantic,已确认
+q007,哪张图片是蓝天白云下带湖泊的校园建筑？,pilot_007_campus_photo,visual_only,已确认
+q008,哪张文档授予张老师优秀教师称号？,pilot_008_certificate,text_explicit,已确认
+q009,哪张低清图片介绍文字识别、手写识别和表格识别？,pilot_009_lowres_ocr_poster,ocr_noise,已确认
+q010,哪张课件介绍输入层、隐藏层、输出层和激活函数？,pilot_010_neural_network_slide,semantic,已确认
+q011,哪张截图是学术搜索平台并检索图像识别深度学习？,pilot_011_academic_search,text_explicit,已确认
+q012,哪张图片上写着蛇年皆顺？,pilot_012_vertical_couplet,text_explicit,已确认

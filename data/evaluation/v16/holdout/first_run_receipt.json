@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "status": "completed_once_without_post_holdout_tuning",
+  "generated_at_utc": "2026-08-07T04:40:10.489339+00:00",
+  "config_lock_file": "data/evaluation/v16/selected_config_lock.json",
+  "config_lock_sha256": "96F4C0DE1920EA973D70C0A249215FF1C314F52CB6343CAF1C162371702483A6",
+  "retrieval_config_revision": "fcc12e82c6bb",
+  "evaluation_protocol": "data/evaluation/v16/holdout/evaluation_protocol.json",
+  "evaluation_protocol_sha256": "1255A8B014F782C3808AFC4B327C9B551F6C791159D958608655C6F0AEA70913",
+  "report": "outputs/evaluation/library_retrieval/v16/holdout_final.json",
+  "report_sha256": "2F8B34F1BE443A168838D9F5BA5FFA722AB75C5F04720AD0680143A5BAAFCF3A",
+  "query_count": 50,
+  "ranker_recall_at_1": 0.866667,
+  "ranker_recall_at_10": 0.966667,
+  "answerable_acceptance_rate": 1.0,
+  "no_answer_rejection_accuracy": 0.95,
+  "end_to_end_top1_accuracy": 0.9,
+  "rule": "This report remains the V16 holdout result. Later improvements belong to V17 and require a new holdout."
+}

@@ -1,0 +1,12 @@
+{"item_id":"pilot_013_resnet_paper","source_path":"data/raw/expansion/01_paper_deep_residual_learning.png","display_name_zh":"ResNet论文首页","category":"paper","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_014_machine_learning_book","source_path":"data/raw/expansion/02_book_page_machine_learning.png","display_name_zh":"机器学习教材内页","category":"textbook","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_015_transformer_survey","source_path":"data/raw/expansion/03_complex_document_transformer_survey.png","display_name_zh":"Transformer综述论文首页","category":"paper","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_016_sales_table","source_path":"data/raw/expansion/04_table_sales_data.png","display_name_zh":"销售数据表格截图","category":"table","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_017_sales_dashboard","source_path":"data/raw/expansion/05_chart_sales_dashboard.png","display_name_zh":"销售数据看板","category":"dashboard","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_018_python_code","source_path":"data/raw/expansion/06_software_python_code.png","display_name_zh":"Python代码编辑器截图","category":"screenshot","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_019_construction_sign","source_path":"data/raw/expansion/07_scene_text_construction_sign.png","display_name_zh":"施工安全提示牌","category":"scene_text","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_020_environment_banner","source_path":"data/raw/expansion/08_scene_text_environment_banner.png","display_name_zh":"环保宣传横幅","category":"scene_text","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_021_viewing_platform_sign","source_path":"data/raw/expansion/09_scene_text_viewing_platform_sign.png","display_name_zh":"观景台指示牌","category":"scene_text","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_022_mountain_lake","source_path":"data/raw/expansion/10_natural_no_text_mountain_lake.png","display_name_zh":"山间湖泊风景","category":"natural_scene","has_text_expected":false,"review_status":"已确认"}
+{"item_id":"pilot_023_snow_mountain","source_path":"data/raw/expansion/11_natural_no_text_snow_mountain.png","display_name_zh":"雪山日照风景","category":"natural_scene","has_text_expected":false,"review_status":"已确认"}
+{"item_id":"pilot_024_seaside_sunset","source_path":"data/raw/expansion/12_natural_no_text_seaside_sunset.png","display_name_zh":"海边日落风景","category":"natural_scene","has_text_expected":false,"review_status":"已确认"}

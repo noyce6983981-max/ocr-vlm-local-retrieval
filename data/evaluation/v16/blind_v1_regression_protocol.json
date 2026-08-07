@@ -1,0 +1,32 @@
+{
+  "name": "v16_blind_v1_historical_regression",
+  "created_date": "2026-08-01",
+  "seal_status": "historical_diagnostic_reused_after_v16_failure_analysis",
+  "query_file": "data/evaluation/blind_study_v1/formal_queries.csv",
+  "query_set_sha256": "b60943f7951cdde343811b0b8bc28ca467d311f794b4cf88220188d9324fe993",
+  "split": "test",
+  "required_review_status": "approved",
+  "query_count": 60,
+  "library_dir": "outputs/user_library",
+  "method": "quality_hybrid",
+  "rerank_top_k": 0,
+  "force_components": false,
+  "expected_search_policy_version": 16,
+  "query_timeout_seconds": 300,
+  "output": "outputs/evaluation/library_retrieval/v16/blind_v1_regression.json",
+  "no_tuning_rule": "This is a historical regression only. V1 informed V16 failure analysis, so these results are not an unbiased final score and must not overwrite the sealed V15 report.",
+  "metrics": [
+    "ranker_recall_at_1/3/5/10",
+    "ranker_mrr",
+    "ranker_ndcg_at_10",
+    "answerable_acceptance_rate",
+    "no_answer_rejection_accuracy",
+    "end_to_end_top1_accuracy",
+    "latency_p50/p95"
+  ],
+  "limitations": [
+    "Queries were assistant-generated and were inspected during V16 development.",
+    "Labels come from pooled candidates and may miss relevant documents outside the pool.",
+    "This report is a historical regression, not a new blind benchmark."
+  ]
+}

@@ -1,0 +1,12 @@
+{"item_id":"pilot_001_transcript","source_path":"data/raw/pilot/1e6fba3a-7433-4e0b-8ace-38bb971db948.png","display_name_zh":"成绩单样例","category":"structured_document","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_002_paper_page_02","source_path":"data/raw/pilot/631970bd-c36d-47d7-9f7e-33fb106f3b2d.png","display_name_zh":"论文第2页","category":"paper","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_003_bookshelf","source_path":"data/raw/pilot/7b9b1bd8-cd64-4a99-bb2c-889ec58314ef.png","display_name_zh":"书架场景文字","category":"scene_text","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_004_cnn_slide","source_path":"data/raw/pilot/8265af97-892f-439c-a5f6-d9e2e83df901.png","display_name_zh":"CNN课程幻灯片","category":"slide","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_005_paper_page_01","source_path":"data/raw/pilot/b72787bc-e8ff-4f21-b1e9-c81d0c86ffe2.png","display_name_zh":"论文第1页","category":"paper","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_006_training_dashboard","source_path":"data/raw/pilot/b80b364d-76d9-447f-b66c-83e566d4aecf.png","display_name_zh":"训练仪表盘截图","category":"screenshot","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_007_campus_photo","source_path":"data/raw/pilot/ba2f680c-510b-4733-88a8-a24cb2c1dcd8.png","display_name_zh":"校园自然图像","category":"natural_image","has_text_expected":false,"review_status":"已确认"}
+{"item_id":"pilot_008_certificate","source_path":"data/raw/pilot/dfc7264a-c5f0-449c-9ac5-ce2e6257bae8.png","display_name_zh":"荣誉证书样例","category":"structured_document","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_009_lowres_ocr_poster","source_path":"data/raw/pilot/download.jpg","display_name_zh":"低清OCR宣传图","category":"low_resolution_text","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_010_neural_network_slide","source_path":"data/raw/pilot/eb53587d-0d30-4457-aa60-14fbbea5ce1c.png","display_name_zh":"神经网络课程幻灯片","category":"slide","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_011_academic_search","source_path":"data/raw/pilot/f319d381-d399-4ed7-8d39-f2a3d882beca.png","display_name_zh":"学术检索网页截图","category":"screenshot","has_text_expected":true,"review_status":"已确认"}
+{"item_id":"pilot_012_vertical_couplet","source_path":"data/raw/pilot/test.jpg","display_name_zh":"竖排春联场景文字","category":"scene_text","has_text_expected":true,"review_status":"已确认"}

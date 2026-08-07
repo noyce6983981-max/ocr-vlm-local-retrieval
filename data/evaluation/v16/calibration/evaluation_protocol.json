@@ -1,0 +1,25 @@
+{
+  "name": "v16_route_balanced_calibration_baseline",
+  "created_date": "2026-08-07",
+  "seal_status": "query_and_labels_frozen_before_retrieval",
+  "query_file": "data/evaluation/v16/calibration/frozen_queries.csv",
+  "query_set_sha256": "3498dd396012012e1432b0097d3aaf514cd9284508da67ef3db189894ba6dbf7",
+  "query_file_sha256": "7960f283c99d9a0207fe83553da769759e03412fe72a56e1bd4dfc7edc33a6ee",
+  "split": "calibration",
+  "required_review_status": "frozen_ai_source_verified",
+  "query_count": 50,
+  "library_dir": "outputs/user_library",
+  "library_manifest_sha256": "f491d9992259eb16982503ff4b7641b5aaacb879a3ce8ffd1787a26b3729d9e6",
+  "method": "quality_hybrid",
+  "rerank_top_k": 0,
+  "force_components": false,
+  "expected_search_policy_version": 16,
+  "query_timeout_seconds": 300,
+  "output": "outputs/evaluation/library_retrieval/v16/calibration_baseline.json",
+  "tuning_rule": "Thresholds and ranking policy may be changed only from this calibration split. The V16 holdout must remain unread until the selected config is locked.",
+  "limitations": [
+    "Labels are AI source-verified, not human adjudicated.",
+    "Visual compositional negatives require pooled-candidate confirmation.",
+    "This split is for development and cannot be reported as holdout performance."
+  ]
+}

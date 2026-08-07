@@ -1,0 +1,2 @@
+PyMuPDF==1.28.0
+docling==2.115.0

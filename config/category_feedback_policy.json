@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "strategy": "current_category_with_confident_model_override",
+  "model_sha256": "C963D3491584A646FCA1401778EC561F81FBFFE5733E281FA36D5B07146EDB86",
+  "override_threshold": 0.8,
+  "selected_on": "validation",
+  "validation_pages": 95,
+  "validation_metrics": {
+    "legacy_baseline_accuracy": 0.410526,
+    "current_baseline_accuracy": 0.810526,
+    "standalone_model_accuracy": 0.789474,
+    "gated_policy_accuracy": 0.852632,
+    "gated_policy_macro_f1": 0.757743,
+    "override_count": 4
+  },
+  "test_status": "completed_once",
+  "test_pages": 95,
+  "test_metrics": {
+    "legacy_baseline_accuracy": 0.463158,
+    "current_baseline_accuracy": 0.852632,
+    "standalone_model_accuracy": 0.747368,
+    "standalone_model_macro_f1": 0.643136,
+    "gated_policy_accuracy": 0.863158,
+    "gated_policy_macro_f1": 0.701524,
+    "override_count": 1
+  }
+}

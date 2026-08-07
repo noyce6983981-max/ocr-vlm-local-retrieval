@@ -1,0 +1,57 @@
+{
+  "status": "frozen",
+  "seed": 42,
+  "ratios": {
+    "train": 0.65,
+    "validation": 0.175,
+    "test": 0.175
+  },
+  "total_pages": 1500,
+  "review_required_pages": 541,
+  "review_split_counts": {
+    "train": 351,
+    "validation": 95,
+    "test": 95
+  },
+  "all_page_split_counts": {
+    "train": 1305,
+    "validation": 96,
+    "test": 99
+  },
+  "category_by_split": {
+    "train": {
+      "complex_academic": 8,
+      "general_text_document": 110,
+      "natural_no_text": 8,
+      "ppt_poster_slide": 28,
+      "scene_text": 37,
+      "software_web_code": 20,
+      "table_form_ticket": 140
+    },
+    "validation": {
+      "complex_academic": 2,
+      "general_text_document": 30,
+      "natural_no_text": 3,
+      "ppt_poster_slide": 7,
+      "scene_text": 10,
+      "software_web_code": 5,
+      "table_form_ticket": 38
+    },
+    "test": {
+      "complex_academic": 2,
+      "general_text_document": 30,
+      "natural_no_text": 2,
+      "ppt_poster_slide": 8,
+      "scene_text": 10,
+      "software_web_code": 5,
+      "table_form_ticket": 38
+    }
+  },
+  "group_count": 1325,
+  "group_leakage_count": 0,
+  "rules": [
+    "同一原文档、感知近重复组和困难负例组不得跨集合",
+    "验证集与测试集人工标签不得参与分类器训练",
+    "无须人工审核且不关联留出页的样本仅进入训练集"
+  ]
+}

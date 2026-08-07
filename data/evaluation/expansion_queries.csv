@@ -1,0 +1,13 @@
+query_id,query,expected_item_id,query_type,review_status
+q013,哪篇论文标题是Deep Residual Learning for Image Recognition并展示了残差网络相关图表？,pilot_013_resnet_paper,multimodal_text,已确认
+q014,哪张中文教材页面包含第8章机器学习以及8.1概述和8.2监督学习？,pilot_014_machine_learning_book,multimodal_text,已确认
+q015,哪篇文档标题是On the Generalization of Transformer-Based Models: A Survey？,pilot_015_transformer_survey,multimodal_text,已确认
+q016,哪张表格包含日期、产品、销售金额、数量和单价等列？,pilot_016_sales_table,table_semantic,已确认
+q017,哪张销售看板显示总销售额156000元、订单数3287和客户数2451？,pilot_017_sales_dashboard,dashboard_semantic,已确认
+q018,哪张软件截图展示Python代码读取data.csv并使用matplotlib绘制折线图？,pilot_018_python_code,code_semantic,已确认
+q019,哪张场景图片中的蓝色标牌写着前方施工注意安全？,pilot_019_construction_sign,scene_text,已确认
+q020,哪张场景图片中的红色横幅写着保护环境从我做起？,pilot_020_environment_banner,scene_text,已确认
+q021,哪张图片包含云海观景台和500米左转的指示牌？,pilot_021_viewing_platform_sign,scene_text,已确认
+q022,哪张自然图片展示蓝天群山环绕的碧绿湖泊和树木倒影？,pilot_022_mountain_lake,visual_only,已确认
+q023,哪张自然图片展示夕阳照亮雪山山峰且前景较暗？,pilot_023_snow_mountain,visual_only,已确认
+q024,哪张自然图片展示海边日落以及太阳在水面和沙滩上的倒影？,pilot_024_seaside_sunset,visual_only,已确认

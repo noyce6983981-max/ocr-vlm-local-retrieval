@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "name": "v16_route_balanced_holdout",
+  "status": "frozen_before_retrieval",
+  "created_at": "2026-08-07T04:16:45.508940+00:00",
+  "query_file": "data/evaluation/v16/holdout/frozen_queries.csv",
+  "query_count": 50,
+  "answerable_count": 30,
+  "no_answer_count": 20,
+  "route_counts": {
+    "text_evidence": 10,
+    "visual_metadata": 10,
+    "visual_discovery": 10,
+    "mixed": 10,
+    "topic_discovery": 10
+  },
+  "query_set_sha256": "3f5a511ebe103f248a08a5b52e5570cbb69eb9cb3f673627fb3cea527e53740f",
+  "query_file_sha256": "d49879a866af08aa788e83dc3a010eba52075c70db4e71dc5263a0ee53e32079",
+  "library_manifest_sha256": "f491d9992259eb16982503ff4b7641b5aaacb879a3ce8ffd1787a26b3729d9e6",
+  "old_query_file_sha256": {
+    "data/evaluation/public_dataset_1500_retrieval_queries_formal.csv": "069fadf2ff8a95a9e413e6b4c06b5f7c531abe488cc436d9b11eb2232d31a313",
+    "data/evaluation/blind_study_v1/formal_queries.csv": "ab1d51e374eeff3d9ee4ee2bd4e28433a2dd09f18d1b8e3df37e1da9b6ee68a9"
+  },
+  "old_relevant_target_count": 245,
+  "old_target_overlap_count": 0,
+  "other_v16_split_target_overlap_count": 0,
+  "authoring_inputs": [
+    "library manifest metadata",
+    "source taxonomy tags",
+    "OCR text"
+  ],
+  "authoring_prohibited_inputs": [
+    "live_search rankings",
+    "retrieval scores",
+    "accept/reject decisions"
+  ],
+  "label_limitations": [
+    "Labels are AI source-verified, not human adjudicated.",
+    "Compositional visual no-answer probes require pooled-candidate confirmation.",
+    "The holdout may be run only after the selected V16 config is locked."
+  ]
+}

@@ -1,0 +1,100 @@
+﻿query_id,query,expected_item_id,relevant_item_ids,query_type,review_status,split,category,review_decision,human_notes,is_no_answer
+rq100_001,哪份普通文档中提到了“Primary Date: 10/9/1996 1:23:59 PM”和“Received Date: 1996-Oct-09 13:23:59”？,user_369ee8426e8b,user_369ee8426e8b,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_002,哪份普通文档中提到了“percentage of this growth.”和“decline in sales due to the lack of”？,user_c5d8dbf38b23,user_c5d8dbf38b23,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_003,"哪份普通文档中提到了“Tuesday, February 03, 1998”和“Cigarette Companies Claiming Victory”？",user_1b9f610816e7,user_1b9f610816e7,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_004,哪份普通文档中提到了“and evaluation activities.”和“to Carolyn and Corky.”？,user_65eba821a61f,user_65eba821a61f,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_005,哪份普通文档中提到了“packings white and rural.”和“skewed towards A and B counties.”？,user_24391b5243e2,user_24391b5243e2,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_006,哪份普通文档中提到了“Director of Biological Research”和“Academy of Toxicological Sciences”？,user_5a324f1d96b3,user_5a324f1d96b3,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_007,哪份普通文档中提到了“(Questionnaire attached.)”和“of this lengtl will be included.”？,user_0d491393e2ba,user_0d491393e2ba,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_008,哪份普通文档中提到了“smoking-related illnesses.”和“are the main carriers of viruses.”？,user_0e9fb75242ba,user_0e9fb75242ba,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_009,哪份普通文档中提到了“Youth Tobacco Survey (YTS)”和“2000 Core Questionnaire”？,user_0750d318dd86,user_0750d318dd86;user_33faf9c899b3,text_explicit,已确认,train,general_text_document,accepted,,False
+rq100_010,"哪份学术或技术文档中提到了“reactivity in these heterocycles.”和“Received October 8, 1980”？",user_b378f5c76b07,user_b378f5c76b07,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_011,哪份学术或技术文档中提到了“Demeton-S-methyl sulfone”和“RECOVERIES (RT 98/2-SAMPLE 1)”？,user_bde87ddfa1da,user_bde87ddfa1da,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_012,哪份学术或技术文档中提到了“Psychological Analysis of”和“Establishment and Maintenance of”？,user_362e13aa0ac0,user_362e13aa0ac0,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_013,"哪份学术或技术文档中提到了“Density Lipoprotein Levels in Mice”和“Manuscript received June 24, 1988”？",user_67edd27a0457,user_67edd27a0457,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_014,哪份学术或技术文档中提到了“ENVIRONMENTAL HEALTH AND SAFETY”和“III. PHYSICAL DATA”？,user_f0c01c1f0b9f,user_f0c01c1f0b9f,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_015,"哪份学术或技术文档中提到了“surface HLA-DR antigen.”和“from Sigma Chemical, St. Louis, MO.”？",user_541f9a4606ec,user_541f9a4606ec,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_016,哪份学术或技术文档中提到了“CIRCULATORY SYSTEMS”和“DOMINGO M. AVIADO”？,user_02c30b0aa3b7,user_02c30b0aa3b7,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_017,哪份学术或技术文档中提到了“U-Net中，输出RGB图像和阿尔法遮罩，但这样显”和“叶可扬，等：基于毛发点云深度剥离的神经渲染与时域稳定性政进方法”？,user_bf43adb1187b,user_bf43adb1187b,academic_semantic,已确认,train,complex_academic,accepted,,False
+rq100_018,哪张表格、表单或票据中包含“学校（从高中开始填写）”和“招聘信息了解渠道”？,user_ed0de10c887f,user_ed0de10c887f,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_019,哪张表格、表单或票据中包含“缺点：性格内向”和“优点：勤俭节约”？,user_4e2000932fdc,user_4e2000932fdc;user_bb3b8e815f76,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_020,哪张表格、表单或票据中包含“考试成绩（课程名称、分数，含思想品德，总分、名次）”和“2019年6月本科毕业”？,user_9f5090d22187,user_9f5090d22187,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_021,哪张表格、表单或票据中包含“在何单位工作或学习”和“高中毕业时间”？,user_27422020e4ee,user_101d04e597e9;user_27422020e4ee,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_022,哪张表格、表单或票据中包含“登记日期：2017年10月9日”和“市级篮球比赛第二名”？,user_18d889a6dc3d,user_18d889a6dc3d,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_023,哪张表格、表单或票据中包含“习（工作）态度、道德品质、遵纪守法等方面”和“四川大学招收硕士研究生政审调查表”？,user_29e5e9841a36,user_29e5e9841a36,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_024,哪张表格、表单或票据中包含“发电机以及发电机组的设计制造”和“中国石油集团济柴动力有限公司”？,user_77f823eac307,user_77f823eac307,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_025,哪张表格、表单或票据中包含“及创新新制作等手段和方法，制作“国家大剧院出品”的”和“剧目制作部通过制作西洋经典歌剧、挖掘中国经典题材”？,user_6887f067d1a2,user_6887f067d1a2;user_a494b7c760cf,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_026,哪张表格、表单或票据中包含“招聘聘用制警务辅助人员登记表”和“何部门任何职”？,user_535e9c39bbde,user_535e9c39bbde;user_b5719d78d65e,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_027,哪张表格、表单或票据中包含“九、直系亲属和主要社会关系的基本情况”和“c.家庭其他成员和主要社会关系”？,user_0f5f1d88a400,user_0f5f1d88a400;user_cc5f05543269,table_field,已确认,train,table_form_ticket,accepted,,False
+rq100_028,哪张幻灯片或海报中出现“Feature Extraction”和“Network Inference”？,user_a7086bc563e7,user_a7086bc563e7,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_029,哪张幻灯片或海报中出现“Research/Strategy/Management”和“NATIONAL MONITOR #14”？,user_a4f9bdb5cfbe,user_a4f9bdb5cfbe;user_f50416193dfd,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_030,哪张幻灯片或海报中出现“international brands.”和“UsA's total control.”？,user_a7b90b59a947,user_a7b90b59a947,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_031,哪张幻灯片或海报中出现“más personas que nunca”和“Ahora fuman”？,user_e76fd2ccb191,user_e76fd2ccb191,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_032,哪张幻灯片或海报中出现“Mainstream Smoke Fractions”和“In Vitro Cytotoxicity”？,user_6fc77000e558,user_6fc77000e558,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_033,哪张幻灯片或海报中出现“low incidence of iitation.”和“Nicotine Patches/16”？,user_c819c9fff280,user_c819c9fff280,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_034,哪张幻灯片或海报中出现“Action Against Access”和“PHILIPMORRIS U.S.A.”？,user_5c9c6dceab4e,user_5c9c6dceab4e,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_035,哪张幻灯片或海报中出现“INVESTMENT COMMUNITY PRESENTATION”和“OVERSEAS TOBACCO BUSINESS.”？,user_dbbbf73b9204,user_dbbbf73b9204,slide_semantic,已确认,train,ppt_poster_slide,accepted,,False
+rq100_036,哪张软件、网页或代码截图中出现“Pipeline Python SDK”和“PaddleNLP Operator”？,user_792b20891a61,user_42cbd8de867d;user_792b20891a61,interface_semantic,已确认,train,software_web_code,accepted,,False
+rq100_037,哪张软件、网页或代码截图中出现“labels/ppocr_keys_v1.txt”和“Choose pre-installed models”？,user_7f812e7368c2,user_7f812e7368c2,interface_semantic,已确认,train,software_web_code,accepted,,False
+rq100_038,哪张软件、网页或代码截图中出现“Model: ch_PF”和“STATUS:load”？,user_ea2d6cda81f5,user_ea2d6cda81f5,interface_semantic,已确认,train,software_web_code,accepted,,False
+rq100_039,哪张软件、网页或代码截图中出现“This may take a few minutes..”和“Trim Trailing Whitespace”？,user_b83910e30a5a,user_2b9c000cef03;user_b83910e30a5a,interface_semantic,已确认,train,software_web_code,accepted,,False
+rq100_040,哪张软件、网页或代码截图中出现“image saved in ./vis.jpg”和“image saved in. /vis. jpg”？,user_f2260563a220,user_2718ee018525;user_f2260563a220,interface_semantic,已确认,train,software_web_code,accepted,,False
+rq100_041,哪张软件、网页或代码截图中出现“/Users/rflynn/src/labellmg/dem”和“Edit Label”？,user_bd2cde09acd6,user_bd2cde09acd6,interface_semantic,已确认,train,software_web_code,accepted,,False
+rq100_042,哪张软件、网页或代码截图中出现“The Cupboard unda the StaiR”和“智能视觉(Paddle.js-CV)”？,user_60f7c1c37eaa,user_60f7c1c37eaa,interface_semantic,已确认,train,software_web_code,accepted,,False
+rq100_043,哪张场景照片中出现“二郎山隧道”和“请开灯行驶”？,user_f45943314333,user_f45943314333,scene_text,已确认,train,scene_text,accepted,,False
+rq100_044,哪张场景照片中出现“请从4号口进出”和“危化品车辆”？,user_9d8db8b4ee5e,user_9d8db8b4ee5e,scene_text,已确认,train,scene_text,accepted,,False
+rq100_045,哪张场景照片中出现“Baohuada dao.”和“宝华大道”？,user_14c0f5d1784a,user_14c0f5d1784a;user_4f238a0ee1a1,scene_text,已确认,train,scene_text,accepted,,False
+rq100_046,哪张场景照片中出现“礼让三分平安在”和“抢行一秒后悔迟”？,user_1b29b8782da3,user_1b29b8782da3;user_9aa243f088d2,scene_text,已确认,train,scene_text,accepted,,False
+rq100_047,哪张场景照片中出现“JINGMI Rd”和“自行车优先”？,user_1fd06658db14,user_1fd06658db14,scene_text,已确认,train,scene_text,accepted,,False
+rq100_048,哪张场景照片中出现“负责本水体整治、日常”和“污水无直排、水面无垃”？,user_691eedac92b8,user_691eedac92b8,scene_text,已确认,train,scene_text,accepted,,False
+rq100_049,查找一张展示“HXD1D hauls K423 on Changfeng Reservoir Bridge”的自然图像。,user_192b0e4f1ba3,user_192b0e4f1ba3;user_e0ac98cbdb60,visual_only,已确认,train,natural_no_text,accepted,,False
+rq100_050,查找一张展示“宝山滨江公园 Baoshan Riverside Park”的自然图像。,user_d5b67aea211d,user_d5b67aea211d,visual_only,已确认,train,natural_no_text,accepted,,False
+rq100_051,查找一张展示“pano cuiping yangshuo”的自然图像。,user_56349905611c,user_56349905611c;user_a671340fa300,visual_only,已确认,train,natural_no_text,accepted,,False
+rq100_052,查找一张展示“G164 on Jinhua–Wenzhou HSR over Daxi River”的自然图像。,user_11c2fda59998,user_11c2fda59998;user_8558ac88a924,visual_only,已确认,train,natural_no_text,accepted,,False
+rq100_053,查找一张展示“Farmers of forty centuries Peas grown in winter”的自然图像。,user_7512cdb069d8,user_7512cdb069d8,visual_only,已确认,train,natural_no_text,accepted,,False
+rq100_054,查找一张展示“CR HXD1 Yuanlong”的自然图像。,user_4dad30785006,user_4dad30785006,visual_only,已确认,train,natural_no_text,accepted,,False
+rq100_055,查找紫色热气球飞越雪山峡谷的照片。,,,no_answer,已确认,train,open_set_no_answer,no_answer,,True
+rq100_056,哪张图片展示宇航员在月球表面维修机器人？,,,no_answer,已确认,train,open_set_no_answer,no_answer,,True
+rq100_057,查找夜晚绿色极光下的木屋和结冰湖面。,,,no_answer,已确认,train,open_set_no_answer,no_answer,,True
+rq100_058,哪份文档介绍量子计算机的低温制冷维护流程？,,,no_answer,已确认,train,open_set_no_answer,no_answer,,True
+rq100_059,查找咖啡拉花步骤和心形图案的教学海报。,,,no_answer,已确认,train,open_set_no_answer,no_answer,,True
+rq100_060,哪张图片展示博物馆中的完整恐龙骨架和参观人群？,,,no_answer,已确认,train,open_set_no_answer,no_answer,,True
+rq100_061,哪份普通文档中提到了“Received Date: 1995-Jul-06 16:57:00”和“Subject: TI Daily Bulletin 7/6/95”？,user_a5e115bad9e1,user_a5e115bad9e1,text_explicit,已确认,validation,general_text_document,accepted,,False
+rq100_062,哪份普通文档中提到了“TOTAL CATEGORY MANAGEMENT”和“DESIGNED FOR FORDWARDS”？,user_1eb35d28a2d3,user_1eb35d28a2d3,text_explicit,已确认,validation,general_text_document,accepted,,False
+rq100_063,哪份普通文档中提到了“ceptibility or resistance to them.”和“USING MADE-TO-ORDER MICE”？,user_6fbe8cccf411,user_6fbe8cccf411;user_f4581a39d2b7,text_explicit,已确认,validation,general_text_document,accepted,,False
+rq100_064,哪份学术或技术文档中提到了“kube-controller-manager”和“SampleSet Controller”？,user_2cc3b6bae1a6,user_2cc3b6bae1a6;user_eb33834179ab,academic_semantic,已确认,validation,complex_academic,accepted,,False
+rq100_065,哪份学术或技术文档中提到了“Molecular Weight: not applicable”和“3.HAZARDS IDENTIFICATION”？,user_a17ff2865601,user_a17ff2865601,academic_semantic,已确认,validation,complex_academic,accepted,,False
+rq100_066,"哪份学术或技术文档中提到了“Hazleton Laboratories America, Inc.”和“LABORATORIES AMERICA,INC.”？",user_9438d4c34168,user_9438d4c34168,academic_semantic,已确认,validation,complex_academic,accepted,,False
+rq100_067,哪张表格、表单或票据中包含“实践活动，先后担任班团支部和班副班长，工作态度诚恳”和“说明：双亲外出情况填写母都外出、亲外出、母亲外出”？,user_9e9858068408,user_9e9858068408,table_field,已确认,validation,table_form_ticket,accepted,,False
+rq100_068,哪张表格、表单或票据中包含“原康复机构或就读学校”和“残疾类型：肢体残疾”？,user_05babda0aef6,user_05babda0aef6,table_field,已确认,validation,table_form_ticket,accepted,,False
+rq100_069,哪张表格、表单或票据中包含“培训班信息登记表”和“星期日上午”？,user_58d7487b89a3,user_4045827c2227;user_58d7487b89a3,table_field,已确认,validation,table_form_ticket,accepted,,False
+rq100_070,哪张表格、表单或票据中包含“是否参加其他培训班”和“常年班学员登记表”？,user_338cda3e0e79,user_338cda3e0e79,table_field,已确认,validation,table_form_ticket,accepted,,False
+rq100_071,哪张幻灯片或海报中出现“PHILIP MORRIS AGREES TO SETTLEMENT”和“employees and our customers.”？,user_b6d5e7fe2b5c,user_b6d5e7fe2b5c,slide_semantic,已确认,validation,ppt_poster_slide,accepted,,False
+rq100_072,哪张幻灯片或海报中出现“UTAH STATE ATTORNEY GENERAL”和“CONTACT: Dolly Colby”？,user_cf749d4ef6df,user_cf749d4ef6df,slide_semantic,已确认,validation,ppt_poster_slide,accepted,,False
+rq100_073,哪张软件、网页或代码截图中出现“Use default native compilers”和“Specify native compilers”？,user_044b6170f68c,user_044b6170f68c,interface_semantic,已确认,validation,software_web_code,accepted,,False
+rq100_074,哪张软件、网页或代码截图中出现“Search Filename”和“Polygon Labels”？,user_303f31c961ec,user_303f31c961ec,interface_semantic,已确认,validation,software_web_code,accepted,,False
+rq100_075,哪张场景照片中出现“惠图仿石艺术漆”和“品质浇筑美好”？,user_a882621495a7,user_a882621495a7,scene_text,已确认,validation,scene_text,accepted,,False
+rq100_076,哪张场景照片中出现“货车限行，港前大道（芦湾”和“上货车、牵引车及危化品”？,user_cbb353366938,user_cbb353366938,scene_text,已确认,validation,scene_text,accepted,,False
+rq100_078,查找一张展示“Farmers of forty centuries Landscape at Samshui”的自然图像。,user_90f6a4db8e23,user_90f6a4db8e23,visual_only,已确认,validation,natural_no_text,accepted,,False
+rq100_079,查找红色双层公交车穿过雨夜霓虹街道的照片。,,,no_answer,已确认,validation,open_set_no_answer,no_answer,,True
+rq100_080,哪份表格记录火星探测器每日能源消耗和通信时延？,,,no_answer,已确认,validation,open_set_no_answer,no_answer,,True
+rq100_081,"哪份普通文档中提到了“From:Carpenter, Michael”和“-Original Message”？",user_66873c4d3b71,user_66873c4d3b71,text_explicit,已确认,test,general_text_document,accepted,,False
+rq100_082,"哪份普通文档中提到了“101 California Street, Suite 2200”和“Madelyn J. Chaber”？",user_13288def84ca,user_13288def84ca;user_1986baa721d9;user_54809414122f;user_6e85a67b638b,text_explicit,已确认,test,general_text_document,accepted,,False
+rq100_083,哪份普通文档中提到了“deal in the Hoosier state.”和“opposition to FDA.”？,user_ec2c3dc7483f,user_ec2c3dc7483f,text_explicit,已确认,test,general_text_document,accepted,,False
+rq100_084,"哪份学术或技术文档中提到了“X6D3BGU,X6D3BGV,andX6D3BGW”和“Siege social: Zaventem, Belgique”？",user_bf7fd2b8462d,user_bf7fd2b8462d,academic_semantic,已确认,test,complex_academic,accepted,,False
+rq100_085,哪份学术或技术文档中提到了“算的节能模型和方法进行攻关，为实际应用提供坚实的理论基础”和“CHINESE JOURNAL OF COMPUTERS”？,user_14520fde203e,user_14520fde203e;user_250c9ba132a1,academic_semantic,已确认,test,complex_academic,accepted,,False
+rq100_086,哪份学术或技术文档中提到了“age of RASS was 1.5 hours.”和“Smoke Generation”？,user_4e286611bf6d,user_4e286611bf6d,academic_semantic,已确认,test,complex_academic,accepted,,False
+rq100_087,哪张表格、表单或票据中包含“210与港、澳、台商合资经营企”和“3660汽车零部件及配件制造”？,user_17cd2194f4a6,user_17cd2194f4a6,table_field,已确认,test,table_form_ticket,accepted,,False
+rq100_088,哪张表格、表单或票据中包含“确认时间2019年4月3日”和“THZJ/JL/01/02”？,user_759c2ca017d2,user_0b51961e51c5;user_759c2ca017d2,table_field,已确认,test,table_form_ticket,accepted,,False
+rq100_089,哪张表格、表单或票据中包含“初中学业水平考试成绩与综合素质评价”和“-来源网络，仅供个人学习参考”？,user_774d6270ed3d,user_774d6270ed3d,table_field,已确认,test,table_form_ticket,accepted,,False
+rq100_090,哪张表格、表单或票据中包含“1.大学寒暑期补习班英语兼职教师，带领过小学四五六年级英语课”和“2013年9月曾去英国伦敦大学进修了为期1年的交”？,user_78b6a8d9f935,user_3c7477132d1f;user_78b6a8d9f935,table_field,已确认,test,table_form_ticket,accepted,,False
+rq100_091,"哪张幻灯片或海报中出现“THURSDAY, SEPTEMBER 24,1992”和“BRENNAN DAWSON”？",user_9baf2d1c70e9,user_9baf2d1c70e9,slide_semantic,已确认,test,ppt_poster_slide,accepted,,False
+rq100_092,哪张幻灯片或海报中出现“2016韩版白鞋”和“轻松百搭时尚魅力”？,user_7c5713aa72db,user_7c5713aa72db;user_9de0f75be211,slide_semantic,已确认,test,ppt_poster_slide,accepted,,False
+rq100_093,哪张软件、网页或代码截图中出现“Where to build the binaries”和“Browse Build. ..”？,user_df78b7252abc,user_df78b7252abc,interface_semantic,已确认,test,software_web_code,accepted,,False
+rq100_094,哪张软件、网页或代码截图中出现“Use default label”和“Verify Image”？,user_1ca11174df6f,user_1ca11174df6f,interface_semantic,已确认,test,software_web_code,accepted,,False
+rq100_095,哪张场景照片中出现“喝东鹏特饮”和“板桥前所”？,user_fe64ffce3f89,user_fe64ffce3f89,scene_text,已确认,test,scene_text,accepted,,False
+rq100_096,哪张场景照片中出现“延东隧道”和“虹桥机场”？,user_962b628e51e7,user_86ae1c6b4018;user_962b628e51e7,scene_text,已确认,test,scene_text,accepted,,False
+rq100_097,查找一张展示“A Corner of Hongqiao Park”的自然图像。,user_3e29c3ca5f11,user_3e29c3ca5f11,visual_only,已确认,test,natural_no_text,accepted,,False
+rq100_098,查找一张展示“Badaling landscape from Great Wall”的自然图像。,user_874c4a6d4726,user_874c4a6d4726,visual_only,已确认,test,natural_no_text,accepted,,False
+rq100_099,查找钢琴旁摆放手写乐谱和小提琴的室内照片。,,,no_answer,已确认,test,open_set_no_answer,no_answer,,True
+rq100_100,哪张技术图片展示显微镜下进行电路板焊接？,,,no_answer,已确认,test,open_set_no_answer,no_answer,,True

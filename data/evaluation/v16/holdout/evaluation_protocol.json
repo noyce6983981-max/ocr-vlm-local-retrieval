@@ -1,0 +1,26 @@
+{
+  "name": "v16_route_balanced_holdout_final",
+  "created_date": "2026-08-07",
+  "seal_status": "queries_and_labels_frozen_then_config_locked_before_first_run",
+  "query_file": "data/evaluation/v16/holdout/frozen_queries.csv",
+  "query_set_sha256": "3f5a511ebe103f248a08a5b52e5570cbb69eb9cb3f673627fb3cea527e53740f",
+  "query_file_sha256": "D49879A866AF08AA788E83DC3A010EBA52075C70DB4E71DC5263A0EE53E32079",
+  "split": "holdout",
+  "required_review_status": "frozen_ai_source_verified",
+  "query_count": 50,
+  "library_dir": "outputs/user_library",
+  "library_manifest_sha256": "f491d9992259eb16982503ff4b7641b5aaacb879a3ce8ffd1787a26b3729d9e6",
+  "method": "quality_hybrid",
+  "rerank_top_k": 0,
+  "force_components": false,
+  "expected_search_policy_version": 16,
+  "expected_retrieval_config_revision": "fcc12e82c6bb",
+  "query_timeout_seconds": 300,
+  "output": "outputs/evaluation/library_retrieval/v16/holdout_final.json",
+  "no_tuning_rule": "This holdout is run once after config lock. Any subsequent code or threshold change requires a new holdout and cannot improve this report retrospectively.",
+  "limitations": [
+    "Queries and labels are AI source-verified, not human adjudicated.",
+    "The benchmark is route-balanced by design and does not estimate production query frequency.",
+    "Compositional visual no-answer probes use closed-taxonomy evidence and should receive pooled-candidate confirmation before any human-quality claim."
+  ]
+}

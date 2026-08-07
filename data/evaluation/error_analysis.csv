@@ -1,0 +1,4 @@
+﻿query_id,query,expected_display_name,expected_item_id,original_filename,visualization_path,expected_rank,top_1_display_name,top_1_item_id,expected_mean_ocr_confidence,proposed_cause,evidence,human_judgement
+q005,哪份文档综述深度学习图像识别算法并包含摘要和关键词？,论文第1页,pilot_005_paper_page_01,b72787bc-e8ff-4f21-b1e9-c81d0c86ffe2.png,outputs/ocr_batch/visualizations/pilot_005_paper_page_01.png,2,学术检索网页截图,pilot_011_academic_search,0.991251,semantic_ranking_ambiguity,目标已进入文本索引，但另一图片含有相近主题词，排序更靠前。,已确认
+q007,哪张图片是蓝天白云下带湖泊的校园建筑？,校园自然图像,pilot_007_campus_photo,ba2f680c-510b-4733-88a8-a24cb2c1dcd8.png,outputs/ocr_batch/visualizations/pilot_007_campus_photo.png,未召回,论文第1页,pilot_005_paper_page_01,0.0,visual_semantics_missing,目标图片没有OCR文字，因此未进入文本索引。,已确认
+q009,哪张低清图片介绍文字识别、手写识别和表格识别？,低清OCR宣传图,pilot_009_lowres_ocr_poster,download.jpg,outputs/ocr_batch/visualizations/pilot_009_lowres_ocr_poster.jpg,7,学术检索网页截图,pilot_011_academic_search,0.527514,ocr_noise,目标图片平均OCR置信度仅0.5275，识别文本存在乱码。,已确认

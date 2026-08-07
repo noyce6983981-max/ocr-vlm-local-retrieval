@@ -1,0 +1,57 @@
+{
+  "status": "success",
+  "evaluated_at": "2026-07-29",
+  "query_count": 24,
+  "metrics": {
+    "dense": {
+      "recall_at_1": 0.708333,
+      "recall_at_3": 0.791667,
+      "mrr": 0.756434
+    },
+    "bm25": {
+      "recall_at_1": 0.75,
+      "recall_at_3": 0.791667,
+      "mrr": 0.784087
+    },
+    "image": {
+      "recall_at_1": 0.916667,
+      "recall_at_3": 0.958333,
+      "mrr": 0.943452
+    },
+    "adaptive_dense_image": {
+      "recall_at_1": 0.958333,
+      "recall_at_3": 0.958333,
+      "mrr": 0.964286
+    },
+    "dense_bm25_image_rrf": {
+      "recall_at_1": 0.75,
+      "recall_at_3": 0.791667,
+      "mrr": 0.790813
+    },
+    "quality_aware_rrf_rejected": {
+      "recall_at_1": 0.375,
+      "recall_at_3": 0.625,
+      "mrr": 0.528734
+    },
+    "query_aware_hybrid": {
+      "recall_at_1": 0.958333,
+      "recall_at_3": 1.0,
+      "mrr": 0.972222
+    },
+    "query_aware_hybrid_qwen3_vl_reranker": {
+      "recall_at_1": 1.0,
+      "recall_at_3": 1.0,
+      "mrr": 1.0
+    }
+  },
+  "reranker_runtime": {
+    "model_load_seconds": 8.174,
+    "inference_seconds_for_24_queries": 59.585,
+    "peak_reserved_gib": 4.609
+  },
+  "limitations": [
+    "Metrics describe the 24-query reviewed pilot only.",
+    "They must not be extrapolated to the 1500-page library.",
+    "Query-aware BM25 weights remain heuristic until larger split-based validation."
+  ]
+}

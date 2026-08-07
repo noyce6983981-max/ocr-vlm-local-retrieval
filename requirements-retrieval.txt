@@ -1,0 +1,5 @@
+# Install CUDA PyTorch separately with the project command in records/COMMANDS.md.
+modelscope==1.38.1
+FlagEmbedding==1.4.0
+faiss-cpu==1.14.3
+jieba==0.42.1

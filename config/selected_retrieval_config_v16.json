@@ -1,0 +1,146 @@
+{
+  "protocol": "V16 starts from the frozen V2 ranker and adds route-aligned evidence guards, conservative topic evidence boosting, and irreversible compound/context rejection. V15 and blind V1 outputs are retained unchanged; a new holdout is required for an unbiased score.",
+  "ranker": {
+    "family": "query_aware",
+    "params": {
+      "text_bm25_weight": 0.25,
+      "visual_weight": 0.25,
+      "text_weight_cap": 0.6,
+      "sparse_scale": 0.5,
+      "visual_discovery_weights": {
+        "visual": 0.78,
+        "text": 0.15,
+        "bm25": 0.07
+      },
+      "pure_color_discovery_weights": {
+        "visual": 0.42,
+        "color": 0.48,
+        "text": 0.07,
+        "bm25": 0.03
+      },
+      "color_object_discovery_weights": {
+        "visual": 0.60,
+        "color": 0.30,
+        "text": 0.07,
+        "bm25": 0.03
+      },
+      "visual_metadata_weights": {
+        "metadata": 0.50,
+        "visual": 0.50
+      },
+      "text_evidence_min_dense_score": 0.50,
+      "text_evidence_min_bm25_score": 4.0,
+      "visual_text_min_dense_score": 0.50,
+      "visual_text_min_bm25_score": 4.0,
+      "visual_metadata_min_visual_score": 0.40,
+      "visual_discovery_min_score": 0.40,
+      "composite_visual_min_score": 0.40,
+      "strong_relation_visual_min_score": 0.46,
+      "topic_discovery_min_dense_score": 0.53,
+      "exact_topic_evidence_boost": 0.20,
+      "route_ranking_sources": {
+        "visual_discovery": "adaptive",
+        "visual_metadata": "adaptive",
+        "visual_metadata_plain_object": "visual_metadata_blend",
+        "mixed": "quality_rrf",
+        "topic_discovery_without_exact": "adaptive"
+      },
+      "color_discovery_min_coverage": 0.18,
+      "visual_result_min_score": 0.40,
+      "topic_result_min_dense_score": 0.48,
+      "color_result_min_coverage": 0.18,
+      "color_object_min_coverage": 0.12,
+      "color_object_min_visual_score": 0.30,
+      "color_object_visual_relative_margin": 0.10,
+      "visual_result_relative_margin": 0.14,
+      "topic_result_relative_margin": 0.12,
+      "color_result_relative_margin": 0.35
+    }
+  },
+  "open_set_gate": {
+    "feature_names": [
+      "dense_top1",
+      "visual_top1",
+      "log1p_bm25_top1",
+      "dense_margin",
+      "visual_margin",
+      "log1p_bm25_margin"
+    ],
+    "mean": [
+      0.5732531631986301,
+      0.46959606061379117,
+      3.9203170896153705,
+      0.058929245173931125,
+      0.06082025667031606,
+      2.699559631885205
+    ],
+    "scale": [
+      0.07549528091781718,
+      0.09301542517796903,
+      0.6869335104480145,
+      0.07082377596721245,
+      0.06066559367539399,
+      1.3524873973507958
+    ],
+    "coefficients": [
+      3.7448285509838795,
+      1.1153922023583545,
+      1.7055286532549456,
+      0.49629327801978707,
+      0.2957489205775483,
+      0.41237116694263687,
+      0.6465986623978116
+    ],
+    "threshold": 0.24596854914494154,
+    "train_balanced_accuracy": 1.0,
+    "train_accuracy": 1.0
+  },
+  "reranker_gate": {
+    "enabled_for_precision_mode": true,
+    "model": "Qwen3-VL-Reranker-2B",
+    "top_k": 10,
+    "threshold": 0.64697266,
+    "instruction": "exact queries require full match; exploratory queries rank useful partial matches without hard rejection"
+  },
+  "product_policy": {
+    "version": 16,
+    "default_mode": "quality_hybrid_fast",
+    "route_aligned_acceptance": true,
+    "compound_guards_are_irreversible": true,
+    "relative_time_requires_indexed_evidence": true,
+    "topic_literal_evidence_is_boost_only": true,
+    "discovery_queries_use_recall_first_ranking": true,
+    "low_confidence_candidates_require_manual_reveal": true,
+    "precision_timeout_seconds": 180,
+    "precision_failure_fallback": "quality_hybrid_fast",
+    "route_aware_lazy_branches": true,
+    "text_evidence_uses_text_bm25_only": true
+  },
+  "development_status": {
+    "stage": "v16_locked_for_holdout",
+    "implementation_revision": 12,
+    "historical_v2_gate_reused_for_mixed_queries_only": true,
+    "blind_v1_used_for_failure_analysis_not_unbiased_claim": true,
+    "new_route_balanced_calibration_required": false,
+    "route_balanced_calibration_fingerprint": "3498dd396012012e1432b0097d3aaf514cd9284508da67ef3db189894ba6dbf7",
+    "complete_quoted_evidence_is_mandatory": true,
+    "strong_relational_visual_floor": true,
+    "new_frozen_holdout_required": false,
+    "selected_config_locked": true,
+    "locked_before_holdout": true,
+    "calibration_result": {
+      "query_count": 50,
+      "ranker_recall_at_1": 1.0,
+      "answerable_acceptance_rate": 1.0,
+      "no_answer_rejection_accuracy": 1.0,
+      "end_to_end_top1_accuracy": 1.0
+    },
+    "legacy99_locked_candidate_result": {
+      "answerable_count": 89,
+      "answerable_recall_at_1": 1.0,
+      "answerable_acceptance_rate": 1.0,
+      "no_answer_count": 10,
+      "no_answer_rejection_accuracy": 1.0
+    }
+  }
+}

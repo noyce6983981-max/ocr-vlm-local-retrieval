@@ -1,0 +1,42 @@
+{
+  "status": "human_review_required",
+  "query_count": 100,
+  "answerable_count": 90,
+  "no_answer_count": 10,
+  "split_counts": {
+    "train": 60,
+    "validation": 20,
+    "test": 20
+  },
+  "category_counts": {
+    "general_text_document": 15,
+    "complex_academic": 14,
+    "table_form_ticket": 18,
+    "ppt_poster_slide": 12,
+    "software_web_code": 11,
+    "scene_text": 10,
+    "natural_no_text": 10,
+    "open_set_no_answer": 10
+  },
+  "query_type_counts": {
+    "text_explicit": 15,
+    "academic_semantic": 14,
+    "table_field": 18,
+    "slide_semantic": 12,
+    "interface_semantic": 11,
+    "scene_text": 10,
+    "visual_only": 10,
+    "no_answer": 10
+  },
+  "target_group_count": 90,
+  "group_overlap_between_targets": false,
+  "privacy_targets_included": false,
+  "queue_sha256": "96d2c91864286563c77e40dddd1d37703e848aefd9d22c77bf6b5284bef6561e",
+  "selection_policy": "independent balanced query split; one target per isolated group; safe OCR evidence or public source visual description",
+  "metric_policy": "train/development may tune retrieval; validation selects; test is reported once after method freeze",
+  "open_set_candidates_attached": 10,
+  "open_set_system_acceptance_counts": {
+    "False": 1,
+    "True": 9
+  }
+}

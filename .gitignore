@@ -1,0 +1,63 @@
+# Python environment and cache
+.venv/
+.venv-ocr/
+.venv-paddle/
+.venv-vl/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local credentials
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Models, datasets and generated outputs
+models/
+data/raw/
+data/processed/
+data/incoming/
+outputs/*
+!outputs/README.md
+artifacts/
+logs/
+output/
+tmp/
+work/
+scripts/build_application_packets.py
+third_party/
+*.pth
+*.pt
+*.bin
+*.safetensors
+
+# Private evaluation payloads (may contain OCR text or human queries)
+data/evaluation/archive/
+data/evaluation/blind_study_v1/*bundle*.jsonl
+data/evaluation/blind_study_v1/candidates.jsonl
+data/evaluation/v16/development/*features.csv
+
+# A generated public export is a separate repository, never nested here
+public-release/
+
+# IDE and system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Private local records
+records/private/
+data/evaluation/*_human_reviews.csv
+
+# Local investigations unrelated to the reusable OCR-VLM project
+00_郑州医疗器械整顿_官方信息核验报告.md
+03_检索记录_说明.md
+analyze_zhengzhou_attachments.py
+download_zhengzhou_medical_sources.ps1
+generate_zhengzhou_manifest.mjs
+verify_core_counts.py

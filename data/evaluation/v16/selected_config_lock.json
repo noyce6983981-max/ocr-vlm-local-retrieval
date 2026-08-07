@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "status": "locked_before_holdout",
+  "locked_at_utc": "2026-08-07T04:38:10.3084226Z",
+  "search_policy_version": 16,
+  "retrieval_config": "config/selected_retrieval_config_v16.json",
+  "retrieval_config_revision": "fcc12e82c6bb",
+  "retrieval_config_sha256": "FCC12E82C6BB098C27537B729DC85D12B640E3914DDADA3F0FB696518A3F8110",
+  "calibration_query_fingerprint": "3498dd396012012e1432b0097d3aaf514cd9284508da67ef3db189894ba6dbf7",
+  "calibration_report_sha256": "953D165A6B6AB7245185CB78E556320D5276D30D4BFC70F8890E039F8B84E78E",
+  "historical_blind_v1_report_sha256": "73419B495D1F4C436AA33A375CC15749D07DADCF00AAFC801EAB9AB0E7394EF8",
+  "legacy99_feature_sha256": "FB4F60B075A2C2B1F04AEFDB2A85EC19136897B1FA3F0B9CF5F8CE3CEFECBD5C",
+  "holdout_query_fingerprint": "3f5a511ebe103f248a08a5b52e5570cbb69eb9cb3f673627fb3cea527e53740f",
+  "holdout_query_file_sha256": "D49879A866AF08AA788E83DC3A010EBA52075C70DB4E71DC5263A0EE53E32079",
+  "rule": "Do not change query labels, routing rules, thresholds, ranking policy, or selected config after reading the holdout result. Any later change starts a new version and invalidates this holdout as a tuning-independent score."
+}

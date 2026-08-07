@@ -1,0 +1,25 @@
+query_id,query,expected_item_id,query_type,review_status
+q001,哪张图片包含北京理工大学成绩单和课程分数？,pilot_001_transcript,text_explicit,已确认
+q002,哪份文档包含ImageNet-1K实验设置和消融实验结果？,pilot_002_paper_page_02,semantic,已确认
+q003,哪张照片中出现图灵程序设计丛书和深度学习书籍？,pilot_003_bookshelf,scene_text,已确认
+q004,哪张图片介绍了卷积层、池化层和全连接层？,pilot_004_cnn_slide,text_explicit,已确认
+q005,哪份文档综述深度学习图像识别算法并包含摘要和关键词？,pilot_005_paper_page_01,semantic,已确认
+q006,哪张截图展示训练损失、验证准确率和学习率曲线？,pilot_006_training_dashboard,semantic,已确认
+q007,哪张图片是蓝天白云下带湖泊的校园建筑？,pilot_007_campus_photo,visual_only,已确认
+q008,哪张文档授予张老师优秀教师称号？,pilot_008_certificate,text_explicit,已确认
+q009,哪张低清图片介绍文字识别、手写识别和表格识别？,pilot_009_lowres_ocr_poster,ocr_noise,已确认
+q010,哪张课件介绍输入层、隐藏层、输出层和激活函数？,pilot_010_neural_network_slide,semantic,已确认
+q011,哪张截图是学术搜索平台并检索图像识别深度学习？,pilot_011_academic_search,text_explicit,已确认
+q012,哪张图片上写着蛇年皆顺？,pilot_012_vertical_couplet,text_explicit,已确认
+q013,哪篇论文标题是Deep Residual Learning for Image Recognition并展示了残差网络相关图表？,pilot_013_resnet_paper,multimodal_text,已确认
+q014,哪张中文教材页面包含第8章机器学习以及8.1概述和8.2监督学习？,pilot_014_machine_learning_book,multimodal_text,已确认
+q015,哪篇文档标题是On the Generalization of Transformer-Based Models: A Survey？,pilot_015_transformer_survey,multimodal_text,已确认
+q016,哪张表格包含日期、产品、销售金额、数量和单价等列？,pilot_016_sales_table,table_semantic,已确认
+q017,哪张销售看板显示总销售额156000元、订单数3287和客户数2451？,pilot_017_sales_dashboard,dashboard_semantic,已确认
+q018,哪张软件截图展示Python代码读取data.csv并使用matplotlib绘制折线图？,pilot_018_python_code,code_semantic,已确认
+q019,哪张场景图片中的蓝色标牌写着前方施工注意安全？,pilot_019_construction_sign,scene_text,已确认
+q020,哪张场景图片中的红色横幅写着保护环境从我做起？,pilot_020_environment_banner,scene_text,已确认
+q021,哪张图片包含云海观景台和500米左转的指示牌？,pilot_021_viewing_platform_sign,scene_text,已确认
+q022,哪张自然图片展示蓝天群山环绕的碧绿湖泊和树木倒影？,pilot_022_mountain_lake,visual_only,已确认
+q023,哪张自然图片展示夕阳照亮雪山山峰且前景较暗？,pilot_023_snow_mountain,visual_only,已确认
+q024,哪张自然图片展示海边日落以及太阳在水面和沙滩上的倒影？,pilot_024_seaside_sunset,visual_only,已确认
