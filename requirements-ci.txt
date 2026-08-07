@@ -1,6 +1,9 @@
 # Lightweight dependencies for unit tests and GitHub Actions.
 # GPU runtimes and model weights are intentionally excluded.
 pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.15.22
+mypy==2.3.0
 numpy==2.3.5
 pandas==3.0.5
 Pillow==12.3.0

@@ -16,6 +16,14 @@ V16 使用与历史目标零重叠、路线均衡的 50 条校准查询选择配
 
 标签由 AI 根据公开来源与 OCR 核验，不是人工金标准。完整的数据隔离、失败样例和配置指纹见 `records/experiments/retrieval_v16_independent_holdout_2026-08-07.md`；锁定配置以原始 SHA-256 保存在 `config/selected_retrieval_config_v16.json`。
 
+## V17 复合视觉查询研究
+
+V17 针对“一个高相似属性掩盖其他必要条件”的失败，引入属性计划解析和候选级 Qwen3-VL 交叉编码验证。严格单向量属性合取在校准中退化为全拒答，因此没有被包装成成功结果；最终校准候选改用必要条件分数的几何聚合，并明确禁止全拒答方案入选。
+
+在 39 条有效校准查询的模型辅助审计标签上，V17 将质量混排 Recall@3 从 34.8% 提升至 69.6%，将无答案误接收率从 62.5% 降至 31.3%，端到端 Top-1 从 23.1% 提升至 51.3%，接收覆盖率为 43.6%。端到端配对 Bootstrap 提升为 +28.2 个百分点，95% CI 为 +13.9～+44.4。
+
+这些数字是模型辅助校准结果，不是独立人工金标准或最终留出成绩；方向关系仍会混淆，误接收差值区间上界达到 0。最终留出集保持封存。方法、阈值和限制见 `data/evaluation/v17/research_protocol.json`、`config/v17_candidate_verification_gate.json` 与 `records/experiments/retrieval_v17_calibration_pool_2026-08-07.md`。
+
 ## 当前状态
 
 - [x] PP-OCRv5单图与manifest批量推理
@@ -229,6 +237,19 @@ outputs/          本地生成结果（默认不提交）
 models/           本地模型权重（不提交）
 artifacts/        本地向量索引（不提交）
 ```
+
+## 40 页最小公开复现
+
+无需内部 1500 页资料库或模型权重即可验证生成、入库、BM25 检索、必要条件拒答和评测链路：
+
+```powershell
+python scripts/minimal_repro.py ingest
+python scripts/minimal_repro.py evaluate --backend cpu
+```
+
+脚本会生成 40 页自行设计、CC0-1.0 授权的合成页面和 16 条查询，CPU 预期结果见 `repro/expected_results.json`。可选 GPU 视觉模式及其限制见 `repro/README.md`。CPU 模式使用生成器已知文本，不把它表述成 OCR 或 VLM 效果复现。
+
+V17 仍是校准阶段的研究候选，不会覆盖冻结 V16；属性解析和候选验证均需显式启用，最终留出集尚未运行。
 
 ## 说明
 

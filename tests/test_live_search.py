@@ -42,9 +42,7 @@ from scripts.live_search import (
 
 class LiveSearchTests(unittest.TestCase):
     def test_selected_policy_metadata_matches_runtime(self) -> None:
-        payload = json.loads(
-            SELECTED_RETRIEVAL_CONFIG.read_text(encoding="utf-8")
-        )
+        payload = json.loads(SELECTED_RETRIEVAL_CONFIG.read_text(encoding="utf-8"))
         policy = payload["product_policy"]
         self.assertEqual(policy["version"], SEARCH_POLICY_VERSION)
         self.assertEqual(policy["precision_timeout_seconds"], 180)
@@ -109,11 +107,7 @@ class LiveSearchTests(unittest.TestCase):
         )
 
     def test_output_rankings_are_bounded(self) -> None:
-        rankings = {
-            "quality_hybrid": [
-                {"item_id": str(index)} for index in range(140)
-            ]
-        }
+        rankings = {"quality_hybrid": [{"item_id": str(index)} for index in range(140)]}
         trimmed = truncate_rankings_for_output(rankings)
         self.assertEqual(len(trimmed["quality_hybrid"]), 100)
         self.assertEqual(len(rankings["quality_hybrid"]), 140)
@@ -202,8 +196,8 @@ class LiveSearchTests(unittest.TestCase):
         self.assertTrue(decision["accepted"])
 
     def test_visual_keyword_auto_enters_discovery(self) -> None:
-        route, exploratory, visual_query, entity = (
-            resolve_search_intent("quality_hybrid", "美丽")
+        route, exploratory, visual_query, entity = resolve_search_intent(
+            "quality_hybrid", "美丽"
         )
         self.assertEqual(route, "visual_discovery")
         self.assertTrue(exploratory)
@@ -211,8 +205,8 @@ class LiveSearchTests(unittest.TestCase):
         self.assertIsNone(entity)
 
     def test_forest_auto_enters_visual_discovery(self) -> None:
-        route, exploratory, visual_query, entity = (
-            resolve_search_intent("quality_hybrid", "森林")
+        route, exploratory, visual_query, entity = resolve_search_intent(
+            "quality_hybrid", "森林"
         )
         self.assertEqual(route, "visual_discovery")
         self.assertTrue(exploratory)
@@ -220,8 +214,8 @@ class LiveSearchTests(unittest.TestCase):
         self.assertIsNone(entity)
 
     def test_landscape_auto_enters_visual_discovery(self) -> None:
-        route, exploratory, visual_query, entity = (
-            resolve_search_intent("quality_hybrid", "山水")
+        route, exploratory, visual_query, entity = resolve_search_intent(
+            "quality_hybrid", "山水"
         )
         self.assertEqual(route, "visual_discovery")
         self.assertTrue(exploratory)
@@ -229,8 +223,8 @@ class LiveSearchTests(unittest.TestCase):
         self.assertIsNone(entity)
 
     def test_short_topic_keyword_uses_recall_first_hybrid(self) -> None:
-        route, exploratory, visual_query, entity = (
-            resolve_search_intent("quality_hybrid", "量子力学")
+        route, exploratory, visual_query, entity = resolve_search_intent(
+            "quality_hybrid", "量子力学"
         )
         self.assertEqual(route, "topic_discovery")
         self.assertTrue(exploratory)
@@ -238,8 +232,8 @@ class LiveSearchTests(unittest.TestCase):
         self.assertIsNone(entity)
 
     def test_short_person_name_remains_strict(self) -> None:
-        route, exploratory, visual_query, entity = (
-            resolve_search_intent("quality_hybrid", "盛和")
+        route, exploratory, visual_query, entity = resolve_search_intent(
+            "quality_hybrid", "盛和"
         )
         self.assertEqual(route, "entity_exact")
         self.assertFalse(exploratory)
@@ -301,9 +295,7 @@ class LiveSearchTests(unittest.TestCase):
 
     def test_text_evidence_skips_unneeded_visual_model(self) -> None:
         self.assertEqual(
-            required_search_branches(
-                "quality_hybrid", "text_evidence", False
-            ),
+            required_search_branches("quality_hybrid", "text_evidence", False),
             {"text": True, "bm25": True, "visual": False},
         )
 
@@ -314,12 +306,8 @@ class LiveSearchTests(unittest.TestCase):
                 "visual_metadata",
             )
         )
-        self.assertFalse(
-            is_composite_visual_query("蓝色汽车", "visual_discovery")
-        )
-        self.assertFalse(
-            is_composite_visual_query("文档包含日期", "text_evidence")
-        )
+        self.assertFalse(is_composite_visual_query("蓝色汽车", "visual_discovery"))
+        self.assertFalse(is_composite_visual_query("文档包含日期", "text_evidence"))
 
     def test_composite_visual_guard_rejects_single_term_overlap(self) -> None:
         decision = {"accepted": True, "reason": "old"}
@@ -333,9 +321,7 @@ class LiveSearchTests(unittest.TestCase):
         )
         self.assertTrue(changed)
         self.assertFalse(decision["accepted"])
-        self.assertEqual(
-            decision["signal_name"], "composite_visual_raw_cosine"
-        )
+        self.assertEqual(decision["signal_name"], "composite_visual_raw_cosine")
 
     def test_composite_visual_guard_keeps_strong_visual_candidate(self) -> None:
         decision = {"accepted": True, "reason": "old"}
@@ -366,9 +352,7 @@ class LiveSearchTests(unittest.TestCase):
 
     def test_relational_visual_query_uses_composite_guard(self) -> None:
         self.assertTrue(
-            is_composite_visual_query(
-                "查找宠物戴红色帽子的照片", "visual_discovery"
-            )
+            is_composite_visual_query("查找宠物戴红色帽子的照片", "visual_discovery")
         )
         decision = {"accepted": True, "reason": "old"}
         changed = apply_composite_visual_guard(
@@ -510,6 +494,23 @@ class LiveSearchTests(unittest.TestCase):
         self.assertEqual(source, "adaptive")
         self.assertEqual(rankings["quality_hybrid"][0]["item_id"], "joint")
 
+    def test_attribute_coverage_preserves_v17_quality_hybrid(self) -> None:
+        rankings = {
+            "quality_hybrid": [{"item_id": "attribute_complete"}],
+            "quality_rrf": [{"item_id": "global_only"}],
+        }
+        source = apply_route_ranking_policy(
+            rankings,
+            "mixed",
+            None,
+            False,
+            False,
+            {"route_ranking_sources": {"mixed": "quality_rrf"}},
+            preserve_quality_hybrid=True,
+        )
+        self.assertEqual(source, "quality_hybrid")
+        self.assertEqual(rankings["quality_hybrid"][0]["item_id"], "attribute_complete")
+
     def test_plain_object_photo_can_use_metadata_visual_blend(self) -> None:
         rankings = {
             "quality_hybrid": [{"item_id": "old"}],
@@ -567,11 +568,7 @@ class LiveSearchTests(unittest.TestCase):
             None,
             False,
             False,
-            {
-                "route_ranking_sources": {
-                    "topic_discovery_without_exact": "adaptive"
-                }
-            },
+            {"route_ranking_sources": {"topic_discovery_without_exact": "adaptive"}},
         )
         self.assertEqual(source, "adaptive")
         self.assertEqual(rankings["quality_hybrid"][0]["item_id"], "semantic")
@@ -607,9 +604,7 @@ class LiveSearchTests(unittest.TestCase):
             set(),
         )
         self.assertFalse(decision["accepted"])
-        self.assertEqual(
-            decision["signal_name"], "complete_quoted_evidence_count"
-        )
+        self.assertEqual(decision["signal_name"], "complete_quoted_evidence_count")
 
     def test_complete_quote_is_promoted_ahead_of_approximation(self) -> None:
         rankings = {
@@ -642,33 +637,25 @@ class LiveSearchTests(unittest.TestCase):
 
     def test_visual_discovery_blends_all_three_branches(self) -> None:
         self.assertEqual(
-            required_search_branches(
-                "quality_hybrid", "visual_discovery", True
-            ),
+            required_search_branches("quality_hybrid", "visual_discovery", True),
             {"text": True, "bm25": True, "visual": True},
         )
 
     def test_precision_mode_also_blends_visual_discovery(self) -> None:
         self.assertEqual(
-            required_search_branches(
-                "reranker", "visual_discovery", True
-            ),
+            required_search_branches("reranker", "visual_discovery", True),
             {"text": True, "bm25": True, "visual": True},
         )
 
     def test_topic_discovery_uses_text_and_keywords(self) -> None:
         self.assertEqual(
-            required_search_branches(
-                "quality_hybrid", "topic_discovery", True
-            ),
+            required_search_branches("quality_hybrid", "topic_discovery", True),
             {"text": True, "bm25": True, "visual": False},
         )
 
     def test_precision_search_remains_route_aware(self) -> None:
         self.assertEqual(
-            required_search_branches(
-                "reranker", "text_evidence", False
-            ),
+            required_search_branches("reranker", "text_evidence", False),
             {"text": True, "bm25": True, "visual": False},
         )
 
@@ -721,19 +708,12 @@ class LiveSearchTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             path = Path(directory) / "visual.json"
             path.write_text(
-                '{"query":"森林","encoded_query":"绿色森林",'
-                '"library_revision":"r1"}',
+                '{"query":"森林","encoded_query":"绿色森林","library_revision":"r1"}',
                 encoding="utf-8",
             )
-            self.assertTrue(
-                cached_visual_query_matches(
-                    path, "森林", "绿色森林", "r1"
-                )
-            )
+            self.assertTrue(cached_visual_query_matches(path, "森林", "绿色森林", "r1"))
             self.assertFalse(
-                cached_visual_query_matches(
-                    path, "森林", "原始森林", "r1"
-                )
+                cached_visual_query_matches(path, "森林", "原始森林", "r1")
             )
 
     def test_reranker_reorders_only_scored_candidates(self) -> None:

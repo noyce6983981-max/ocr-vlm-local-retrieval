@@ -121,6 +121,10 @@ def audit(root: Path) -> list[str]:
         "SECURITY.md",
         "THIRD_PARTY_DATA.md",
         "config/selected_retrieval_config_v16.json",
+        "config/v17_attribute_coverage.json",
+        "pyproject.toml",
+        "repro/README.md",
+        "repro/expected_results.json",
         "requirements-ci.txt",
     )
     for relative in required:

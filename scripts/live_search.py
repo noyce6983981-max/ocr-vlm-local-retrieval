@@ -8,7 +8,6 @@ import hashlib
 import json
 import os
 import re
-import subprocess
 import sys
 import time
 import unicodedata
@@ -20,6 +19,26 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+PACKAGE_ROOT = PROJECT_ROOT / "src"
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
+from ocr_vlm_retrieval.gating.attribute_coverage import (  # noqa: E402
+    VISUAL_REQUIREMENT_KINDS,
+    AttributePlan,
+    aggregate_candidate_evidence,
+    decompose_visual_query,
+    load_attribute_policy,
+)
+from ocr_vlm_retrieval.runtime.backends import (  # noqa: E402
+    SubprocessBranchBackend,
+)
+from ocr_vlm_retrieval.runtime.cache import (  # noqa: E402
+    prune_json_cache,
+    read_json_object,
+    read_jsonl,
+    write_json_atomic,
+)
 
 from scripts.demo_backend import (  # noqa: E402
     build_method_scores,
@@ -60,9 +79,8 @@ FINAL_CACHE_MAX_FILES_PER_LIBRARY = 512
 FINAL_CACHE_MAX_BYTES_PER_LIBRARY = 512 * 1024 * 1024
 COMPONENT_CACHE_MAX_FILES = 4096
 COMPONENT_CACHE_MAX_BYTES = 2 * 1024 * 1024 * 1024
-SELECTED_RETRIEVAL_CONFIG = (
-    PROJECT_ROOT / "config/selected_retrieval_config_v16.json"
-)
+SELECTED_RETRIEVAL_CONFIG = PROJECT_ROOT / "config/selected_retrieval_config_v16.json"
+BRANCH_BACKEND = SubprocessBranchBackend(PROJECT_ROOT)
 
 
 def parse_args() -> argparse.Namespace:
@@ -92,88 +110,16 @@ def parse_args() -> argparse.Namespace:
         default=0,
         help="Rerank this many adaptive-fusion candidates; 0 disables it.",
     )
-    return parser.parse_args()
-
-
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    return [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
-
-
-def read_json_object(path: Path) -> dict[str, Any] | None:
-    """Return a JSON object or treat a partial/corrupt cache as a miss."""
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return None
-    return payload if isinstance(payload, dict) else None
-
-
-def write_json_atomic(path: Path, payload: Any) -> None:
-    """Replace a cache only after a complete JSON file reaches disk."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(
-        f".{path.name}.{os.getpid()}.{time.time_ns()}.tmp"
+    parser.add_argument(
+        "--attribute-policy",
+        type=Path,
+        default=None,
+        help=(
+            "Opt in to a versioned V17 compositional-attribute policy. "
+            "The default remains the frozen V16 product policy."
+        ),
     )
-    try:
-        with temporary.open("w", encoding="utf-8", newline="\n") as handle:
-            json.dump(payload, handle, ensure_ascii=False, indent=2)
-            handle.write("\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-    finally:
-        if temporary.exists():
-            temporary.unlink()
-
-
-def prune_json_cache(
-    directory: Path,
-    *,
-    protected: set[Path] | None = None,
-    max_files: int,
-    max_bytes: int,
-) -> dict[str, int]:
-    """Bound a generated JSON cache by count and bytes, newest first."""
-    if not directory.is_dir():
-        return {"deleted_files": 0, "deleted_bytes": 0}
-    protected_paths = {
-        path.resolve() for path in (protected or set()) if path.exists()
-    }
-    candidates: list[tuple[Path, int, int]] = []
-    kept_files = 0
-    kept_bytes = 0
-    for path in directory.glob("*.json"):
-        try:
-            stat = path.stat()
-        except OSError:
-            continue
-        if path.resolve() in protected_paths:
-            kept_files += 1
-            kept_bytes += stat.st_size
-            continue
-        candidates.append((path, stat.st_size, stat.st_mtime_ns))
-    candidates.sort(key=lambda row: row[2], reverse=True)
-    deleted_files = 0
-    deleted_bytes = 0
-    for path, size, _ in candidates:
-        if kept_files < max_files and kept_bytes + size <= max_bytes:
-            kept_files += 1
-            kept_bytes += size
-            continue
-        try:
-            path.unlink()
-        except OSError:
-            continue
-        deleted_files += 1
-        deleted_bytes += size
-    return {
-        "deleted_files": deleted_files,
-        "deleted_bytes": deleted_bytes,
-    }
+    return parser.parse_args()
 
 
 def prune_final_cache_if_needed(output_path: Path) -> None:
@@ -191,15 +137,10 @@ def prune_final_cache_if_needed(output_path: Path) -> None:
     )
 
 
-def reranker_cache_signature(
-    item_ids: list[str], exploratory_query: bool
-) -> str:
+def reranker_cache_signature(item_ids: list[str], exploratory_query: bool) -> str:
     """Version policy-dependent reranking separately from base embeddings."""
     mode = "exploratory" if exploratory_query else "exact"
-    material = (
-        f"policy={SEARCH_POLICY_VERSION}\nmode={mode}\n"
-        + "\n".join(item_ids)
-    )
+    material = f"policy={SEARCH_POLICY_VERSION}\nmode={mode}\n" + "\n".join(item_ids)
     return hashlib.sha256(material.encode("utf-8")).hexdigest()[:12]
 
 
@@ -210,9 +151,7 @@ def library_revision(
     library_dir = library_dir.resolve()
     manifest_path = library_dir / "manifest.jsonl"
     if not manifest_path.is_file():
-        return hashlib.sha256(
-            str(library_dir).encode("utf-8")
-        ).hexdigest()[:12]
+        return hashlib.sha256(str(library_dir).encode("utf-8")).hexdigest()[:12]
     revision_paths = [
         library_dir / "text_index/index.faiss",
         library_dir / "bm25_index/index.json.gz",
@@ -239,13 +178,19 @@ def library_revision(
     return digest.hexdigest()[:12]
 
 
-def retrieval_config_revision() -> str:
+def retrieval_config_revision(
+    attribute_policy_path: Path | None = None,
+) -> str:
     """Hash ranking policy separately so model component caches stay reusable."""
     if not SELECTED_RETRIEVAL_CONFIG.is_file():
         return "fallback"
-    return hashlib.sha256(
-        SELECTED_RETRIEVAL_CONFIG.read_bytes()
-    ).hexdigest()[:12]
+    digest = hashlib.sha256(SELECTED_RETRIEVAL_CONFIG.read_bytes())
+    if attribute_policy_path is not None:
+        resolved = attribute_policy_path.resolve()
+        digest.update(b"\nattribute-policy\n")
+        digest.update(resolved.name.encode("utf-8"))
+        digest.update(resolved.read_bytes())
+    return digest.hexdigest()[:12]
 
 
 def selected_runtime_config(
@@ -269,9 +214,7 @@ def selected_runtime_config(
         or not SELECTED_RETRIEVAL_CONFIG.is_file()
     ):
         return fallback
-    payload = json.loads(
-        SELECTED_RETRIEVAL_CONFIG.read_text(encoding="utf-8")
-    )
+    payload = json.loads(SELECTED_RETRIEVAL_CONFIG.read_text(encoding="utf-8"))
     ranker = payload.get("ranker", {})
     if ranker.get("family") not in {"adaptive", "query_aware"}:
         return fallback
@@ -279,9 +222,7 @@ def selected_runtime_config(
         "ranker": ranker,
         "open_set_gate": payload.get("open_set_gate"),
         "reranker_gate": payload.get("reranker_gate"),
-        "source": SELECTED_RETRIEVAL_CONFIG.relative_to(
-            PROJECT_ROOT
-        ).as_posix(),
+        "source": SELECTED_RETRIEVAL_CONFIG.relative_to(PROJECT_ROOT).as_posix(),
     }
 
 
@@ -317,10 +258,8 @@ def required_search_branches(
     # branches by topic type and are ranked without factual-answer rejection.
     return {
         "text": retrieval_route != "visual_discovery",
-        "bm25": retrieval_route
-        in {"text_evidence", "topic_discovery", "mixed"},
-        "visual": retrieval_route
-        in {"visual_metadata", "visual_discovery", "mixed"},
+        "bm25": retrieval_route in {"text_evidence", "topic_discovery", "mixed"},
+        "visual": retrieval_route in {"visual_metadata", "visual_discovery", "mixed"},
     }
 
 
@@ -419,15 +358,11 @@ def apply_composite_visual_guard(
     if not is_composite_visual_query(query, retrieval_route):
         return False
     complete_literal_evidence_ids = complete_literal_evidence_ids or set()
-    if any(
-        row.get("item_id") in complete_literal_evidence_ids
-        for row in ranking[:10]
-    ):
+    if any(row.get("item_id") in complete_literal_evidence_ids for row in ranking[:10]):
         return False
     normalized_query = "".join(query.split())
     strong_relation = any(
-        marker in normalized_query
-        for marker in STRONG_RELATIONAL_VISUAL_MARKERS
+        marker in normalized_query for marker in STRONG_RELATIONAL_VISUAL_MARKERS
     )
     threshold = float(
         ranker_params.get(
@@ -438,10 +373,7 @@ def apply_composite_visual_guard(
         else ranker_params.get("composite_visual_min_score", 0.35)
     )
     top_visual = max(
-        (
-            float(row.get("raw_visual_score", 0.0))
-            for row in ranking[:10]
-        ),
+        (float(row.get("raw_visual_score", 0.0)) for row in ranking[:10]),
         default=0.0,
     )
     decision["composite_visual_guard_applied"] = True
@@ -466,6 +398,64 @@ def apply_composite_visual_guard(
     return True
 
 
+def apply_attribute_coverage_guard(
+    plan: AttributePlan,
+    ranking: list[dict[str, Any]],
+    decision: dict[str, Any],
+    gate_source: str,
+) -> bool:
+    """Make V17 necessary-condition coverage irreversible for the top result."""
+
+    if not plan.compositional:
+        return False
+    top = ranking[0] if ranking else None
+    upstream_accepted = bool(decision.get("accepted", False))
+    attribute_accepted = bool(top and top.get("attribute_coverage_passed", False))
+    accepted = upstream_accepted and attribute_accepted
+    coverage = float(top.get("attribute_coverage_ratio", 0.0) if top else 0.0)
+    missing = list(top.get("attribute_missing_requirement_ids", []) if top else [])
+    decision.update(
+        {
+            "accepted": accepted,
+            "reason": (
+                "V17 将复合视觉查询拆成必要属性，并要求同一首位候选"
+                f"逐项通过；当前覆盖率 {coverage:.1%}，"
+                f"缺失 {len(missing)} 项；上游证据门控"
+                f"{'通过' if upstream_accepted else '未通过'}。"
+            ),
+            "signal_name": "attribute_requirement_coverage",
+            "signal": round(coverage, 6),
+            "threshold": 1.0,
+            "gate_source": gate_source,
+            "attribute_coverage_guard_applied": True,
+            "attribute_plan_fingerprint": plan.fingerprint,
+            "attribute_requirements_passed": attribute_accepted,
+            "upstream_gate_passed": upstream_accepted,
+            "missing_requirement_ids": missing,
+            "weakest_requirement_id": (
+                top.get("attribute_weakest_requirement_id") if top else None
+            ),
+        }
+    )
+    return True
+
+
+def promote_attribute_complete_evidence(
+    rankings: dict[str, list[dict[str, Any]]],
+) -> None:
+    """Keep complete candidates ahead of partial matches for V17 methods."""
+
+    for method in ("quality_hybrid", "reranker"):
+        rows = rankings.get(method)
+        if not rows:
+            continue
+        complete = [row for row in rows if row.get("attribute_coverage_passed") is True]
+        partial = [
+            row for row in rows if row.get("attribute_coverage_passed") is not True
+        ]
+        rankings[method] = complete + partial
+
+
 def apply_route_acceptance_guard(
     query: str,
     retrieval_route: str,
@@ -484,9 +474,7 @@ def apply_route_acceptance_guard(
     top_rows = ranking[:10]
     quoted_evidence_ids = quoted_evidence_ids or set()
     quoted_matches = [
-        row
-        for row in top_rows
-        if row.get("item_id") in quoted_evidence_ids
+        row for row in top_rows if row.get("item_id") in quoted_evidence_ids
     ]
     quoted_terms = extract_quoted_terms(query)
     if (
@@ -525,9 +513,7 @@ def apply_route_acceptance_guard(
         dense_threshold = float(
             ranker_params.get("text_evidence_min_dense_score", 0.50)
         )
-        bm25_threshold = float(
-            ranker_params.get("text_evidence_min_bm25_score", 4.0)
-        )
+        bm25_threshold = float(ranker_params.get("text_evidence_min_bm25_score", 4.0))
         aligned = [
             row
             for row in top_rows
@@ -563,9 +549,8 @@ def apply_route_acceptance_guard(
             for row in top_rows
             if float(row.get("raw_visual_score", 0.0)) >= visual_threshold
         ]
-        requires_literal = (
-            "手写" not in query
-            and any(term in query for term in VISUAL_LITERAL_EVIDENCE_TERMS)
+        requires_literal = "手写" not in query and any(
+            term in query for term in VISUAL_LITERAL_EVIDENCE_TERMS
         )
         literal_rows = [
             row
@@ -576,8 +561,7 @@ def apply_route_acceptance_guard(
             >= float(ranker_params.get("visual_text_min_bm25_score", 4.0))
         ]
         accepted = bool(
-            quoted_matches
-            or (literal_rows if requires_literal else visual_rows)
+            quoted_matches or (literal_rows if requires_literal else visual_rows)
         )
         signal = len(literal_rows if requires_literal else visual_rows)
         evidence_name = (
@@ -649,9 +633,7 @@ def resolve_search_intent(
     """Route exact lookups strictly and browse queries recall-first."""
     route = infer_retrieval_route(query)
     strict_entity_term = (
-        extract_strict_entity_term(query)
-        if route == "entity_exact"
-        else None
+        extract_strict_entity_term(query) if route == "entity_exact" else None
     )
     if strict_entity_term is not None:
         return route, False, query, strict_entity_term
@@ -730,9 +712,7 @@ def apply_strict_entity_policy(
     if evidence_item_ids:
         for method, rows in rankings.items():
             rankings[method] = [
-                row
-                for row in rows
-                if row["item_id"] in evidence_item_ids
+                row for row in rows if row["item_id"] in evidence_item_ids
             ]
             acceptance[method] = {
                 "accepted": True,
@@ -779,9 +759,7 @@ def discovery_acceptance_decision(
                 (float(row.get("color_score", 0.0)) for row in top_rows),
                 default=0.0,
             )
-            threshold = float(
-                ranker_params.get("color_discovery_min_coverage", 0.18)
-            )
+            threshold = float(ranker_params.get("color_discovery_min_coverage", 0.18))
             signal_name = "color_coverage_relevance"
             reason = (
                 "颜色查询同时使用视觉语义和真实像素覆盖率；"
@@ -789,15 +767,10 @@ def discovery_acceptance_decision(
             )
         else:
             signal = max(
-                (
-                    float(row.get("raw_visual_score", 0.0))
-                    for row in top_rows
-                ),
+                (float(row.get("raw_visual_score", 0.0)) for row in top_rows),
                 default=0.0,
             )
-            threshold = float(
-                ranker_params.get("visual_discovery_min_score", 0.35)
-            )
+            threshold = float(ranker_params.get("visual_discovery_min_score", 0.35))
             signal_name = "visual_discovery_relevance"
             reason = (
                 "视觉主题采用召回优先的三路融合，同时保留最低相关性门槛；"
@@ -809,9 +782,7 @@ def discovery_acceptance_decision(
             (float(row.get("raw_text_score", 0.0)) for row in top_rows),
             default=0.0,
         )
-        threshold = float(
-            ranker_params.get("topic_discovery_min_dense_score", 0.44)
-        )
+        threshold = float(ranker_params.get("topic_discovery_min_dense_score", 0.44))
         accepted = exact_topic_evidence_count > 0 or signal >= threshold
         reason = (
             f"主题查询精确命中 {exact_topic_evidence_count} 页，"
@@ -854,19 +825,14 @@ def filter_discovery_rankings(
         before_count = len(rows)
         cutoff = 0.0
         if retrieval_route == "topic_discovery":
-            minimum = float(
-                ranker_params.get("topic_result_min_dense_score", 0.44)
-            )
+            minimum = float(ranker_params.get("topic_result_min_dense_score", 0.44))
             best = max(
                 (float(row.get("raw_text_score", 0.0)) for row in rows),
                 default=0.0,
             )
             cutoff = max(
                 minimum,
-                best
-                - float(
-                    ranker_params.get("topic_result_relative_margin", 0.12)
-                ),
+                best - float(ranker_params.get("topic_result_relative_margin", 0.12)),
             )
             rankings[method] = [
                 row
@@ -875,24 +841,17 @@ def filter_discovery_rankings(
                 or float(row.get("raw_text_score", 0.0)) >= cutoff
             ]
         elif color_intent and pure_color_query:
-            minimum = float(
-                ranker_params.get("color_result_min_coverage", 0.18)
-            )
+            minimum = float(ranker_params.get("color_result_min_coverage", 0.18))
             best = max(
                 (float(row.get("color_score", 0.0)) for row in rows),
                 default=0.0,
             )
             cutoff = max(
                 minimum,
-                best
-                - float(
-                    ranker_params.get("color_result_relative_margin", 0.35)
-                ),
+                best - float(ranker_params.get("color_result_relative_margin", 0.35)),
             )
             rankings[method] = [
-                row
-                for row in rows
-                if float(row.get("color_score", 0.0)) >= cutoff
+                row for row in rows if float(row.get("color_score", 0.0)) >= cutoff
             ]
         elif color_intent:
             color_threshold = float(
@@ -902,10 +861,7 @@ def filter_discovery_rankings(
                 ranker_params.get("color_object_min_visual_score", 0.30)
             )
             best_visual = max(
-                (
-                    float(row.get("raw_visual_score", 0.0))
-                    for row in rows
-                ),
+                (float(row.get("raw_visual_score", 0.0)) for row in rows),
                 default=0.0,
             )
             visual_threshold = max(
@@ -922,32 +878,21 @@ def filter_discovery_rankings(
                 row
                 for row in rows
                 if float(row.get("color_score", 0.0)) >= color_threshold
-                and float(row.get("raw_visual_score", 0.0))
-                >= visual_threshold
+                and float(row.get("raw_visual_score", 0.0)) >= visual_threshold
             ]
             cutoff = visual_threshold
         else:
-            minimum = float(
-                ranker_params.get("visual_result_min_score", 0.35)
-            )
+            minimum = float(ranker_params.get("visual_result_min_score", 0.35))
             best = max(
-                (
-                    float(row.get("raw_visual_score", 0.0))
-                    for row in rows
-                ),
+                (float(row.get("raw_visual_score", 0.0)) for row in rows),
                 default=0.0,
             )
             cutoff = max(
                 minimum,
-                best
-                - float(
-                    ranker_params.get("visual_result_relative_margin", 0.14)
-                ),
+                best - float(ranker_params.get("visual_result_relative_margin", 0.14)),
             )
             rankings[method] = [
-                row
-                for row in rows
-                if float(row.get("raw_visual_score", 0.0)) >= cutoff
+                row for row in rows if float(row.get("raw_visual_score", 0.0)) >= cutoff
             ]
         summary["methods"][method] = {
             "before": before_count,
@@ -987,8 +932,12 @@ def apply_route_ranking_policy(
     has_quoted_evidence: bool,
     ranker_params: dict[str, Any],
     query: str = "",
+    *,
+    preserve_quality_hybrid: bool = False,
 ) -> str:
     """Select a precomputed ranking only when cross-dataset evidence agrees."""
+    if preserve_quality_hybrid:
+        return "quality_hybrid"
     if retrieval_route == "visual_discovery" and color_intent:
         return "quality_hybrid"
     if retrieval_route == "visual_metadata" and has_quoted_evidence:
@@ -1003,10 +952,7 @@ def apply_route_ranking_policy(
     )
     if plain_visual_object_query:
         source_key = "visual_metadata_plain_object"
-    elif (
-        retrieval_route == "topic_discovery"
-        and not has_exact_topic_evidence
-    ):
+    elif retrieval_route == "topic_discovery" and not has_exact_topic_evidence:
         source_key = "topic_discovery_without_exact"
     else:
         source_key = retrieval_route
@@ -1028,9 +974,7 @@ def promote_complete_quoted_evidence(
         rows = rankings.get(method)
         if not rows:
             continue
-        exact = [
-            row for row in rows if row.get("item_id") in quoted_evidence_ids
-        ]
+        exact = [row for row in rows if row.get("item_id") in quoted_evidence_ids]
         approximate = [
             row for row in rows if row.get("item_id") not in quoted_evidence_ids
         ]
@@ -1054,16 +998,12 @@ def ocr_text(
     override_path = library_dir / "ocr/overrides" / f"{item_id}.json"
     if override_path.is_file():
         payload = json.loads(override_path.read_text(encoding="utf-8"))
-        return "\n".join(
-            str(value) for value in payload.get("rec_texts", [])
-        )
+        return "\n".join(str(value) for value in payload.get("rec_texts", []))
     for directory in (library_dir / "ocr/json",):
         path = directory / f"{item_id}.json"
         if path.is_file():
             payload = json.loads(path.read_text(encoding="utf-8"))
-            return "\n".join(
-                str(value) for value in payload.get("rec_texts", [])
-            )
+            return "\n".join(str(value) for value in payload.get("rec_texts", []))
     return ""
 
 
@@ -1074,9 +1014,7 @@ def add_reranker_ranking(
     """Add reranked Top-K followed by the remaining hybrid candidates."""
     hybrid = rankings.get("quality_hybrid") or rankings["adaptive"]
     hybrid_by_id = {row["item_id"]: row for row in hybrid}
-    score_by_id = dict(
-        zip(reranker_payload["item_ids"], reranker_payload["scores"])
-    )
+    score_by_id = dict(zip(reranker_payload["item_ids"], reranker_payload["scores"]))
     reranked_ids = sorted(
         score_by_id,
         key=lambda item_id: float(score_by_id[item_id]),
@@ -1103,24 +1041,10 @@ def add_reranker_ranking(
 
 
 def run_branch(command: list[str], label: str) -> None:
-    completed = subprocess.run(
-        command,
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        timeout=180,
-        check=False,
-    )
-    if completed.returncode != 0:
-        detail = (completed.stderr or completed.stdout)[-1600:]
-        raise RuntimeError(f"{label} branch failed:\n{detail}")
+    BRANCH_BACKEND.run(command, label=label)
 
 
-def align_scores(
-    payload: dict[str, Any], item_ids: list[str]
-) -> np.ndarray:
+def align_scores(payload: dict[str, Any], item_ids: list[str]) -> np.ndarray:
     source_ids = payload["item_ids"]
     source_scores = payload["scores"]
     score_by_id = dict(zip(source_ids, source_scores))
@@ -1144,9 +1068,25 @@ def align_score_field(
     )
 
 
-def cached_query_matches(
-    path: Path, query: str, revision: str | None = None
-) -> bool:
+def align_attribute_score(
+    payload: dict[str, Any],
+    item_ids: list[str],
+    requirement_id: str,
+) -> np.ndarray:
+    """Align one V17 attribute score vector to the active manifest."""
+
+    source_ids = payload["item_ids"]
+    source_scores = payload.get("scores_by_requirement", {}).get(requirement_id)
+    if source_scores is None:
+        raise ValueError(f"Missing visual scores for attribute {requirement_id!r}.")
+    score_by_id = dict(zip(source_ids, source_scores))
+    return np.array(
+        [float(score_by_id[item_id]) for item_id in item_ids],
+        dtype=np.float32,
+    )
+
+
+def cached_query_matches(path: Path, query: str, revision: str | None = None) -> bool:
     if not path.is_file():
         return False
     payload = read_json_object(path)
@@ -1162,6 +1102,8 @@ def cached_visual_query_matches(
     query: str,
     encoded_query: str,
     revision: str | None = None,
+    attribute_plan_fingerprint: str | None = None,
+    attribute_policy_sha256: str | None = None,
 ) -> bool:
     """Validate both the visible query and the text encoded by the VLM."""
     if not cached_query_matches(path, query, revision):
@@ -1169,7 +1111,18 @@ def cached_visual_query_matches(
     payload = read_json_object(path)
     if payload is None:
         return False
-    return payload.get("encoded_query", query) == encoded_query
+    if payload.get("encoded_query", query) != encoded_query:
+        return False
+    if attribute_plan_fingerprint is not None:
+        cached_plan = payload.get("attribute_plan") or {}
+        if cached_plan.get("fingerprint") != attribute_plan_fingerprint:
+            return False
+    if (
+        attribute_policy_sha256 is not None
+        and payload.get("attribute_policy_sha256") != attribute_policy_sha256
+    ):
+        return False
+    return True
 
 
 def main() -> None:
@@ -1187,11 +1140,45 @@ def main() -> None:
     ).resolve()
     manifest_path = library_dir / "manifest.jsonl"
     if not manifest_path.is_file():
-        raise FileNotFoundError(
-            "当前资料库还是空的，请先上传并完成入库。"
-        )
+        raise FileNotFoundError("当前资料库还是空的，请先上传并完成入库。")
+    attribute_policy_path = None
+    attribute_policy: dict[str, Any] | None = None
+    attribute_policy_sha256: str | None = None
+    attribute_plan: AttributePlan | None = None
+    if args.attribute_policy is not None:
+        attribute_policy_path = (
+            args.attribute_policy
+            if args.attribute_policy.is_absolute()
+            else PROJECT_ROOT / args.attribute_policy
+        ).resolve()
+        attribute_policy = load_attribute_policy(attribute_policy_path)
+        attribute_policy_sha256 = hashlib.sha256(
+            attribute_policy_path.read_bytes()
+        ).hexdigest()
+        attribute_plan = decompose_visual_query(query, attribute_policy)
     revision = library_revision(library_dir)
-    config_revision = retrieval_config_revision()
+    config_revision = retrieval_config_revision(attribute_policy_path)
+    search_policy_version = (
+        int(attribute_policy["search_policy_version"])
+        if attribute_policy is not None
+        else SEARCH_POLICY_VERSION
+    )
+    runtime_config = selected_runtime_config(library_dir)
+    runtime_config["attribute_coverage"] = {
+        "enabled": bool(attribute_plan and attribute_plan.compositional),
+        "policy": (
+            attribute_policy_path.relative_to(PROJECT_ROOT).as_posix()
+            if attribute_policy_path is not None
+            and attribute_policy_path.is_relative_to(PROJECT_ROOT)
+            else str(attribute_policy_path)
+            if attribute_policy_path is not None
+            else None
+        ),
+        "policy_sha256": attribute_policy_sha256,
+        "status": (
+            attribute_policy.get("status") if attribute_policy is not None else None
+        ),
+    }
     (
         retrieval_route,
         exploratory_query,
@@ -1204,7 +1191,12 @@ def main() -> None:
     output_path = (
         args.output
         if args.output is not None
-        else CACHE_DIR / f"{key}.json"
+        else CACHE_DIR
+        / (
+            f"{key}_{config_revision}.json"
+            if attribute_policy is not None
+            else f"{key}.json"
+        )
     )
     if not output_path.is_absolute():
         output_path = PROJECT_ROOT / output_path
@@ -1214,12 +1206,9 @@ def main() -> None:
             cached.get("query") == query
             and cached.get("library_revision") == revision
             and cached.get("rerank_top_k", 0) == args.rerank_top_k
-            and cached.get("requested_method", "quality_hybrid")
-            == args.method
-            and cached.get("search_policy_version")
-            == SEARCH_POLICY_VERSION
-            and cached.get("retrieval_config_revision")
-            == config_revision
+            and cached.get("requested_method", "quality_hybrid") == args.method
+            and cached.get("search_policy_version") == search_policy_version
+            and cached.get("retrieval_config_revision") == config_revision
             and cached.get("retrieval_route") == retrieval_route
             and cached.get("visual_query", query) == visual_query
         ):
@@ -1229,7 +1218,6 @@ def main() -> None:
     started = time.perf_counter()
     manifest = combined_manifest(library_dir)
     item_ids = [row["item_id"] for row in manifest]
-    runtime_config = selected_runtime_config(library_dir)
     exact_entity_ids = (
         exact_evidence_item_ids(
             strict_entity_term,
@@ -1247,14 +1235,10 @@ def main() -> None:
     topic_evidence_counts: dict[str, int] = {}
     for term in topic_evidence_terms:
         for item_id in exact_evidence_item_ids(term, library_dir, manifest):
-            topic_evidence_counts[item_id] = (
-                topic_evidence_counts.get(item_id, 0) + 1
-            )
+            topic_evidence_counts[item_id] = topic_evidence_counts.get(item_id, 0) + 1
     literal_evidence_ids = set(topic_evidence_counts)
     exact_topic_ids = (
-        literal_evidence_ids
-        if retrieval_route == "topic_discovery"
-        else set()
+        literal_evidence_ids if retrieval_route == "topic_discovery" else set()
     )
     contextual_terms = extract_temporal_personal_terms(query)
     contextual_evidence_ids: set[str] = set()
@@ -1264,18 +1248,13 @@ def main() -> None:
         )
     quoted_terms = extract_quoted_terms(query)
     quoted_term_matches = [
-        exact_evidence_item_ids(term, library_dir, manifest)
-        for term in quoted_terms
+        exact_evidence_item_ids(term, library_dir, manifest) for term in quoted_terms
     ]
     quoted_evidence_ids = (
-        set.intersection(*quoted_term_matches)
-        if quoted_term_matches
-        else set()
+        set.intersection(*quoted_term_matches) if quoted_term_matches else set()
     )
     if strict_entity_term and not exact_entity_ids:
-        rankings: dict[str, list[dict[str, Any]]] = {
-            args.method: []
-        }
+        rankings: dict[str, list[dict[str, Any]]] = {args.method: []}
         acceptance: dict[str, dict[str, Any]] = {}
         apply_strict_entity_policy(
             strict_entity_term,
@@ -1286,7 +1265,7 @@ def main() -> None:
         )
         payload = {
             "query": query,
-            "search_policy_version": SEARCH_POLICY_VERSION,
+            "search_policy_version": search_policy_version,
             "retrieval_config_revision": config_revision,
             "requested_method": args.method,
             "query_mode": "entity_exact",
@@ -1300,6 +1279,9 @@ def main() -> None:
             "topic_evidence_terms": topic_evidence_terms,
             "contextual_evidence_terms": contextual_terms,
             "quoted_evidence_terms": quoted_terms,
+            "attribute_plan": (
+                attribute_plan.to_dict() if attribute_plan is not None else None
+            ),
             "library_dir": library_dir.relative_to(PROJECT_ROOT).as_posix(),
             "cache_key": key,
             "library_revision": revision,
@@ -1354,7 +1336,20 @@ def main() -> None:
         needs_visual
         and not args.force
         and cached_visual_query_matches(
-            visual_path, query, visual_query, revision
+            visual_path,
+            query,
+            visual_query,
+            revision,
+            (
+                attribute_plan.fingerprint
+                if attribute_plan is not None and attribute_plan.compositional
+                else None
+            ),
+            (
+                attribute_policy_sha256
+                if attribute_plan is not None and attribute_plan.compositional
+                else None
+            ),
         )
     )
     component_cache_hits: dict[str, bool | None] = {
@@ -1402,22 +1397,26 @@ def main() -> None:
             "bm25",
         )
     if needs_visual and not visual_cache_hit:
-        run_branch(
-            [
-                str(VISUAL_PYTHON),
-                str(PROJECT_ROOT / "scripts/score_visual_query.py"),
-                query,
-                "--encoded-query",
-                visual_query,
-                "--index-dir",
-                str(library_dir / "visual_index"),
-                "--output",
-                str(visual_path),
-                "--library-revision",
-                revision,
-            ],
-            "visual",
-        )
+        visual_command = [
+            str(VISUAL_PYTHON),
+            str(PROJECT_ROOT / "scripts/score_visual_query.py"),
+            query,
+            "--encoded-query",
+            visual_query,
+            "--index-dir",
+            str(library_dir / "visual_index"),
+            "--output",
+            str(visual_path),
+            "--library-revision",
+            revision,
+        ]
+        if (
+            attribute_policy_path is not None
+            and attribute_plan is not None
+            and attribute_plan.compositional
+        ):
+            visual_command.extend(["--attribute-policy", str(attribute_policy_path)])
+        run_branch(visual_command, "visual")
 
     empty_scores = np.zeros(len(item_ids), dtype=np.float32)
     text_payload = (
@@ -1436,24 +1435,16 @@ def main() -> None:
         else {"elapsed_seconds": 0.0}
     )
     text_scores = (
-        align_scores(text_payload, item_ids)
-        if needs_text
-        else empty_scores.copy()
+        align_scores(text_payload, item_ids) if needs_text else empty_scores.copy()
     )
     bm25_scores = (
-        align_scores(bm25_payload, item_ids)
-        if needs_bm25
-        else empty_scores.copy()
+        align_scores(bm25_payload, item_ids) if needs_bm25 else empty_scores.copy()
     )
     visual_scores = (
-        align_scores(visual_payload, item_ids)
-        if needs_visual
-        else empty_scores.copy()
+        align_scores(visual_payload, item_ids) if needs_visual else empty_scores.copy()
     )
     metadata_scores = (
-        align_score_field(
-            text_payload, item_ids, "metadata_scores"
-        )
+        align_score_field(text_payload, item_ids, "metadata_scores")
         if needs_text and "metadata_scores" in text_payload
         else text_scores.copy()
     )
@@ -1462,6 +1453,79 @@ def main() -> None:
         library_dir,
         manifest,
     )
+
+    attribute_summary_by_id: dict[str, dict[str, Any]] = {}
+    attribute_coverage_scores: np.ndarray | None = None
+    attribute_coverage_active = bool(
+        attribute_policy is not None
+        and attribute_plan is not None
+        and attribute_plan.compositional
+        and needs_visual
+    )
+    if attribute_coverage_active:
+        requirement_vectors: dict[str, np.ndarray] = {}
+        for requirement in attribute_plan.requirements:
+            if requirement.kind in VISUAL_REQUIREMENT_KINDS:
+                requirement_vectors[requirement.requirement_id] = align_attribute_score(
+                    visual_payload,
+                    item_ids,
+                    requirement.requirement_id,
+                )
+            elif requirement.kind == "color":
+                requirement_vectors[requirement.requirement_id] = color_query_scores(
+                    requirement.value,
+                    library_dir,
+                    manifest,
+                )
+            elif requirement.kind == "ocr":
+                evidence_ids = exact_evidence_item_ids(
+                    requirement.value, library_dir, manifest
+                )
+                requirement_vectors[requirement.requirement_id] = np.asarray(
+                    [1.0 if item_id in evidence_ids else 0.0 for item_id in item_ids],
+                    dtype=np.float32,
+                )
+        aggregate_scores: list[float] = []
+        failed_multiplier = float(
+            attribute_policy.get("failed_candidate_multiplier", 0.25)
+        )
+        for index, item_id in enumerate(item_ids):
+            evidence = {
+                requirement.requirement_id: float(
+                    requirement_vectors[requirement.requirement_id][index]
+                )
+                for requirement in attribute_plan.requirements
+            }
+            result = aggregate_candidate_evidence(
+                attribute_plan,
+                evidence,
+                float(visual_scores[index]),
+                attribute_policy,
+            )
+            ranking_score = float(result["score"])
+            if not result["accepted"]:
+                ranking_score *= failed_multiplier
+            aggregate_scores.append(ranking_score)
+            attribute_summary_by_id[item_id] = {
+                "attribute_coverage_score": round(ranking_score, 6),
+                "attribute_coverage_passed": bool(result["accepted"]),
+                "attribute_coverage_ratio": result["coverage_ratio"],
+                "attribute_missing_requirement_ids": result["missing_requirement_ids"],
+                "attribute_weakest_requirement_id": result["weakest_requirement_id"],
+                "attribute_weakest_margin": result.get("weakest_margin"),
+                "attribute_evidence": [
+                    {
+                        "requirement_id": row["requirement_id"],
+                        "kind": row["kind"],
+                        "value": row["value"],
+                        "raw_score": row["raw_score"],
+                        "threshold": row["threshold"],
+                        "passed": row["passed"],
+                    }
+                    for row in result["requirements"]
+                ],
+            }
+        attribute_coverage_scores = np.asarray(aggregate_scores, dtype=np.float32)
 
     ocr_rows = read_ocr_rows(library_dir)
     confidence_by_id = {
@@ -1472,9 +1536,7 @@ def main() -> None:
         dtype=np.float32,
     )
     ranker_params = runtime_config["ranker"].get("params", {})
-    adaptive_text_weight_cap = float(
-        ranker_params.get("text_weight_cap", 0.6)
-    )
+    adaptive_text_weight_cap = float(ranker_params.get("text_weight_cap", 0.6))
     sparse_scale = float(ranker_params.get("sparse_scale", 1.0))
     method_scores, text_weights = build_method_scores(
         text_scores[None, :],
@@ -1488,35 +1550,23 @@ def main() -> None:
         visual_scores,
         confidences,
     )
-    normalized_bm25_scores = normalize_rows(
-        bm25_scores[None, :]
-    )[0]
-    normalized_metadata_scores = normalize_rows(
-        metadata_scores[None, :]
-    )[0]
+    normalized_bm25_scores = normalize_rows(bm25_scores[None, :])[0]
+    normalized_metadata_scores = normalize_rows(metadata_scores[None, :])[0]
     query_mode = infer_query_mode(query)
-    ranker_family = runtime_config["ranker"].get(
-        "family", "adaptive"
-    )
+    ranker_family = runtime_config["ranker"].get("family", "adaptive")
     sparse_weight = sparse_scale * bm25_query_weight(query)
     if ranker_family == "query_aware":
         if retrieval_route in {"text_evidence", "entity_exact"}:
-            sparse_weight = float(
-                ranker_params.get("text_bm25_weight", 0.25)
-            )
+            sparse_weight = float(ranker_params.get("text_bm25_weight", 0.25))
             quality_hybrid_scores = (
-                method_scores["text"][0]
-                + sparse_weight * normalized_bm25_scores
+                method_scores["text"][0] + sparse_weight * normalized_bm25_scores
             )
         elif retrieval_route == "visual_metadata":
-            visual_weight = float(
-                ranker_params.get("visual_weight", 0.25)
-            )
+            visual_weight = float(ranker_params.get("visual_weight", 0.25))
             sparse_weight = 0.0
             quality_hybrid_scores = (
                 visual_weight * method_scores["visual"][0]
-                + (1.0 - visual_weight)
-                * normalized_metadata_scores
+                + (1.0 - visual_weight) * normalized_metadata_scores
             )
         elif retrieval_route == "visual_discovery":
             weight_key = (
@@ -1538,14 +1588,10 @@ def main() -> None:
                 )
             )
             text_discovery_weight = float(
-                discovery_weights.get(
-                    "text", 0.07 if color_intent else 0.15
-                )
+                discovery_weights.get("text", 0.07 if color_intent else 0.15)
             )
             bm25_discovery_weight = float(
-                discovery_weights.get(
-                    "bm25", 0.03 if color_intent else 0.07
-                )
+                discovery_weights.get("bm25", 0.03 if color_intent else 0.07)
             )
             color_discovery_weight = float(
                 discovery_weights.get(
@@ -1566,32 +1612,33 @@ def main() -> None:
             )
         elif retrieval_route == "topic_discovery":
             quality_hybrid_scores = (
-                method_scores["text"][0]
-                + sparse_weight * normalized_bm25_scores
+                method_scores["text"][0] + sparse_weight * normalized_bm25_scores
             )
         else:
             quality_hybrid_scores = (
-                method_scores["adaptive"][0]
-                + sparse_weight * normalized_bm25_scores
+                method_scores["adaptive"][0] + sparse_weight * normalized_bm25_scores
             )
     else:
         quality_hybrid_scores = (
-            method_scores["adaptive"][0]
-            + sparse_weight * normalized_bm25_scores
+            method_scores["adaptive"][0] + sparse_weight * normalized_bm25_scores
         )
 
     if retrieval_route == "topic_discovery" and topic_evidence_counts:
-        exact_topic_boost = float(
-            ranker_params.get("exact_topic_evidence_boost", 0.20)
-        )
+        exact_topic_boost = float(ranker_params.get("exact_topic_evidence_boost", 0.20))
         exact_topic_counts = np.asarray(
             [topic_evidence_counts.get(item_id, 0) for item_id in item_ids],
             dtype=np.float32,
         )
-        quality_hybrid_scores = (
-            quality_hybrid_scores
-            + exact_topic_boost * np.minimum(exact_topic_counts, 2.0)
+        quality_hybrid_scores = quality_hybrid_scores + exact_topic_boost * np.minimum(
+            exact_topic_counts, 2.0
         )
+
+    if attribute_coverage_active and attribute_coverage_scores is not None:
+        attribute_weight = float(attribute_policy.get("ranking_attribute_weight", 0.70))
+        normalized_global_ranking = normalize_rows(quality_hybrid_scores[None, :])[0]
+        quality_hybrid_scores = (
+            1.0 - attribute_weight
+        ) * normalized_global_ranking + attribute_weight * attribute_coverage_scores
 
     manifest_by_id = {row["item_id"]: row for row in manifest}
     rankings: dict[str, list[dict[str, Any]]] = {}
@@ -1599,55 +1646,35 @@ def main() -> None:
         "visual_metadata_weights", {"metadata": 0.5, "visual": 0.5}
     )
     visual_metadata_blend_scores = (
-        float(visual_metadata_weights.get("metadata", 0.5))
-        * normalized_metadata_scores
-        + float(visual_metadata_weights.get("visual", 0.5))
-        * method_scores["visual"][0]
+        float(visual_metadata_weights.get("metadata", 0.5)) * normalized_metadata_scores
+        + float(visual_metadata_weights.get("visual", 0.5)) * method_scores["visual"][0]
     )
     score_vectors = {
-        **{
-            method: matrix[0]
-            for method, matrix in method_scores.items()
-        },
+        **{method: matrix[0] for method, matrix in method_scores.items()},
         "bm25": normalized_bm25_scores,
         "metadata": normalized_metadata_scores,
         "visual_metadata_blend": visual_metadata_blend_scores,
         **rrf_scores,
         "quality_hybrid": quality_hybrid_scores,
     }
+    if attribute_coverage_scores is not None:
+        score_vectors["attribute_coverage"] = attribute_coverage_scores
     for method, scores in score_vectors.items():
         order = np.argsort(-scores)
         rankings[method] = [
             {
                 **manifest_by_id[item_ids[index]],
+                **attribute_summary_by_id.get(item_ids[index], {}),
                 "score": round(float(scores[index]), 6),
-                "text_score": round(
-                    float(method_scores["text"][0, index]), 6
-                ),
-                "visual_score": round(
-                    float(method_scores["visual"][0, index]), 6
-                ),
-                "bm25_score": round(
-                    float(normalized_bm25_scores[index]), 6
-                ),
-                "metadata_score": round(
-                    float(normalized_metadata_scores[index]), 6
-                ),
-                "bm25_raw_score": round(
-                    float(bm25_scores[index]), 6
-                ),
-                "raw_text_score": round(
-                    float(text_scores[index]), 6
-                ),
-                "raw_visual_score": round(
-                    float(visual_scores[index]), 6
-                ),
-                "raw_metadata_score": round(
-                    float(metadata_scores[index]), 6
-                ),
-                "color_score": round(
-                    float(color_scores[index]), 6
-                ),
+                "text_score": round(float(method_scores["text"][0, index]), 6),
+                "visual_score": round(float(method_scores["visual"][0, index]), 6),
+                "bm25_score": round(float(normalized_bm25_scores[index]), 6),
+                "metadata_score": round(float(normalized_metadata_scores[index]), 6),
+                "bm25_raw_score": round(float(bm25_scores[index]), 6),
+                "raw_text_score": round(float(text_scores[index]), 6),
+                "raw_visual_score": round(float(visual_scores[index]), 6),
+                "raw_metadata_score": round(float(metadata_scores[index]), 6),
+                "color_score": round(float(color_scores[index]), 6),
                 "color_intent": color_intent,
                 "pure_color_query": pure_color_query,
                 "retrieval_route": retrieval_route,
@@ -1657,15 +1684,9 @@ def main() -> None:
                 "literal_evidence_match_count": topic_evidence_counts.get(
                     item_ids[index], 0
                 ),
-                "dense_rrf": round(
-                    float(rrf_branches["dense_rrf"][index]), 8
-                ),
-                "bm25_rrf": round(
-                    float(rrf_branches["bm25_rrf"][index]), 8
-                ),
-                "visual_rrf": round(
-                    float(rrf_branches["visual_rrf"][index]), 8
-                ),
+                "dense_rrf": round(float(rrf_branches["dense_rrf"][index]), 8),
+                "bm25_rrf": round(float(rrf_branches["bm25_rrf"][index]), 8),
+                "visual_rrf": round(float(rrf_branches["visual_rrf"][index]), 8),
                 "ocr_confidence": round(float(confidences[index]), 6),
                 "text_weight": round(float(text_weights[index]), 6),
                 "bm25_query_weight": sparse_weight,
@@ -1681,14 +1702,13 @@ def main() -> None:
         bool(quoted_evidence_ids),
         ranker_params,
         query=query,
+        preserve_quality_hybrid=attribute_coverage_active,
     )
 
     reranker_payload: dict[str, Any] | None = None
     if args.rerank_top_k:
         candidate_count = min(args.rerank_top_k, len(item_ids))
-        metadata_rows_path = (
-            library_dir / "metadata_index/metadata.jsonl"
-        )
+        metadata_rows_path = library_dir / "metadata_index/metadata.jsonl"
         metadata_text_by_id = (
             {
                 row["item_id"]: row.get("metadata_text", "")
@@ -1702,9 +1722,7 @@ def main() -> None:
                 "item_id": row["item_id"],
                 "source_path": row["source_path"],
                 "ocr_text": ocr_text(row["item_id"], library_dir),
-                "metadata_text": metadata_text_by_id.get(
-                    row["item_id"], ""
-                ),
+                "metadata_text": metadata_text_by_id.get(row["item_id"], ""),
             }
             for row in rankings["quality_hybrid"][:candidate_count]
         ]
@@ -1712,25 +1730,16 @@ def main() -> None:
             [candidate["item_id"] for candidate in candidates],
             exploratory_query,
         )
-        candidate_path = (
-            component_dir
-            / (
-                f"{key}_rerank_candidates_{candidate_count}_"
-                f"{candidate_signature}.json"
-            )
+        candidate_path = component_dir / (
+            f"{key}_rerank_candidates_{candidate_count}_{candidate_signature}.json"
         )
-        reranker_path = (
-            component_dir
-            / (
-                f"{key}_reranker_{candidate_count}_"
-                f"{candidate_signature}.json"
-            )
+        reranker_path = component_dir / (
+            f"{key}_reranker_{candidate_count}_{candidate_signature}.json"
         )
         write_json_atomic(candidate_path, candidates)
         active_component_paths.update({candidate_path, reranker_path})
-        reranker_cache_hit = (
-            not args.force
-            and cached_query_matches(reranker_path, query, revision)
+        reranker_cache_hit = not args.force and cached_query_matches(
+            reranker_path, query, revision
         )
         component_cache_hits["reranker"] = reranker_cache_hit
         if not reranker_cache_hit:
@@ -1748,22 +1757,32 @@ def main() -> None:
             if exploratory_query:
                 reranker_command.append("--exploratory")
             run_branch(reranker_command, "reranker")
-        reranker_payload = json.loads(
-            reranker_path.read_text(encoding="utf-8")
-        )
+        reranker_payload = json.loads(reranker_path.read_text(encoding="utf-8"))
         add_reranker_ranking(rankings, reranker_payload)
 
     promote_complete_quoted_evidence(rankings, quoted_evidence_ids)
+    if attribute_coverage_active:
+        promote_attribute_complete_evidence(rankings)
 
     low_confidence_rankings = snapshot_low_confidence_candidates(rankings)
-    result_filter = filter_discovery_rankings(
-        retrieval_route,
-        rankings,
-        exact_topic_ids,
-        ranker_params,
-        color_intent,
-        pure_color_query,
-    )
+    if attribute_coverage_active:
+        result_filter = {
+            "applied": False,
+            "reason": (
+                "V17 compositional queries use attribute-level coverage; "
+                "the V16 single-global-score discovery filter is bypassed."
+            ),
+            "methods": {},
+        }
+    else:
+        result_filter = filter_discovery_rankings(
+            retrieval_route,
+            rankings,
+            exact_topic_ids,
+            ranker_params,
+            color_intent,
+            pure_color_query,
+        )
 
     acceptance = build_acceptance_decisions(query, rankings)
     open_set_gate = runtime_config.get("open_set_gate")
@@ -1808,24 +1827,15 @@ def main() -> None:
             acceptance["reranker"] = dict(decision)
     reranker_gate = runtime_config.get("reranker_gate")
     if reranker_payload is not None and reranker_gate:
-        reranker_top_score = max(
-            float(value) for value in reranker_payload["scores"]
-        )
+        reranker_top_score = max(float(value) for value in reranker_payload["scores"])
         reranker_threshold = float(reranker_gate["threshold"])
         acceptance["reranker"] = {
             "accepted": (
-                True
-                if exploratory_query
-                else reranker_top_score >= reranker_threshold
+                True if exploratory_query else reranker_top_score >= reranker_threshold
             ),
-            "query_mode": (
-                retrieval_route if exploratory_query else query_mode
-            ),
+            "query_mode": (retrieval_route if exploratory_query else query_mode),
             "reason": (
-                (
-                    "浏览型查询采用相关性排序；"
-                    f"当前精排相关分 {reranker_top_score:.3f}。"
-                )
+                (f"浏览型查询采用相关性排序；当前精排相关分 {reranker_top_score:.3f}。")
                 if exploratory_query
                 else (
                     f"多模态精排完整匹配分 {reranker_top_score:.3f}，"
@@ -1838,11 +1848,7 @@ def main() -> None:
                 else "qwen3_vl_reranker_score"
             ),
             "signal": round(reranker_top_score, 6),
-            "threshold": (
-                None
-                if exploratory_query
-                else round(reranker_threshold, 6)
-            ),
+            "threshold": (None if exploratory_query else round(reranker_threshold, 6)),
             "gate_source": runtime_config["source"],
         }
     if exploratory_query:
@@ -1888,15 +1894,23 @@ def main() -> None:
             contextual_evidence_ids,
             runtime_config["source"],
         )
-        apply_composite_visual_guard(
-            query,
-            retrieval_route,
-            guarded_ranking,
-            guarded_decision,
-            ranker_params,
-            runtime_config["source"],
-            quoted_evidence_ids,
-        )
+        if attribute_coverage_active:
+            apply_attribute_coverage_guard(
+                attribute_plan,
+                guarded_ranking,
+                guarded_decision,
+                runtime_config["source"],
+            )
+        else:
+            apply_composite_visual_guard(
+                query,
+                retrieval_route,
+                guarded_ranking,
+                guarded_decision,
+                ranker_params,
+                runtime_config["source"],
+                quoted_evidence_ids,
+            )
     if strict_entity_term:
         apply_strict_entity_policy(
             strict_entity_term,
@@ -1908,7 +1922,7 @@ def main() -> None:
     rankings = truncate_rankings_for_output(rankings)
     payload = {
         "query": query,
-        "search_policy_version": SEARCH_POLICY_VERSION,
+        "search_policy_version": search_policy_version,
         "retrieval_config_revision": config_revision,
         "requested_method": args.method,
         "query_mode": query_mode,
@@ -1918,9 +1932,7 @@ def main() -> None:
         "strict_entity_term": strict_entity_term,
         "color_intent": color_intent,
         "pure_color_query": pure_color_query,
-        "composite_visual_query": is_composite_visual_query(
-            query, retrieval_route
-        ),
+        "composite_visual_query": is_composite_visual_query(query, retrieval_route),
         "exact_entity_evidence_item_ids": sorted(exact_entity_ids),
         "exact_topic_evidence_item_ids": sorted(exact_topic_ids),
         "literal_evidence_item_ids": sorted(literal_evidence_ids),
@@ -1929,6 +1941,10 @@ def main() -> None:
         "contextual_evidence_item_ids": sorted(contextual_evidence_ids),
         "quoted_evidence_terms": quoted_terms,
         "quoted_evidence_item_ids": sorted(quoted_evidence_ids),
+        "attribute_plan": (
+            attribute_plan.to_dict() if attribute_plan is not None else None
+        ),
+        "attribute_coverage_active": attribute_coverage_active,
         "library_dir": library_dir.relative_to(PROJECT_ROOT).as_posix(),
         "cache_key": key,
         "library_revision": revision,

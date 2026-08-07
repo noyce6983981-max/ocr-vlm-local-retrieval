@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
@@ -22,5 +22,29 @@ jobs:
         run: python -m pip install --requirement requirements-ci.txt
       - name: Run public-release safety audit
         run: python scripts/check_public_release.py .
-      - name: Run unit tests
-        run: python -m pytest -q
+      - name: Ruff
+        run: >-
+          python -m ruff check
+          src/ocr_vlm_retrieval
+          scripts/build_v17_human_pool.py
+          scripts/evaluate_v17_human_study.py
+          scripts/freeze_v17_query_set.py
+          scripts/minimal_repro.py
+          scripts/prepare_v17_query_proposals.py
+          scripts/score_visual_attribute_queries.py
+          scripts/v17_query_review_app.py
+          tests/test_attribute_coverage.py
+          tests/test_runtime_boundaries.py
+          tests/test_minimal_repro.py
+          tests/test_v17_human_evaluation.py
+          tests/test_v17_human_evaluation_e2e.py
+          tests/test_v17_query_collection.py
+          tests/test_v17_query_review_app.py
+      - name: Type check core package
+        run: python -m mypy src/ocr_vlm_retrieval
+      - name: Run tests with core coverage gate
+        run: >-
+          python -m pytest -q
+          --cov=ocr_vlm_retrieval
+          --cov-report=term-missing
+          --cov-fail-under=85

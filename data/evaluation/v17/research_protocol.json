@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "status": "calibration_method_selected_model_assisted_holdout_sealed",
+  "version": "V17",
+  "primary_research_question": "For compositional visual queries, can independently scored object, scene, color, relation, binding, and OCR requirements reduce false acceptance caused by one dominant global similarity while preserving answerable recall?",
+  "hypotheses": {
+    "H1": "Conservative attribute coverage reduces false acceptance on compositional hard negatives by at least 30% relative to the frozen V16 global-similarity baseline.",
+    "H2": "The selected V17 method loses no more than 3 percentage points of answerable Recall@3 compared with V16.",
+    "H3": "Attribute diagnostics correctly identify at least one human-confirmed missing necessary condition in at least 80% of V16 compositional false acceptances."
+  },
+  "method_boundary": {
+    "implemented_first_stage": "Attribute-level multi-query interaction over precomputed single image vectors; calibration showed that its strict coverage thresholds degenerated to rejecting every query.",
+    "selected_calibration_candidate": "Top-1 candidate-level Qwen3-VL cross-encoder verification with geometric aggregation over independently scored necessary conditions.",
+    "not_claimed": "Patch-level or token-level visual late interaction.",
+    "future_extension": "Patch/object-region representations or stronger directional-relation verification; the current cross-encoder still confuses some behind/front and above/below counterfactuals."
+  },
+  "frozen_baseline": {
+    "name": "V16 global single-vector retrieval and route-aligned rejection",
+    "config": "config/selected_retrieval_config_v16.json",
+    "lock": "data/evaluation/v16/selected_config_lock.json",
+    "rule": "V16 holdout queries, labels, results, and post-run review cannot select V17 thresholds or aggregation."
+  },
+  "planned_methods": [
+    {"id": "B0", "name": "V16 global similarity", "role": "frozen baseline"},
+    {"id": "B1", "name": "attribute weighted mean", "role": "ablation"},
+    {"id": "B2", "name": "attribute geometric mean", "role": "ablation"},
+    {"id": "B3", "name": "weakest-attribute conservative coverage", "role": "transparent V17 candidate"},
+    {"id": "B4", "name": "calibration-only learned aggregation", "role": "optional candidate selected before holdout"},
+    {"id": "B5", "name": "Top-20 cross-encoder attribute verification", "role": "optional compute-heavy comparison"}
+  ],
+  "human_evaluation": {
+    "target_query_count": 200,
+    "calibration_count": 100,
+    "holdout_count": 100,
+    "query_composition": {
+      "compositional_visual": 80,
+      "visual_metadata": 30,
+      "text_evidence": 30,
+      "mixed": 30,
+      "topic_discovery": 30
+    },
+    "answerability": "Each route contains answerable queries and hard no-answer queries formed from near-neighbor attribute, object, scene, or relation substitutions.",
+    "language": "Natural user wording; templates may define coverage targets but may not be copied into final queries.",
+    "pooling": "For calibration, take the deduplicated union of each run's Top-3 first, then fill by cross-run RRF to exactly 20 total candidates per query. This supports complete Top-1/Top-3 judging but not unbiased per-run Recall@10 or Recall@20.",
+    "reviewers": {
+      "holdout": "Two independent human reviewers for every pooled candidate and answerability decision.",
+      "calibration": "At least 30% double annotated; all conflicts and uncertain cases adjudicated.",
+      "blindness": "Reviewers do not see method names, scores, ranks, acceptance decisions, or query-author expectations."
+    },
+    "agreement": ["raw agreement", "Cohen kappa", "adjudication rate"],
+    "split_isolation": "Group by source item, near-duplicate group, query family, and compositional transformation so related cases cannot cross calibration and holdout."
+  },
+  "primary_endpoints": {
+    "compositional_false_acceptance_rate": "paired V17 versus V16 difference with 95% bootstrap confidence interval",
+    "answerable_recall_at_3_non_inferiority_margin": -0.03
+  },
+  "secondary_metrics": [
+    "Recall@1",
+    "Recall@3",
+    "MRR@3",
+    "pool-conditioned ranking diagnostics (descriptive only)",
+    "no-answer rejection rate",
+    "end-to-end Top-1",
+    "risk-coverage curve",
+    "per-route metrics",
+    "per-attribute-type metrics",
+    "cold and warm latency",
+    "attribute scoring overhead"
+  ],
+  "uncertainty": {
+    "bootstrap_repetitions": 10000,
+    "confidence_level": 0.95,
+    "sampling_unit": "query family group",
+    "paired_method_comparison": true
+  },
+  "holdout_rule": "After the selected V17 parser, prompts, thresholds, aggregation, and code revision are hashed and locked, the final holdout is run once. Any later change starts V18 and requires a new holdout.",
+  "seed_failure": "The yellow pyramid returned for 'yellow dolphin jumping over a desert pyramid' is a motivating regression case only, not a tuning-independent metric.",
+  "query_collection_progress": {
+    "status": "query_wording_frozen_calibration_review_complete_holdout_unjudged",
+    "compositional_visual_proposal_count": 80,
+    "calibration_proposal_count": 40,
+    "holdout_proposal_count": 40,
+    "human_authored_textvqa_source_questions": 56,
+    "unverified_near_neighbor_transformations": 24,
+    "proposal_query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979",
+    "frozen_query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979",
+    "human_query_reviews_completed": 80,
+    "human_query_reviews_approved": 80,
+    "freeze_receipt": "data/evaluation/v17/frozen_query_set/freeze_receipt.json",
+    "retrieval_executed_during_collection": false,
+    "relevance_review_complete": true,
+    "warning": "The wording is human-approved and frozen. Calibration has 52 preserved human judgments plus a separate model-assisted visual audit; the latter is not an independent human gold standard. Holdout relevance remains unjudged."
+  },
+  "calibration_retrieval_progress": {
+    "status": "calibration_method_selected_model_assisted_holdout_not_run",
+    "executed_split": "calibration",
+    "calibration_query_count": 40,
+    "holdout_query_count_not_executed": 40,
+    "library_revision": "3051b34cf6e4",
+    "run_ids": [
+      "text",
+      "bm25",
+      "global_visual",
+      "v16_quality_hybrid",
+      "v17_quality_hybrid",
+      "v17_attribute_coverage"
+    ],
+    "study_fingerprint": "5c7e418a3d731961f7e278e1bb8b9047d1ba641a936bde5af8b8eaf7db899036",
+    "pool_strategy": "union of every run Top-3, then RRF fill to 20 total",
+    "blinded_candidate_count": 800,
+    "candidate_count_per_query": {
+      "minimum": 20,
+      "median": 20,
+      "maximum": 20
+    },
+    "completed_judgments": 52,
+    "invalidated_judgments_on_user_reset": 12,
+    "known_relevant_items_outside_capped_pool": 0,
+    "latest_reset_backup": "data/evaluation/v17/human_study/calibration/archive/user_reset_20260807_round2/invalidated_judgments_before_reset.jsonl",
+    "pre_cap_pool_archive": "data/evaluation/v17/human_study/calibration/archive/pre_pool_cap_20_20260807",
+    "relevance_review_complete": true,
+    "double_reviewed_query_count": 12,
+    "answerability_exact_agreement": 0.9166666666666666,
+    "answerability_cohen_kappa": 0.797,
+    "candidate_binary_exact_agreement": 0.9583333333333334,
+    "candidate_binary_cohen_kappa": 0.645,
+    "model_assisted_audit": "data/evaluation/v17/human_study/calibration/model_audit_report.json",
+    "model_assisted_labels": "data/evaluation/v17/human_study/calibration/adjudicated_judgments.jsonl",
+    "warning": "The capped pool preserves complete Top-1/Top-3 coverage only. Per-run Recall@10, Recall@20, and nDCG@10 are invalid. Model-assisted adjudication is for calibration and error analysis only, not an independent human gold standard."
+  },
+  "calibration_selection": {
+    "status": "selected_on_model_assisted_calibration_not_holdout_locked",
+    "parser_version": 3,
+    "selected_method": "candidate_cross_encoder_attribute_geometric",
+    "model": "Qwen3-VL-Reranker-2B",
+    "verified_rank_depth": 1,
+    "threshold": 0.45,
+    "effective_query_count": 39,
+    "excluded_query_ids": ["v17_visual_033"],
+    "ranking": {
+      "v16_quality_hybrid_recall_at_3": 0.34782608695652173,
+      "v17_quality_hybrid_recall_at_3": 0.6956521739130435,
+      "paired_difference": 0.34782608695652173,
+      "bootstrap_95_percent_ci": [0.08695652173913043, 0.5909090909090909]
+    },
+    "open_set": {
+      "v16_false_accept_rate": 0.625,
+      "v17_false_accept_rate": 0.3125,
+      "relative_false_accept_reduction": 0.5,
+      "false_accept_paired_difference_ci": [-0.6, 0.0],
+      "v16_end_to_end_top1": 0.23076923076923078,
+      "v17_end_to_end_top1": 0.5128205128205128,
+      "end_to_end_paired_difference": 0.282051282051282,
+      "end_to_end_paired_difference_ci": [0.1388888888888889, 0.4444444444444444],
+      "coverage": 0.4358974358974359,
+      "degenerate_reject_all": false
+    },
+    "artifacts": [
+      "config/v17_candidate_verification_gate.json",
+      "outputs/evaluation/v17/calibration/parser_v3/adjudicated_calibration_report.json",
+      "outputs/evaluation/v17/calibration/parser_v3/candidate_gate_calibration_report.json"
+    ],
+    "limitations": [
+      "Calibration labels are model-assisted rather than an independent human gold standard.",
+      "The false-accept paired confidence interval reaches zero.",
+      "Directional relation counterfactuals remain a known failure mode.",
+      "The final holdout has not been read, scored, or judged."
+    ]
+  },
+  "references": [
+    "https://arxiv.org/abs/2004.12832",
+    "https://proceedings.neurips.cc/paper_files/paper/2023/hash/917cd410aa55b61594fa2a6f6e5a9e94-Abstract-Datasets_and_Benchmarks.html",
+    "https://openaccess.thecvf.com/content/CVPR2024/papers/Pham_Composing_Object_Relations_and_Attributes_for_Image-Text_Matching_CVPR_2024_paper.pdf",
+    "https://github.com/QwenLM/Qwen3-VL-Embedding"
+  ]
+}

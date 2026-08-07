@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "backend": "cpu_bm25",
+  "page_count": 40,
+  "query_count": 16,
+  "answerable_count": 12,
+  "no_answer_count": 4,
+  "metrics": {
+    "answerable_recall_at_1": 1.0,
+    "answerable_recall_at_10": 1.0,
+    "no_answer_rejection_accuracy": 1.0,
+    "end_to_end_top1_accuracy": 1.0
+  }
+}

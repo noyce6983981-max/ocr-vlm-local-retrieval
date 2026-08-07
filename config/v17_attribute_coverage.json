@@ -1,0 +1,68 @@
+{
+  "version": 2,
+  "search_policy_version": 17,
+  "status": "research_scaffold_uncalibrated",
+  "research_question": "Can independently scored object, scene, color, relation, binding, and OCR requirements reduce compositional false acceptance compared with one global image-query cosine without harming answerable recall?",
+  "method_name": "attribute_multi_query_conservative_coverage",
+  "method_boundary": "This is attribute-level multi-query interaction over precomputed single image vectors, not patch/token-level visual late interaction.",
+  "parser_version": 3,
+  "minimum_compositional_requirements": 2,
+  "max_requirements": 8,
+  "global_score_floor": 0.35,
+  "global_score_full": 0.60,
+  "ranking_attribute_weight": 0.70,
+  "failed_candidate_multiplier": 0.25,
+  "aggregation_weights": {
+    "global": 0.20,
+    "mean": 0.35,
+    "geometric": 0.25,
+    "weakest": 0.20
+  },
+  "thresholds": {
+    "object": {"minimum": 0.40, "full_score": 0.56, "weight": 1.25, "mandatory": true},
+    "scene": {"minimum": 0.39, "full_score": 0.55, "weight": 1.00, "mandatory": true},
+    "relation": {"minimum": 0.44, "full_score": 0.60, "weight": 1.50, "mandatory": true},
+    "binding": {"minimum": 0.43, "full_score": 0.59, "weight": 1.40, "mandatory": true},
+    "color": {"minimum": 0.18, "full_score": 0.45, "weight": 0.80, "mandatory": true},
+    "ocr": {"minimum": 1.00, "full_score": 1.01, "weight": 1.50, "mandatory": true}
+  },
+  "color_aliases": {
+    "蓝色": ["蓝色", "蓝天", "蔚蓝", "blue"],
+    "红色": ["红色", "红的", "red"],
+    "绿色": ["绿色", "绿的", "green"],
+    "黄色": ["黄色", "黄的", "金黄色", "yellow", "golden"],
+    "黑色": ["黑色", "黑的", "black"],
+    "白色": ["白色", "白的", "white"],
+    "紫色": ["紫色", "紫的", "purple"],
+    "粉色": ["粉色", "粉红色", "pink"],
+    "橙色": ["橙色", "橘色", "orange"],
+    "灰色": ["灰色", "灰的", "gray", "grey"],
+    "棕色": ["棕色", "褐色", "brown"]
+  },
+  "scene_terms": [
+    "沙漠", "雪山", "峡谷", "森林", "山林", "草原", "田野", "公园",
+    "花园", "海边", "海面", "海洋", "湖泊", "河流", "瀑布", "城市",
+    "街道", "室内", "餐厅", "教室", "办公室", "舞台", "天空", "水下",
+    "desert", "forest", "park", "garden", "beach", "ocean", "lake", "river",
+    "city", "street", "restaurant", "classroom", "office", "stage", "underwater"
+  ],
+  "relation_markers": [
+    "上写着", "旁边", "飞越", "跃过", "游过", "穿过", "驶过", "停在",
+    "站在", "坐在", "趴在", "戴着", "搭着", "举着", "挂在", "放着",
+    "摆放", "围着", "顶着", "装进", "降落在", "written on", "printed on",
+    "on the back of", "on the front of", "on the left", "on the right", "next to",
+    "in front of", "to the left of", "to the right of", "at the bottom", "at the top",
+    "behind", "above", "below",
+    "under", "over", "beside", "between", "inside", "on"
+  ],
+  "query_noise_terms": [
+    "请帮我", "帮我", "请", "查找", "搜索", "寻找", "找出", "找到", "找",
+    "返回", "显示", "包含", "带有", "有", "一张", "一个", "一幅", "一页",
+    "please find", "please show", "show me", "find", "retrieve", "what's", "what is",
+    "what does", "what do", "which", "where is", "who is", "is there"
+  ],
+  "visual_container_terms": [
+    "真实照片", "自然照片", "照片", "图片", "图像", "画面", "截图",
+    "photo", "image", "picture", "screenshot", "page"
+  ]
+}

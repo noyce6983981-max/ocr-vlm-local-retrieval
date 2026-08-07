@@ -36,8 +36,7 @@ def parse_args() -> argparse.Namespace:
         "--queries",
         type=Path,
         default=Path(
-            "data/evaluation/"
-            "public_dataset_1500_retrieval_queries_formal.csv"
+            "data/evaluation/public_dataset_1500_retrieval_queries_formal.csv"
         ),
     )
     parser.add_argument(
@@ -84,10 +83,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path(
-            "outputs/evaluation/library_retrieval/"
-            "dev_text_bm25_scores.npz"
-        ),
+        default=Path("outputs/evaluation/library_retrieval/dev_text_bm25_scores.npz"),
     )
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--batch-size", type=int, default=8)
@@ -111,17 +107,17 @@ def read_queries(
     splits: set[str],
     required_review_status: str = "已确认",
 ) -> list[dict[str, str]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        rows = list(csv.DictReader(handle))
+    if path.suffix.lower() == ".jsonl":
+        rows = [dict(row) for row in read_jsonl(path)]
+    else:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            rows = list(csv.DictReader(handle))
     rows = [row for row in rows if row.get("split") in splits]
     if not rows:
         raise ValueError(f"No queries found for splits: {sorted(splits)}")
-    if any(
-        row.get("review_status") != required_review_status for row in rows
-    ):
+    if any(row.get("review_status") != required_review_status for row in rows):
         raise ValueError(
-            "All scored queries must have review_status="
-            f"{required_review_status!r}."
+            f"All scored queries must have review_status={required_review_status!r}."
         )
     return rows
 
@@ -166,9 +162,7 @@ def main() -> None:
     item_ids = [row["item_id"] for row in manifest]
     if len(item_ids) != len(set(item_ids)):
         raise ValueError("Manifest contains duplicate item IDs.")
-    item_columns = {
-        item_id: column for column, item_id in enumerate(item_ids)
-    }
+    item_columns = {item_id: column for column, item_id in enumerate(item_ids)}
 
     text_index_dir = project_path(args.text_index)
     index = faiss.deserialize_index(
@@ -198,15 +192,9 @@ def main() -> None:
         batch_size=args.batch_size,
         max_length=128,
     )
-    query_vectors = np.ascontiguousarray(
-        encoded["dense_vecs"], dtype=np.float32
-    )
-    dense_chunk_scores, dense_chunk_indices = index.search(
-        query_vectors, index.ntotal
-    )
-    dense_unsorted = np.full(
-        (len(queries), index.ntotal), -1.0, dtype=np.float32
-    )
+    query_vectors = np.ascontiguousarray(encoded["dense_vecs"], dtype=np.float32)
+    dense_chunk_scores, dense_chunk_indices = index.search(query_vectors, index.ntotal)
+    dense_unsorted = np.full((len(queries), index.ntotal), -1.0, dtype=np.float32)
     row_indices = np.arange(len(queries))[:, None]
     dense_unsorted[row_indices, dense_chunk_indices] = dense_chunk_scores
     dense_scores = aggregate_chunks(
@@ -226,24 +214,18 @@ def main() -> None:
                 dtype=np.uint8,
             )
         )
-        metadata_rows = read_jsonl(
-            metadata_index_dir / "metadata.jsonl"
-        )
+        metadata_rows = read_jsonl(metadata_index_dir / "metadata.jsonl")
         if metadata_index.ntotal != len(metadata_rows):
-            raise ValueError(
-                "Metadata index and metadata are inconsistent."
-            )
-        metadata_chunk_scores, metadata_chunk_indices = (
-            metadata_index.search(query_vectors, metadata_index.ntotal)
+            raise ValueError("Metadata index and metadata are inconsistent.")
+        metadata_chunk_scores, metadata_chunk_indices = metadata_index.search(
+            query_vectors, metadata_index.ntotal
         )
         metadata_unsorted = np.full(
             (len(queries), metadata_index.ntotal),
             -1.0,
             dtype=np.float32,
         )
-        metadata_unsorted[
-            row_indices, metadata_chunk_indices
-        ] = metadata_chunk_scores
+        metadata_unsorted[row_indices, metadata_chunk_indices] = metadata_chunk_scores
         metadata_scores = aggregate_chunks(
             metadata_unsorted,
             metadata_rows,
@@ -253,9 +235,7 @@ def main() -> None:
 
     bm25_started = time.perf_counter()
     bm25_index_dir = project_path(args.bm25_index)
-    with gzip.open(
-        bm25_index_dir / "index.json.gz", "rt", encoding="utf-8"
-    ) as handle:
+    with gzip.open(bm25_index_dir / "index.json.gz", "rt", encoding="utf-8") as handle:
         bm25_payload = json.load(handle)
     bm25_metadata = read_jsonl(bm25_index_dir / "metadata.jsonl")
     if len(bm25_metadata) != int(bm25_payload["document_count"]):
@@ -277,9 +257,7 @@ def main() -> None:
     archive_payload: dict[str, Any] = {
         "dense_scores": dense_scores,
         "bm25_scores": bm25_scores,
-        "query_ids": np.asarray(
-            [row["query_id"] for row in queries]
-        ),
+        "query_ids": np.asarray([row["query_id"] for row in queries]),
         "item_ids": np.asarray(item_ids),
         "splits": np.asarray([row["split"] for row in queries]),
     }
@@ -295,12 +273,8 @@ def main() -> None:
         bm25_elapsed = round(bm25_seconds / len(queries), 3)
         for index_value, row in enumerate(queries):
             query = " ".join(row["query"].split())
-            route, exploratory, _, _ = resolve_search_intent(
-                "quality_hybrid", query
-            )
-            branches = required_search_branches(
-                "quality_hybrid", route, exploratory
-            )
+            route, exploratory, _, _ = resolve_search_intent("quality_hybrid", query)
+            branches = required_search_branches("quality_hybrid", route, exploratory)
             key = query_key(query, revision)
             if branches["text"]:
                 text_payload: dict[str, Any] = {
@@ -309,19 +283,15 @@ def main() -> None:
                     "library_revision": revision,
                     "item_ids": item_ids,
                     "scores": [
-                        round(float(score), 8)
-                        for score in dense_scores[index_value]
+                        round(float(score), 8) for score in dense_scores[index_value]
                     ],
                     "elapsed_seconds": text_elapsed,
                 }
                 if metadata_scores is not None:
                     text_payload["metadata_scores"] = [
-                        round(float(score), 8)
-                        for score in metadata_scores[index_value]
+                        round(float(score), 8) for score in metadata_scores[index_value]
                     ]
-                write_json_atomic(
-                    cache_dir / f"{key}_text.json", text_payload
-                )
+                write_json_atomic(cache_dir / f"{key}_text.json", text_payload)
             if branches["bm25"]:
                 bm25_row = bm25_scores[index_value]
                 write_json_atomic(
@@ -331,9 +301,7 @@ def main() -> None:
                         "branch": "bm25",
                         "library_revision": revision,
                         "item_ids": item_ids,
-                        "scores": [
-                            round(float(score), 8) for score in bm25_row
-                        ],
+                        "scores": [round(float(score), 8) for score in bm25_row],
                         "matched_documents": int(np.sum(bm25_row > 0)),
                         "elapsed_seconds": bm25_elapsed,
                     },
@@ -363,10 +331,7 @@ def main() -> None:
         ),
         encoding="utf-8",
     )
-    print(
-        f"Saved {len(queries)} x {len(item_ids)} Dense/BM25 scores: "
-        f"{output_path}"
-    )
+    print(f"Saved {len(queries)} x {len(item_ids)} Dense/BM25 scores: {output_path}")
 
 
 if __name__ == "__main__":

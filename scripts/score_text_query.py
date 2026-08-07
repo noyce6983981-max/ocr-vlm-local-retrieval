@@ -10,6 +10,8 @@ from typing import Any
 
 import faiss
 import numpy as np
+import torch
+from FlagEmbedding import BGEM3FlagModel
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -70,10 +72,7 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     ]
 
 
-def load_text_model(model_path: Path, device: str) -> Any:
-    import torch
-    from FlagEmbedding import BGEM3FlagModel
-
+def load_text_model(model_path: Path, device: str) -> BGEM3FlagModel:
     if device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but is not available.")
     return BGEM3FlagModel(
@@ -155,7 +154,7 @@ def load_text_resources(
 
 def score_text_query_payload(
     query: str,
-    model: Any,
+    model: BGEM3FlagModel,
     resources: dict[str, Any],
     *,
     library_revision: str,

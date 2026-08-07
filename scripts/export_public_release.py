@@ -10,7 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ROOT_FILES = {
     ".gitattributes",
@@ -21,6 +20,7 @@ ROOT_FILES = {
     "THIRD_PARTY_DATA.md",
     "app.py",
     "correction_app.py",
+    "pyproject.toml",
     "pytest.ini",
     "requirements-ci.txt",
     "requirements-ingest.txt",
@@ -51,6 +51,7 @@ DATA_FILES = {
     "data/evaluation/v16/holdout/first_run_receipt.json",
     "data/evaluation/v16/holdout/frozen_queries.csv",
     "data/evaluation/v16/selected_config_lock.json",
+    "data/evaluation/v17/research_protocol.json",
 }
 EXCLUDED_FILES = {
     "records/presentation/INTERVIEW_PACKAGE.md",
@@ -92,7 +93,9 @@ def is_public_file(relative: str) -> bool:
         return False
     if "/" not in relative:
         return relative in ROOT_FILES or relative == "LICENSE"
-    if relative.startswith((".github/workflows/", "config/", "scripts/", "tests/")):
+    if relative.startswith(
+        (".github/workflows/", "config/", "repro/", "scripts/", "src/", "tests/")
+    ):
         return True
     if relative == ".streamlit/config.toml" or relative == "outputs/README.md":
         return True

@@ -13,6 +13,8 @@ from typing import Any
 
 import faiss
 import numpy as np
+import torch
+from FlagEmbedding import BGEM3FlagModel
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -130,9 +132,6 @@ def aggregate_metrics(results: list[dict[str, Any]]) -> dict[str, float]:
 
 
 def main() -> None:
-    import torch
-    from FlagEmbedding import BGEM3FlagModel
-
     args = parse_args()
     if args.device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but PyTorch cannot access the GPU.")

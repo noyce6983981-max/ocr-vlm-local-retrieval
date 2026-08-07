@@ -1,0 +1,15 @@
+{
+  "status": "selected_on_model_assisted_calibration_not_holdout_locked",
+  "method": "attribute_geometric",
+  "threshold": 0.45,
+  "top_k_verified": 1,
+  "model": "Qwen3-VL-Reranker-2B",
+  "parser_policy_sha256": "b34262e133bd9e6f2b5ed632d6608706c7c4e185dfff3078816661b48d6b073c",
+  "verification_ranking_sha256": "c16ba2d7de504532b224f08d76539e9622a97e539e2c6262c2f084f17d85a5ff",
+  "selection_constraints": {
+    "minimum_false_accept_relative_reduction": 0.3,
+    "minimum_top1_relevant_acceptance": 0.3,
+    "reject_all_forbidden": true
+  },
+  "selection_rule": "Among 0.01-spaced thresholds satisfying the constraints, maximize end-to-end accuracy, then relevant-candidate acceptance, then minimize false acceptance; prefer geometric evidence when methods tie."
+}

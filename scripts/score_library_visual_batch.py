@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import sys
 import time
@@ -13,9 +14,9 @@ from typing import Any
 import numpy as np
 import torch
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OFFICIAL_REPO = PROJECT_ROOT / "third_party/Qwen3-VL-Embedding"
+PACKAGE_ROOT = PROJECT_ROOT / "src"
 if str(OFFICIAL_REPO) not in sys.path:
     sys.path.insert(0, str(OFFICIAL_REPO))
 
@@ -23,7 +24,14 @@ from src.models.qwen3_vl_embedding import Qwen3VLEmbedder  # noqa: E402
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
 
+from ocr_vlm_retrieval.gating.attribute_coverage import (  # noqa: E402
+    VISUAL_REQUIREMENT_KINDS,
+    decompose_visual_query,
+    load_attribute_policy,
+)
 from scripts.live_search import (  # noqa: E402
     library_revision,
     query_key,
@@ -39,8 +47,7 @@ def parse_args() -> argparse.Namespace:
         "--queries",
         type=Path,
         default=Path(
-            "data/evaluation/"
-            "public_dataset_1500_retrieval_queries_formal.csv"
+            "data/evaluation/public_dataset_1500_retrieval_queries_formal.csv"
         ),
     )
     parser.add_argument(
@@ -75,12 +82,18 @@ def parse_args() -> argparse.Namespace:
         help="Also materialize product-compatible visual caches.",
     )
     parser.add_argument(
+        "--attribute-policy",
+        type=Path,
+        default=None,
+        help=(
+            "Optionally encode every compositional attribute requirement in "
+            "the same model load and write V17-compatible visual caches."
+        ),
+    )
+    parser.add_argument(
         "--output",
         type=Path,
-        default=Path(
-            "outputs/evaluation/library_retrieval/"
-            "dev_visual_scores.npz"
-        ),
+        default=Path("outputs/evaluation/library_retrieval/dev_visual_scores.npz"),
     )
     parser.add_argument("--batch-size", type=int, default=4)
     return parser.parse_args()
@@ -103,17 +116,17 @@ def read_queries(
     splits: set[str],
     required_review_status: str = "已确认",
 ) -> list[dict[str, str]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        rows = list(csv.DictReader(handle))
+    if path.suffix.lower() == ".jsonl":
+        rows = [dict(row) for row in read_jsonl(path)]
+    else:
+        with path.open("r", encoding="utf-8-sig", newline="") as handle:
+            rows = list(csv.DictReader(handle))
     rows = [row for row in rows if row.get("split") in splits]
     if not rows:
         raise ValueError(f"No queries found for splits: {sorted(splits)}")
-    if any(
-        row.get("review_status") != required_review_status for row in rows
-    ):
+    if any(row.get("review_status") != required_review_status for row in rows):
         raise ValueError(
-            "All scored queries must have review_status="
-            f"{required_review_status!r}."
+            f"All scored queries must have review_status={required_review_status!r}."
         )
     return rows
 
@@ -134,6 +147,19 @@ def main() -> None:
         )
         for row in queries
     }
+    attribute_policy = None
+    attribute_policy_sha256 = None
+    attribute_plans: dict[str, Any] = {}
+    if args.attribute_policy is not None:
+        attribute_policy_path = project_path(args.attribute_policy)
+        attribute_policy = load_attribute_policy(attribute_policy_path)
+        attribute_policy_sha256 = hashlib.sha256(
+            attribute_policy_path.read_bytes()
+        ).hexdigest()
+        attribute_plans = {
+            row["query_id"]: decompose_visual_query(row["query"], attribute_policy)
+            for row in queries
+        }
     if args.product_required_only:
         queries = [
             row
@@ -154,10 +180,7 @@ def main() -> None:
 
     torch.cuda.empty_cache()
     torch.cuda.reset_peak_memory_stats()
-    print(
-        f"Encoding {len(queries)} confirmed queries with "
-        "Qwen3-VL-Embedding-2B ..."
-    )
+    print(f"Encoding {len(queries)} confirmed queries with Qwen3-VL-Embedding-2B ...")
     model = Qwen3VLEmbedder(
         model_name_or_path=str(project_path(args.model)),
         max_length=512,
@@ -168,33 +191,58 @@ def main() -> None:
         low_cpu_mem_usage=True,
     )
     started = time.perf_counter()
-    vectors: list[np.ndarray] = []
-    for start in range(0, len(queries), args.batch_size):
-        batch = queries[start : start + args.batch_size]
-        encoded_queries = [
-            product_intents[row["query_id"]][2]
-            if args.product_required_only
-            else row["query"]
-            for row in batch
-        ]
-        embeddings = model.process(
-            [
+    model_inputs: list[dict[str, str]] = []
+    request_keys: list[tuple[str, str | None]] = []
+    for row in queries:
+        query_id = row["query_id"]
+        encoded_query = (
+            product_intents[query_id][2] if args.product_required_only else row["query"]
+        )
+        model_inputs.append(
+            {
+                "text": encoded_query,
+                "instruction": (
+                    "Retrieve the image that best matches the user's "
+                    "Chinese natural-language query."
+                ),
+            }
+        )
+        request_keys.append((query_id, None))
+        plan = attribute_plans.get(query_id)
+        if plan is None or not plan.compositional:
+            continue
+        for requirement in plan.requirements:
+            if requirement.kind not in VISUAL_REQUIREMENT_KINDS:
+                continue
+            model_inputs.append(
                 {
-                    "text": encoded_query,
+                    "text": requirement.prompt,
                     "instruction": (
-                        "Retrieve the image that best matches the user's "
-                        "Chinese natural-language query."
+                        "Score whether the image independently satisfies this "
+                        "mandatory visual requirement. Do not reward a different "
+                        "attribute from the original compound query."
                     ),
                 }
-                for encoded_query in encoded_queries
-            ]
-        )
+            )
+            request_keys.append((query_id, requirement.requirement_id))
+
+    vectors: list[np.ndarray] = []
+    for start in range(0, len(model_inputs), args.batch_size):
+        embeddings = model.process(model_inputs[start : start + args.batch_size])
         vectors.append(embeddings.detach().float().cpu().numpy())
     torch.cuda.synchronize()
-    query_matrix = np.ascontiguousarray(
-        np.vstack(vectors), dtype=np.float32
-    )
-    scores = query_matrix @ image_vectors.T
+    request_matrix = np.ascontiguousarray(np.vstack(vectors), dtype=np.float32)
+    request_scores = request_matrix @ image_vectors.T
+    global_scores_by_id: dict[str, np.ndarray] = {}
+    attribute_scores_by_id: dict[str, dict[str, np.ndarray]] = {}
+    for request_index, (query_id, requirement_id) in enumerate(request_keys):
+        if requirement_id is None:
+            global_scores_by_id[query_id] = request_scores[request_index]
+        else:
+            attribute_scores_by_id.setdefault(query_id, {})[requirement_id] = (
+                request_scores[request_index]
+            )
+    scores = np.vstack([global_scores_by_id[row["query_id"]] for row in queries])
 
     output_path = project_path(args.output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -209,9 +257,7 @@ def main() -> None:
         cache_dir = project_path(args.live_cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
         revision = library_revision(project_path(args.index_dir).parent)
-        elapsed_per_query = round(
-            (time.perf_counter() - started) / len(queries), 3
-        )
+        elapsed_per_query = round((time.perf_counter() - started) / len(queries), 3)
         for index_value, row in enumerate(queries):
             query = " ".join(row["query"].split())
             encoded_query = product_intents[row["query_id"]][2]
@@ -224,10 +270,21 @@ def main() -> None:
                     "branch": "visual",
                     "library_revision": revision,
                     "item_ids": [row["item_id"] for row in metadata],
-                    "scores": [
-                        round(float(score), 8)
-                        for score in scores[index_value]
-                    ],
+                    "scores": [round(float(score), 8) for score in scores[index_value]],
+                    "attribute_policy_sha256": attribute_policy_sha256,
+                    "attribute_plan": (
+                        attribute_plans[row["query_id"]].to_dict()
+                        if row["query_id"] in attribute_plans
+                        else None
+                    ),
+                    "scores_by_requirement": {
+                        requirement_id: [
+                            round(float(value), 8) for value in requirement_scores
+                        ]
+                        for requirement_id, requirement_scores in (
+                            attribute_scores_by_id.get(row["query_id"], {}).items()
+                        )
+                    },
                     "elapsed_seconds": elapsed_per_query,
                 },
             )
@@ -246,6 +303,14 @@ def main() -> None:
                     torch.cuda.max_memory_reserved() / 1024**3, 3
                 ),
                 "product_required_only": args.product_required_only,
+                "attribute_policy": (
+                    project_path(args.attribute_policy)
+                    .relative_to(PROJECT_ROOT)
+                    .as_posix()
+                    if args.attribute_policy is not None
+                    else None
+                ),
+                "encoded_request_count": len(model_inputs),
                 "live_cache_dir": (
                     project_path(args.live_cache_dir)
                     .relative_to(PROJECT_ROOT)
@@ -260,10 +325,7 @@ def main() -> None:
         ),
         encoding="utf-8",
     )
-    print(
-        f"Saved {len(queries)} x {len(metadata)} visual scores: "
-        f"{output_path}"
-    )
+    print(f"Saved {len(queries)} x {len(metadata)} visual scores: {output_path}")
 
 
 if __name__ == "__main__":

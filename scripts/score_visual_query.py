@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import time
@@ -19,6 +20,16 @@ if str(OFFICIAL_REPO) not in sys.path:
     sys.path.insert(0, str(OFFICIAL_REPO))
 
 from src.models.qwen3_vl_embedding import Qwen3VLEmbedder  # noqa: E402
+
+PACKAGE_ROOT = PROJECT_ROOT / "src"
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
+from ocr_vlm_retrieval.gating.attribute_coverage import (  # noqa: E402
+    VISUAL_REQUIREMENT_KINDS,
+    decompose_visual_query,
+    load_attribute_policy,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,6 +54,15 @@ def parse_args() -> argparse.Namespace:
         "--model",
         type=Path,
         default=Path("models/qwen3-vl-embedding-2b"),
+    )
+    parser.add_argument(
+        "--attribute-policy",
+        type=Path,
+        default=None,
+        help=(
+            "Optional V17 attribute policy. When supplied, global and "
+            "attribute queries are encoded in the same model batch."
+        ),
     )
     parser.add_argument(
         "--output",
@@ -77,6 +97,24 @@ def main() -> None:
         raise ValueError("Query cannot be empty.")
     if not torch.cuda.is_available():
         raise RuntimeError("Qwen3-VL query encoding requires CUDA.")
+
+    attribute_policy: dict[str, Any] | None = None
+    attribute_policy_sha256: str | None = None
+    attribute_plan = None
+    visual_requirements = []
+    if args.attribute_policy is not None:
+        policy_path = project_path(args.attribute_policy)
+        attribute_policy = load_attribute_policy(policy_path)
+        attribute_policy_sha256 = hashlib.sha256(
+            policy_path.read_bytes()
+        ).hexdigest()
+        attribute_plan = decompose_visual_query(query, attribute_policy)
+        if attribute_plan.compositional:
+            visual_requirements = [
+                row
+                for row in attribute_plan.requirements
+                if row.kind in VISUAL_REQUIREMENT_KINDS
+            ]
 
     metadata: list[dict[str, Any]] = []
     vector_parts: list[np.ndarray] = []
@@ -116,20 +154,36 @@ def main() -> None:
         attn_implementation="sdpa",
         low_cpu_mem_usage=True,
     )
-    embedding = model.process(
-        [
-            {
-                "text": encoded_query,
-                "instruction": (
-                    "Retrieve the image that best matches the user's "
-                    "Chinese natural-language query."
-                ),
-            }
-        ]
+    model_inputs = [
+        {
+            "text": encoded_query,
+            "instruction": (
+                "Retrieve the image that best matches the user's "
+                "Chinese natural-language query."
+            ),
+        }
+    ]
+    model_inputs.extend(
+        {
+            "text": row.prompt,
+            "instruction": (
+                "Score whether the image independently satisfies this "
+                "mandatory visual requirement. Do not reward a different "
+                "attribute from the original compound query."
+            ),
+        }
+        for row in visual_requirements
     )
+    embeddings = model.process(model_inputs)
     torch.cuda.synchronize()
-    query_vector = embedding.detach().float().cpu().numpy()[0]
+    query_matrix = embeddings.detach().float().cpu().numpy()
+    query_vector = query_matrix[0]
     scores = image_vectors @ query_vector
+    attribute_scores = (
+        query_matrix[1:] @ image_vectors.T
+        if visual_requirements
+        else np.empty((0, len(item_ids)), dtype=np.float32)
+    )
 
     payload = {
         "query": query,
@@ -138,6 +192,17 @@ def main() -> None:
         "library_revision": args.library_revision,
         "item_ids": item_ids,
         "scores": [round(float(score), 8) for score in scores],
+        "attribute_policy_sha256": attribute_policy_sha256,
+        "attribute_plan": (
+            attribute_plan.to_dict() if attribute_plan is not None else None
+        ),
+        "scores_by_requirement": {
+            row.requirement_id: [
+                round(float(value), 8)
+                for value in attribute_scores[index]
+            ]
+            for index, row in enumerate(visual_requirements)
+        },
         "elapsed_seconds": round(time.perf_counter() - started, 3),
     }
     output_path = project_path(args.output)
