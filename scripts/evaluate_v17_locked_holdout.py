@@ -165,7 +165,9 @@ def evaluate_locked_holdout(
     for decision in decisions:
         baseline = baseline_by_id[str(decision["query_id"])]
         if baseline.get("group_id") != decision["group_id"]:
-            raise ValueError("V16 baseline group_id does not match holdout verification")
+            raise ValueError(
+                "V16 baseline group_id does not match holdout verification"
+            )
         if not isinstance(baseline.get("v16_accepted"), bool):
             raise ValueError("V16 baseline accepted decision must be boolean")
         if not isinstance(baseline.get("v16_pool_conditioned_correct"), bool):

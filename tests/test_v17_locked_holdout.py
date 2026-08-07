@@ -12,9 +12,9 @@ if str(PACKAGE_ROOT) not in sys.path:
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from ocr_vlm_retrieval.evaluation.protocol_lock import file_sha256
 from scripts.evaluate_v17_locked_holdout import evaluate_locked_holdout
 from scripts.run_v17_holdout_once import validate_authorization
-from ocr_vlm_retrieval.evaluation.protocol_lock import file_sha256
 
 
 def candidate(item_id: str, score: float) -> dict:

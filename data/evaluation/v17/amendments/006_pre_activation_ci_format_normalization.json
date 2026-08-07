@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "amendment_id": "V17-A006",
+  "date": "2026-08-07",
+  "title": "Normalize governance formatting before activating the final method lock",
+  "parent_amendment": {
+    "path": "data/evaluation/v17/amendments/005_method_locked_holdout_execution_guarded.json",
+    "sha256": "1afdc0bdd1b91806b8bc26ea9f564452475c77e5d2d5f8e61b1498574bc0f06a"
+  },
+  "trigger": {
+    "failed_ci_run": "https://github.com/noyce6983981-max/ocr-vlm-local-retrieval/actions/runs/31192999513",
+    "failed_step": "Strict V17 Ruff",
+    "method_lock_activated_before_failure": false,
+    "holdout_read": false,
+    "receipt_created": false
+  },
+  "superseded_lock_snapshot": {
+    "git_commit": "df46b9d3fa8a56a53b905eaaabdc3a260a6f4696",
+    "sha256": "1c1ab2b5d42621cdac65f8fc444f103a749067b7bdae833ca9fb434ee14879b9"
+  },
+  "effective_lock_snapshot": {
+    "path": "config/v17_method_lock.json",
+    "lock_revision": 2,
+    "sha256": "d0295db2460a9fdff26ffd24397b292771ba56ae411742a5000c7b1c37de5e48"
+  },
+  "changes": [
+    {
+      "file": "scripts/evaluate_v17_locked_holdout.py",
+      "change": "wrap one 89-character error message",
+      "behavior_change": false
+    },
+    {
+      "file": "scripts/run_v17_holdout_once.py",
+      "change": "use the Python 3.11 datetime.UTC alias",
+      "behavior_change": false
+    },
+    {
+      "file": "tests/test_v17_locked_holdout.py",
+      "change": "sort imports under the isolated Ruff configuration",
+      "behavior_change": false
+    }
+  ],
+  "unchanged_method_dimensions": [
+    "method source Git commit",
+    "locked method files",
+    "query set and runtime artifacts",
+    "verification prompts",
+    "model manifest",
+    "inference parameters",
+    "aggregation and threshold",
+    "holdout sealed state"
+  ],
+  "activation_rule": "The revision-2 lock becomes effective only after its GitHub Actions run passes. Any later locked change requires V18."
+}

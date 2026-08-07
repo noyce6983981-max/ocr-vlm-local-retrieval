@@ -233,3 +233,7 @@ The guard has deliberately not been authorized or executed. No receipt or V17
 holdout result exists, and V16 remains the latest independent public result.
 Governance is recorded in
 `data/evaluation/v17/amendments/005_method_locked_holdout_execution_guarded.json`.
+The initial lock commit failed the isolated strict-Ruff step before activation;
+the formatting-only correction and revision-2 lock are appended, without
+rewriting A005, in
+`data/evaluation/v17/amendments/006_pre_activation_ci_format_normalization.json`.

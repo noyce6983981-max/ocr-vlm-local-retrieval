@@ -59,6 +59,8 @@ DATA_FILES = {
     "004_topk_calibration_selects_k3_full_query.json",
     "data/evaluation/v17/amendments/"
     "005_method_locked_holdout_execution_guarded.json",
+    "data/evaluation/v17/amendments/"
+    "006_pre_activation_ci_format_normalization.json",
     "data/evaluation/v17/parser/calibration_parser_reference.jsonl",
     "data/evaluation/v17/human_study/calibration/"
     "top5_extension_judgments.jsonl",

@@ -1,5 +1,7 @@
 {
   "schema_version": 1,
+  "lock_revision": 2,
+  "lock_revision_reason": "Pre-activation CI-only formatting normalization; no method, prompt, model, inference, aggregation, threshold, or data change.",
   "study_name": "V17-Compositional-80 Pilot",
   "status": "method_locked_holdout_sealed",
   "locked_date": "2026-08-07",
@@ -18,8 +20,8 @@
     "src/ocr_vlm_retrieval/gating/gate_calibration.py": "dd2c06ca5d032341d48c8d10bee32bac19b3bffab316d0041644cde0ba377010"
   },
   "governance_files": {
-    "scripts/evaluate_v17_locked_holdout.py": "e6f818c9b7b5ba2726b50b6da8e3faceeaaef9c47689f62a44df408632aa9db3",
-    "scripts/run_v17_holdout_once.py": "f0af92553e183256445cb65696849f9f17c605e0d200bcdbe724584986ebdf7e",
+    "scripts/evaluate_v17_locked_holdout.py": "7be69a8b94603a027a0491fc91dad296b1e2ad0cf2ca44332443b4343b927d93",
+    "scripts/run_v17_holdout_once.py": "3ea4bc076b25139ec0fb8499daf59a25d20e3c645cda878090421051ce106585",
     "src/ocr_vlm_retrieval/evaluation/protocol_lock.py": "0727f584cd5dd9bdd79eb896339989971541921be7a699051ea3ecd68a866b07"
   },
   "query_set_path": "data/evaluation/v17/frozen_query_set/frozen_queries.jsonl",
@@ -101,5 +103,5 @@
     "default_mode": "preflight_only",
     "explicit_execute_flag": "--execute"
   },
-  "upgrade_rule": "Any change to a locked method file, governance file, prompt, model manifest, inference setting, aggregation, threshold, or data hash requires V18; V17 holdout reruns are forbidden."
+  "upgrade_rule": "After this lock passes activation CI, any change to a locked method file, governance file, prompt, model manifest, inference setting, aggregation, threshold, or data hash requires V18; V17 holdout reruns are forbidden."
 }

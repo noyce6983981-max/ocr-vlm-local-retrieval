@@ -126,13 +126,21 @@ def test_topk_selection_is_calibration_only_and_config_is_hashed() -> None:
 
 
 def test_final_method_lock_does_not_claim_a_holdout_result() -> None:
-    amendment = read_json(
+    original_lock_amendment = read_json(
         V17_ROOT / "amendments/005_method_locked_holdout_execution_guarded.json"
     )
-    lock_path = PROJECT_ROOT / amendment["method_lock"]["path"]
+    amendment = read_json(
+        V17_ROOT / "amendments/006_pre_activation_ci_format_normalization.json"
+    )
+    effective = amendment["effective_lock_snapshot"]
+    lock_path = PROJECT_ROOT / effective["path"]
     lock = read_json(lock_path)
 
-    assert sha256(lock_path) == amendment["method_lock"]["sha256"]
+    assert sha256(lock_path) == effective["sha256"]
+    assert effective["lock_revision"] == 2
+    assert original_lock_amendment["method_lock"]["sha256"] == (
+        amendment["superseded_lock_snapshot"]["sha256"]
+    )
     assert lock["status"] == "method_locked_holdout_sealed"
     assert lock["holdout"]["status"] == "sealed_not_run"
     for relative, expected in {
@@ -148,7 +156,9 @@ def test_final_method_lock_does_not_claim_a_holdout_result() -> None:
         "contrastive_relations": False,
         "relation_margin_threshold": 0.0,
     }
-    assert amendment["execution_authorization"]["current_status"] == (
+    assert original_lock_amendment["execution_authorization"]["current_status"] == (
         "not_authorized"
     )
-    assert amendment["one_shot_guard"]["current_receipt_exists"] is False
+    assert original_lock_amendment["one_shot_guard"][
+        "current_receipt_exists"
+    ] is False

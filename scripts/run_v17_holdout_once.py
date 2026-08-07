@@ -7,7 +7,7 @@ import json
 import subprocess
 import sys
 from collections.abc import Mapping
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -192,7 +192,7 @@ def execute_holdout_once(
     receipt = {
         "schema_version": 1,
         "status": "one_shot_execution_claimed",
-        "claimed_at_utc": datetime.now(timezone.utc).isoformat(),
+        "claimed_at_utc": datetime.now(UTC).isoformat(),
         "method_lock_sha256": report["method_lock_sha256"],
         "locked_method_git_commit_sha": lock["git_commit_sha"],
         "authorization_sha256": file_sha256(paths["authorization"]),
