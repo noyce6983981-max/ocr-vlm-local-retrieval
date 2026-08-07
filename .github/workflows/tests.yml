@@ -34,6 +34,7 @@ jobs:
           scripts/score_visual_attribute_queries.py
           scripts/v17_query_review_app.py
           tests/test_attribute_coverage.py
+          tests/test_cpu_import_boundaries.py
           tests/test_runtime_boundaries.py
           tests/test_minimal_repro.py
           tests/test_v17_human_evaluation.py

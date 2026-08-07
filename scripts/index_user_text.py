@@ -11,8 +11,6 @@ from typing import Any
 
 import faiss
 import numpy as np
-import torch
-from FlagEmbedding import BGEM3FlagModel
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -100,6 +98,9 @@ def build_rows(
 
 
 def main() -> None:
+    import torch
+    from FlagEmbedding import BGEM3FlagModel
+
     args = parse_args()
     if args.device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but is not available.")

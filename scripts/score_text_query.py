@@ -6,12 +6,13 @@ import argparse
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import faiss
 import numpy as np
-import torch
-from FlagEmbedding import BGEM3FlagModel
+
+if TYPE_CHECKING:
+    from FlagEmbedding import BGEM3FlagModel
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -73,6 +74,9 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def load_text_model(model_path: Path, device: str) -> BGEM3FlagModel:
+    import torch
+    from FlagEmbedding import BGEM3FlagModel
+
     if device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but is not available.")
     return BGEM3FlagModel(
