@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "lock_revision": 3,
-  "lock_revision_reason": "Pre-evaluation governance correction: separate the ranking-policy hash from split-specific ranking artifacts, close the first-stage retrieval dependency manifest, bind completed blinded human-review artifacts, and add structural preflight. No method, prompt, model, query, aggregation, threshold, or selected calibration result changed; no holdout metric was computed.",
+  "lock_revision_reason": "Pre-evaluation governance correction: separate the ranking-policy hash from split-specific ranking artifacts, close the first-stage retrieval dependency manifest, bind completed blinded human-review artifacts, add structural preflight, and fix direct CLI project-path initialization caught before authorization. No method, prompt, model, query, aggregation, threshold, or selected calibration result changed; no holdout metric was computed.",
   "prior_lock_sha256": "d0295db2460a9fdff26ffd24397b292771ba56ae411742a5000c7b1c37de5e48",
   "study_name": "V17-Compositional-80 Pilot",
   "status": "method_locked_holdout_sealed",
@@ -22,11 +22,11 @@
   },
   "governance_files": {
     "scripts/adjudicate_v17_holdout.py": "deae1e42fce56dc05fd54ecac4a1678cf96b90d356af50681fae8273501c8822",
-    "scripts/authorize_v17_holdout_once.py": "943d02fa619c8fbd4a77f8d7f54e8e3da4e955b34181f8491ee778d18f6fcdf5",
-    "scripts/evaluate_v17_locked_holdout.py": "5538cba80c48d50fe1e2b22e1fcadd45777cbf6b91d89548b995d1c99628bbcb",
+    "scripts/authorize_v17_holdout_once.py": "6c650767140bcfadf02ae5ce3c3a4293c2ebe0c2b8ce7f78924b3bd4249e911c",
+    "scripts/evaluate_v17_locked_holdout.py": "8b1023b06af7efd079fed453fbd8db2e06f96a1f7f8ef9679f78b868b7a9380c",
     "scripts/prepare_v17_holdout_adjudication.py": "be9dcde7a1f97c3fd6313340427e6acfc0210e7bfbd0aafd2991f3a69bfa8d4d",
     "scripts/prepare_v17_locked_holdout_baseline.py": "059f39d184be815e974c7290ada6c89f09cc3ed57b435ece962c89e094b0e2fb",
-    "scripts/run_v17_holdout_once.py": "7fc36037d1c73a2e9dd26ff50988f1af8a40782bcb1d4021e7ffd69d74a2de03",
+    "scripts/run_v17_holdout_once.py": "25898d8a5f2d7bd7f81fc46337498b91d6e0969a8432f242cdc08c8823ab65c2",
     "scripts/run_v17_locked_holdout_retrieval.py": "0f65b9df040694623405512f375917b55b49bae4cb1483b5c8ef2dfa4ec13e6c",
     "scripts/score_v17_locked_holdout_verification.py": "ac87dab8520a62b62ea203cc9578f75451b9228742ab30c2d74a32561e08690d",
     "scripts/v17_relevance_review_app.py": "2b66214e20cf84e1acd55bc584ecda59e4bdc90d3a3470a1905724ab197a84fe",
@@ -142,6 +142,7 @@
     "v17_candidate_ranking_sha256": "d017dde81e7092228ac5fb3a4d437ab2d8198cfce78defa23f86e4236e1946dc",
     "v16_baseline_ranking_path": "outputs/evaluation/v17/holdout/retrieval/runs/v16_quality_hybrid.jsonl",
     "v16_baseline_ranking_sha256": "ee676389923504b61f8f892b8e283286cb6b55c7dc882d4608049a6d5f84a790",
+    "verification_execution_lock_sha256": "4e5eadbaa67b2be6519dbbefe840293a4c543cf61421f9f238dd2eb5fc4949b2",
     "library_revision": "3051b34cf6e4",
     "holdout_metrics_computed_at_revision": false
   },

@@ -2,24 +2,30 @@
   "schema_version": 1,
   "amendment_id": "007_pre_evaluation_governance_correction",
   "effective_date": "2026-08-08",
-  "timing": "after label-blind holdout retrieval and independent human review, before candidate verification, authorization, or any holdout metric computation",
+  "timing": "drafted after label-blind holdout retrieval and independent human review; finalized after label-blind candidate verification exposed a direct-CLI import-path defect, but before authorization or any holdout metric computation",
   "reason": "Revision 2 conflated a calibration ranking artifact hash with the cross-split ranking policy hash and did not fully bind first-stage retrieval dependencies. It also allowed a one-shot receipt to be claimed before deep structural validation of all evaluator inputs.",
   "superseded_lock_snapshot": {
     "path": "config/v17_method_lock.json",
     "lock_revision": 2,
     "sha256": "d0295db2460a9fdff26ffd24397b292771ba56ae411742a5000c7b1c37de5e48"
   },
+  "verification_execution_snapshot": {
+    "path": "config/v17_method_lock.json",
+    "lock_revision": 3,
+    "sha256": "4e5eadbaa67b2be6519dbbefe840293a4c543cf61421f9f238dd2eb5fc4949b2",
+    "role": "Used for label-blind candidate verification; superseded before authorization only to initialize the project root for direct CLI execution."
+  },
   "effective_lock_snapshot": {
     "path": "config/v17_method_lock.json",
     "lock_revision": 3,
-    "sha256": "4e5eadbaa67b2be6519dbbefe840293a4c543cf61421f9f238dd2eb5fc4949b2"
+    "sha256": "256d3dfe5027dc3ea8a0a795c4d6829c4b95acef558f2ff86446dac4c89b150f"
   },
   "changes": {
     "ranking_identity": "Separates a canonical ranking-policy hash from calibration and holdout ranking-file hashes.",
     "retrieval_dependency_closure": "Binds the retrieval configuration and all scripts used to materialize the frozen rankings against the original method commit.",
     "holdout_input_bindings": "Binds the label-blind retrieval receipt, review packets, final independent-human adjudication, and V16/V17 frozen ranking artifacts.",
     "label_governance": "Adds blind third-review adjudication materialization with exact reviewer-artifact hashes and explicitly forbids model-assisted holdout labels.",
-    "one_shot_safety": "Adds a structural, metrics-free validation pass before the immutable one-shot receipt can be claimed.",
+    "one_shot_safety": "Adds a structural, metrics-free validation pass before the immutable one-shot receipt can be claimed and fixes direct CLI project-path initialization caught by that pass.",
     "baseline_semantics": "Stores only label-blind V16 acceptance and selected-item decisions; final correctness is computed by the locked evaluator."
   },
   "unchanged_selected_method": {
@@ -34,6 +40,8 @@
   },
   "holdout_safeguards": {
     "holdout_metrics_computed_before_revision": false,
+    "label_blind_candidate_verification_complete": true,
+    "verification_execution_lock_sha256": "4e5eadbaa67b2be6519dbbefe840293a4c543cf61421f9f238dd2eb5fc4949b2",
     "threshold_or_method_selected_from_holdout": false,
     "model_assisted_holdout_labels_used": false,
     "one_shot_receipt_exists": false,

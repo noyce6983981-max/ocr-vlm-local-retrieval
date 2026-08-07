@@ -33,6 +33,7 @@ def fixtures() -> tuple[dict, dict, list[dict], list[dict]]:
         "holdout_inputs": {
             "v17_candidate_ranking_sha256": "ranking",
             "v16_baseline_ranking_sha256": "baseline-ranking",
+            "verification_execution_lock_sha256": "verification-lock",
         },
         "inference": {"top_k": 3},
         "aggregation": {
@@ -52,6 +53,7 @@ def fixtures() -> tuple[dict, dict, list[dict], list[dict]]:
         "policy_sha256": "policy",
         "ranking_policy_sha256": "ranking-policy",
         "ranking_sha256": "ranking",
+        "method_lock_sha256": "verification-lock",
         "results": [
             {
                 "query_id": "q1",

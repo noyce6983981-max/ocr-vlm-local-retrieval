@@ -42,7 +42,7 @@
     },
     {
       "path": "data/evaluation/v17/amendments/007_pre_evaluation_governance_correction.json",
-      "sha256": "dc46f498d3c5500cc418d5da8eec377e47f1698b62252407d41576ce4a5c88cd",
+      "sha256": "f5dee723893855bdf931d25661287f16b9d19743f0a2778cdf33703901a76a66",
       "role": "pre_evaluation_governance_and_dependency_closure"
     }
   ],
@@ -111,7 +111,7 @@
       "config_sha256": "d6187abb81497a757d6bc84c1be44bce98fcdd79a59254e21b4e333d0bff67d9",
       "final_method_locked": true,
       "method_lock_path": "config/v17_method_lock.json",
-      "method_lock_sha256": "4e5eadbaa67b2be6519dbbefe840293a4c543cf61421f9f238dd2eb5fc4949b2"
+      "method_lock_sha256": "256d3dfe5027dc3ea8a0a795c4d6829c4b95acef558f2ff86446dac4c89b150f"
     },
     "descriptive_pool_conditioned_metrics": {
       "v16_quality_hybrid_recall_at_3": 0.34782608695652173,

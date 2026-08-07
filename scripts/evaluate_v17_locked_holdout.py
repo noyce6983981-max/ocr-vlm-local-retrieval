@@ -102,6 +102,10 @@ def prepare_locked_holdout_inputs(
         "v17_candidate_ranking_sha256"
     ):
         raise ValueError("Holdout ranking artifact hash does not match the lock")
+    if verification.get("method_lock_sha256") != holdout_inputs.get(
+        "verification_execution_lock_sha256"
+    ):
+        raise ValueError("Holdout verification is outside the lock lineage")
 
     judgment_by_id = {
         query_id: normalize_pool_judgment(row)
