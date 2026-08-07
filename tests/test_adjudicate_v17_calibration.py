@@ -17,7 +17,8 @@ def packet() -> dict[str, object]:
 def payload(**decision_overrides: object) -> dict[str, object]:
     decision = {
         "query_id": "q1",
-        "answerability": "answerable",
+        "task_id": "pooled_relevance",
+        "pool_relevance": "relevant_candidate_in_pool",
         "relevant_item_ids": ["a"],
         "confidence": "high",
         "rationale": "visible",
@@ -38,15 +39,17 @@ def test_materialize_preserves_human_rows_and_expands_candidate_map() -> None:
             "query_id": "q1",
             "reviewer_id": "human",
             "reviewer_role": "primary",
-            "answerability": "no_answer",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "no_relevant_candidate_in_pool",
             "candidate_relevance": {"a": False, "b": False},
         }
     ]
     adjudicated, report = materialize_adjudication(
         [packet()], judgments, payload()
     )
-    assert judgments[0]["answerability"] == "no_answer"
+    assert judgments[0]["pool_relevance"] == "no_relevant_candidate_in_pool"
     assert adjudicated[0]["candidate_relevance"] == {"a": True, "b": False}
+    assert adjudicated[0]["pool_relevance"] == "relevant_candidate_in_pool"
     assert adjudicated[0]["reviewer_type"] == "model_assisted"
     assert report["primary_queries_changed"] == 1
 
@@ -58,8 +61,8 @@ def test_materialize_rejects_unknown_candidate() -> None:
         )
 
 
-def test_materialize_rejects_answerable_without_relevant_item() -> None:
-    with pytest.raises(ValueError, match="Answerable decision has no relevant"):
+def test_materialize_rejects_relevant_pool_without_relevant_item() -> None:
+    with pytest.raises(ValueError, match="Relevant-in-pool decision has no relevant"):
         materialize_adjudication(
             [packet()], [], payload(relevant_item_ids=[])
         )

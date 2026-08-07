@@ -90,7 +90,8 @@ def test_pool_to_double_review_report_without_model_weights(tmp_path: Path) -> N
             {
                 "query_id": "q001",
                 "reviewer_id": "reviewer_a",
-                "answerability": "answerable",
+                "task_id": "pooled_relevance",
+                "pool_relevance": "relevant_candidate_in_pool",
                 "candidate_relevance": {
                     "yellow_pyramid": False,
                     "dolphin_scene": True,
@@ -99,7 +100,8 @@ def test_pool_to_double_review_report_without_model_weights(tmp_path: Path) -> N
             {
                 "query_id": "q001",
                 "reviewer_id": "reviewer_b",
-                "answerability": "answerable",
+                "task_id": "pooled_relevance",
+                "pool_relevance": "relevant_candidate_in_pool",
                 "candidate_relevance": {
                     "yellow_pyramid": False,
                     "dolphin_scene": True,
@@ -128,3 +130,4 @@ def test_pool_to_double_review_report_without_model_weights(tmp_path: Path) -> N
     report = json.loads(report_path.read_text(encoding="utf-8"))
     assert report["annotation_coverage"]["valid"]
     assert report["agreement"]["candidate_raw_agreement"] == 1.0
+    assert report["agreement"]["pool_relevance_raw_agreement"] == 1.0

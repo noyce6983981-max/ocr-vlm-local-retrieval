@@ -24,17 +24,20 @@ def fixtures(raw_dir: Path):
     judgments = [
         {
             "query_id": "q1",
-            "answerability": "answerable",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "relevant_candidate_in_pool",
             "candidate_relevance": {"good": True, "bad": False},
         },
         {
             "query_id": "q2",
-            "answerability": "no_answer",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "no_relevant_candidate_in_pool",
             "candidate_relevance": {"bad": False, "other": False},
         },
         {
             "query_id": "q3",
-            "answerability": "excluded",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "excluded",
             "candidate_relevance": {"bad": False},
         },
     ]
@@ -78,14 +81,16 @@ def test_evaluate_flags_reject_all_and_preserves_ranking_gain(tmp_path: Path) ->
     assert report["scope"]["excluded_query_ids"] == ["q3"]
     assert report["ranking_metrics"]["v16_quality_hybrid"]["recall_at_1"] == 0.0
     assert report["ranking_metrics"]["v17_quality_hybrid"]["recall_at_1"] == 1.0
-    assert report["open_set_quality_hybrid"]["v17"]["degenerate_reject_all"]
+    assert report["pool_conditioned_selective_retrieval"]["v17"][
+        "degenerate_reject_all"
+    ]
     assert not report["research_hypotheses"][
-        "h1_false_accept_relative_reduction_at_least_30_percent"
+        "h1_pool_conditioned_false_accept_relative_reduction_at_least_30_percent"
     ]["valid_success"]
     assert (
-        report["paired_group_bootstrap"]["answerable_recall_at_3_v17_minus_v16"][
-            "repetitions"
-        ]
+        report["paired_group_bootstrap"][
+            "relevant_in_pool_recall_at_3_v17_minus_v16"
+        ]["repetitions"]
         == 25
     )
 
@@ -105,13 +110,13 @@ def test_evaluate_rejects_top_three_result_outside_audited_pool(tmp_path: Path) 
         )
 
 
-def test_evaluate_rejects_answerable_query_without_relevant_candidate(
+def test_evaluate_rejects_relevant_pool_without_relevant_candidate(
     tmp_path: Path,
 ) -> None:
     judgments, packets, runs = fixtures(tmp_path / "raw")
     judgments[0]["candidate_relevance"] = {"good": False, "bad": False}
 
-    with pytest.raises(ValueError, match="has no relevant candidate"):
+    with pytest.raises(ValueError, match="needs a relevant candidate"):
         evaluate(
             judgments=judgments,
             packets=packets,

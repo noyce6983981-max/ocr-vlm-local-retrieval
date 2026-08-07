@@ -12,13 +12,23 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PACKAGE_ROOT = PROJECT_ROOT / "src"
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
+from ocr_vlm_retrieval.evaluation.judgments import (
+    POOLED_RELEVANCE_TASK,
+    RELEVANT_CANDIDATE_IN_POOL,
+    pool_relevance_decision,
+)
+
 DEFAULT_STUDY_DIR = Path("data/evaluation/v17/human_study/calibration")
-VALID_ANSWERABILITY = {"answerable", "no_answer", "excluded"}
 VALID_CONFIDENCE = {"high", "medium"}
 
 
@@ -103,16 +113,16 @@ def materialize_adjudication(
 
     adjudicated: list[dict[str, Any]] = []
     differences: list[dict[str, Any]] = []
-    answerability_counts: Counter[str] = Counter()
+    pool_relevance_counts: Counter[str] = Counter()
     confidence_counts: Counter[str] = Counter()
 
     for query_id in sorted(packet_by_id):
         packet = packet_by_id[query_id]
         decision = decision_by_id[query_id]
-        answerability = str(decision.get("answerability", ""))
+        pool_relevance = pool_relevance_decision(decision)
         confidence = str(decision.get("confidence", ""))
-        if answerability not in VALID_ANSWERABILITY:
-            raise ValueError(f"Invalid answerability for {query_id}: {answerability}")
+        if pool_relevance == "uncertain":
+            raise ValueError(f"Adjudication cannot remain uncertain: {query_id}")
         if confidence not in VALID_CONFIDENCE:
             raise ValueError(f"Invalid confidence for {query_id}: {confidence}")
 
@@ -123,17 +133,23 @@ def materialize_adjudication(
         unknown = sorted(relevant - set(candidate_ids))
         if unknown:
             raise ValueError(f"Unknown relevant candidates for {query_id}: {unknown}")
-        if answerability == "answerable" and not relevant:
-            raise ValueError(f"Answerable decision has no relevant item: {query_id}")
-        if answerability != "answerable" and relevant:
-            raise ValueError(f"Non-answerable decision has relevant items: {query_id}")
+        if pool_relevance == RELEVANT_CANDIDATE_IN_POOL and not relevant:
+            raise ValueError(
+                f"Relevant-in-pool decision has no relevant item: {query_id}"
+            )
+        if pool_relevance != RELEVANT_CANDIDATE_IN_POOL and relevant:
+            raise ValueError(
+                f"No-relevant/excluded decision has relevant items: {query_id}"
+            )
 
         row = {
             "query_id": query_id,
             "reviewer_id": decision_payload["adjudicator_id"],
             "reviewer_role": "model_assisted_adjudicator",
             "reviewer_type": "model_assisted",
-            "answerability": answerability,
+            "task_id": POOLED_RELEVANCE_TASK,
+            "pool_relevance": pool_relevance,
+            "pool_sha256": packet.get("pool_sha256"),
             "candidate_relevance": {
                 item_id: item_id in relevant for item_id in candidate_ids
             },
@@ -144,22 +160,20 @@ def materialize_adjudication(
             "source_decisions_sha256": decision_payload["decision_revision"],
         }
         adjudicated.append(row)
-        answerability_counts[answerability] += 1
+        pool_relevance_counts[pool_relevance] += 1
         confidence_counts[confidence] += 1
 
         query_differences: list[dict[str, Any]] = []
         for human in human_by_query.get(query_id, []):
             human_relevant = relevant_items(human)
-            if (
-                human.get("answerability") != answerability
-                or human_relevant != relevant
-            ):
+            human_pool_relevance = pool_relevance_decision(human)
+            if human_pool_relevance != pool_relevance or human_relevant != relevant:
                 query_differences.append(
                     {
                         "reviewer_id": human.get("reviewer_id"),
                         "reviewer_role": human.get("reviewer_role"),
-                        "human_answerability": human.get("answerability"),
-                        "adjudicated_answerability": answerability,
+                        "human_pool_relevance": human_pool_relevance,
+                        "adjudicated_pool_relevance": pool_relevance,
                         "human_relevant_item_ids": sorted(human_relevant),
                         "adjudicated_relevant_item_ids": sorted(relevant),
                         "added_by_adjudication": sorted(relevant - human_relevant),
@@ -194,7 +208,8 @@ def materialize_adjudication(
         )
     }
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "task_id": POOLED_RELEVANCE_TASK,
         "status": "model_assisted_calibration_adjudication_complete",
         "adjudicator_id": decision_payload["adjudicator_id"],
         "adjudicator_type": "model_assisted_visual_audit_not_human_gold",
@@ -204,7 +219,7 @@ def materialize_adjudication(
         "human_judgment_count": len(judgments),
         "primary_judgment_count": len(primary),
         "secondary_judgment_count": len(secondary),
-        "answerability_counts": dict(sorted(answerability_counts.items())),
+        "pool_relevance_counts": dict(sorted(pool_relevance_counts.items())),
         "confidence_counts": dict(sorted(confidence_counts.items())),
         "primary_queries_changed": len(primary_changed),
         "secondary_queries_changed": len(secondary_changed),

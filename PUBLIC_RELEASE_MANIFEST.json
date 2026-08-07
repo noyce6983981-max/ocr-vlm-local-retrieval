@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_revision": "7f5f212e07f438651615aa29fb4a8512a9e6080e",
-  "file_count": 294,
+  "file_count": 299,
   "files": [
     {
       "path": ".gitattributes",
@@ -9,7 +9,7 @@
     },
     {
       "path": ".github/workflows/tests.yml",
-      "sha256": "8dd3603b477c3a85fae17d12190dd2a0094e3e8de4950facce51a97b5f329183"
+      "sha256": "b381e1d9f74863b57d0c48b4f7ceefed9c921ad28955e649fe6a009496ef28ca"
     },
     {
       "path": ".gitignore",
@@ -29,7 +29,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "2d4f434747f927fc6af1e7f6fb355e9152f822783dcb81eb0b6ba41ab2bda323"
+      "sha256": "e06e6dcebc6defa08210bb2479170c7a1b32daa637edf2532b0fa65ea4dedb7f"
     },
     {
       "path": "SECURITY.md",
@@ -160,12 +160,16 @@
       "sha256": "b32d3266e2eaffcfa72683321e3a07755b59a5b6c06580d5a7787de6646cee5c"
     },
     {
+      "path": "data/evaluation/v17/amendments/003_separate_pooled_relevance_from_corpus_answerability.json",
+      "sha256": "10b99cd7465607cb841e0c608688f7d2ea5c986971f01e4942d0b010cae67e9b"
+    },
+    {
       "path": "data/evaluation/v17/protocol_frozen_v1.json",
       "sha256": "acb8720ea827e95976b05a081d3dcd5f269308ea8b3d2d16a6c8e2ca208bf674"
     },
     {
       "path": "data/evaluation/v17/study_status.json",
-      "sha256": "bbb46bde9b6e58f1218ad9b4788afad23f53e1e49816fe1fe24883bab9f71860"
+      "sha256": "b80c9d975378257735a698ccfddf8c97297ae21e456fcefd9e999f5ef8a34760"
     },
     {
       "path": "data/manifest/dataset_v1_manifest.jsonl",
@@ -365,7 +369,7 @@
     },
     {
       "path": "records/experiments/retrieval_v17_calibration_pool_2026-08-07.md",
-      "sha256": "194981ba177e75752d6c1d874127867c274a0efbf98818266c36437a0b4cb409"
+      "sha256": "e1abe6339807ed42b25bea69a2a3264fbb222ef688adc7a1079c1b9a72b13be9"
     },
     {
       "path": "records/experiments/retrieval_v17_gpu_smoke_2026-08-07.md",
@@ -469,7 +473,7 @@
     },
     {
       "path": "scripts/adjudicate_v17_calibration.py",
-      "sha256": "2b71f86eb75000ee15434f20be32ebc1507970b50cc99305d44af171151cde0c"
+      "sha256": "fa51063dac5c6dacef7fa89cb4876549c979f2b9f0bc31aad7fa3645a67ef837"
     },
     {
       "path": "scripts/analyze_library_quality_gate.py",
@@ -604,8 +608,12 @@
       "sha256": "54d808e4192417c75d60acaf4a0748571dc6a6245c3c4086b2d5e14a798719ef"
     },
     {
+      "path": "scripts/build_v17_answerability_pool.py",
+      "sha256": "17cb5fdb913dfc797103a2797d72cc0c94aead228352b3b02c3875edaf3e9741"
+    },
+    {
       "path": "scripts/build_v17_human_pool.py",
-      "sha256": "4d3a71c4f6998ecadb9a78d7f7d4254b8b661b4ca50c76d8cdabbda887582ddf"
+      "sha256": "a5029744dcc165660edee4f8604f8ea533f295cc89d31ca5d2962f5012a4e892"
     },
     {
       "path": "scripts/build_visual_index.py",
@@ -613,7 +621,7 @@
     },
     {
       "path": "scripts/calibrate_v17_candidate_gate.py",
-      "sha256": "ebe49e732be20c002098bf6848c43aa9ddb60c943ea4dc4dbf8fd5de44a43ea5"
+      "sha256": "cdaaa5649782bd563937c016ab924152e44a0a2f4993cbb181b3d7c3a68dc1a3"
     },
     {
       "path": "scripts/capture_route_gate_features.py",
@@ -721,11 +729,11 @@
     },
     {
       "path": "scripts/evaluate_v17_calibration_rankings.py",
-      "sha256": "db79d06dddaaaf03c79fccb0b9ea64dbe0cfec134a12b34347b2a538a5581101"
+      "sha256": "d2d982cc0ebed597a67968a47ea438783611f7f076080fa810a3259c0bb7dd63"
     },
     {
       "path": "scripts/evaluate_v17_human_study.py",
-      "sha256": "8b12503d4f9ae624184eb486739f5e850e5dc2cf4c79e4de78c8cf072942678c"
+      "sha256": "c5c3c4f2f009c09b3308dcdbcb65876e39a94c819f39a89d7f1f716b478dd92b"
     },
     {
       "path": "scripts/evaluate_visual_retrieval.py",
@@ -733,7 +741,7 @@
     },
     {
       "path": "scripts/export_public_release.py",
-      "sha256": "fc36573985106cb7d6c2104fd73e00a547842e325046eb760e3e8dbbcd480d98"
+      "sha256": "768fd68ccb13e5b36021a06a4645eb72a944c4f03ddf7cc831bc588b0b9f9c9e"
     },
     {
       "path": "scripts/fetch_qwen3_vl_code.ps1",
@@ -949,7 +957,7 @@
     },
     {
       "path": "scripts/v17_relevance_review_app.py",
-      "sha256": "995d5f2cbd57d75b765b7ee51c3e1113444e8dd6a2561a5a747050c9360e8b13"
+      "sha256": "497ab336117d2405fe7bd98dff7b9124692fc893c21eafb3b7cca4b831361d18"
     },
     {
       "path": "src/ocr_vlm_retrieval/__init__.py",
@@ -961,7 +969,15 @@
     },
     {
       "path": "src/ocr_vlm_retrieval/evaluation/human_evaluation.py",
-      "sha256": "13d2ff23bef1e9c6ce151dd25d27cc6ea5257d4f056086e3de32ac2375d913c4"
+      "sha256": "ab09af928ab87b7031bfb46803ab8389f178f234e90c6967827c96f09206806c"
+    },
+    {
+      "path": "src/ocr_vlm_retrieval/evaluation/judgments.py",
+      "sha256": "fbb649c96f98ae7c3616d238517dc8f2014afe922a2fccc8a4ca49a0baaa0825"
+    },
+    {
+      "path": "src/ocr_vlm_retrieval/evaluation/pooling.py",
+      "sha256": "2c370706c58356235a331490bec7fe84172191b62e705c78d17fb50b7f82f1ac"
     },
     {
       "path": "src/ocr_vlm_retrieval/evaluation/query_collection.py",
@@ -989,7 +1005,7 @@
     },
     {
       "path": "tests/test_adjudicate_v17_calibration.py",
-      "sha256": "93cf524d69f162a420ee17fcdebc6a389439bb0a7823a8f1c4434333f2f0ac1f"
+      "sha256": "d30ebeb07eb151edb5126c90269c766b35a614c7a9ad15adaf3c71014d6a43f3"
     },
     {
       "path": "tests/test_apply_duplicate_decisions.py",
@@ -1033,7 +1049,7 @@
     },
     {
       "path": "tests/test_calibrate_v17_candidate_gate.py",
-      "sha256": "66f82bc03dae3c9fc9232aa62b4027175225352e5429a70e4c406e0b2a81cdf7"
+      "sha256": "6c0b686e9a61c22a993a9ab86196fd1578114704e974e93d58bbb17671bc4786"
     },
     {
       "path": "tests/test_capture_route_gate_features.py",
@@ -1077,7 +1093,7 @@
     },
     {
       "path": "tests/test_evaluate_v17_calibration_rankings.py",
-      "sha256": "551264d9980ec632aef5f6d514499ef7d70137001d27168c3cf2177d5174c694"
+      "sha256": "3d912759f37120f414088a2de9adbf68150c73e6cbcef4db15e3d7ccc3551c99"
     },
     {
       "path": "tests/test_feedback_category_model.py",
@@ -1156,16 +1172,20 @@
       "sha256": "3fcb284460531e30c361b91fc3c6735b8d9b8a14ba6a6fa631805d94dfdca075"
     },
     {
+      "path": "tests/test_v17_answerability_pooling.py",
+      "sha256": "00b687dacfcf5bf7992ac014e11681d5f53ea0b9039c6bc693fbf616b0e6ceb8"
+    },
+    {
       "path": "tests/test_v17_human_evaluation.py",
-      "sha256": "7f38862f79ef5c3ea49ed79ee06f40a61c08146c7d86a36352ef8dcea9bd6e24"
+      "sha256": "97f9db06e17de91bb56fec106c60fb78e4960fc507d6c3d99159ced772455220"
     },
     {
       "path": "tests/test_v17_human_evaluation_e2e.py",
-      "sha256": "6594d5694d902b9624ef753eb6573dfb7dcbd1b4169eef4a11023c899b0e95b9"
+      "sha256": "e56c84e7c493ea032320e230186dfebffe24d5dfb872f68efd96d07195ad2657"
     },
     {
       "path": "tests/test_v17_protocol_governance.py",
-      "sha256": "fac54f08ce84ef5c264b2559b2bf5d7e42f04164a94b1739ecbf0fbea1fcf27e"
+      "sha256": "10081309dd263943259cd35d3f60435a5716cd1d9bbc4ec733ee14ad2dc192ee"
     },
     {
       "path": "tests/test_v17_query_collection.py",
@@ -1177,7 +1197,7 @@
     },
     {
       "path": "tests/test_v17_relevance_review_app.py",
-      "sha256": "ab42ac5d35bc416bdaf4c571cd6c705a47c0ffa2e33013037186c5073957f252"
+      "sha256": "e3596bcdd9020bf5f9f4c4866311161f9e2052ac5a4a6e5cfd1ae3ee94afb020"
     }
   ]
 }

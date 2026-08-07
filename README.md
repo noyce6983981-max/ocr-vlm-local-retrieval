@@ -24,6 +24,8 @@ V17-Compositional-80 Pilot 针对“一个高相似属性掩盖其他必要条�
 
 这些数字是 20 候选池条件下的模型辅助校准结果，不是语料库级开放集结论、独立人工金标准或最终留出成绩；方向关系仍会混淆，误接收差值区间上界达到 0。最终留出集保持封存。原始协议、追加修正和当前状态分别见 `data/evaluation/v17/protocol_frozen_v1.json`、`data/evaluation/v17/amendments/` 和 `data/evaluation/v17/study_status.json`；候选阈值见 `config/v17_candidate_verification_gate.json`。
 
+V17 现在把评测拆成两个独立任务：20 项池只标注 `pooled_relevance` 并报告 R@1、R@3 和 MRR@3；语料库可回答性必须另建 Dense、BM25、全局视觉、V16、V17 的 Top-100 与候选验证器 Top-50 高召回池，再加入同来源、近重复、类别近邻和反事实候选。只有两名独立审核者完成并裁决后，才允许使用 `corpus_no_answer_after_high_recall_pooling`。审核界面默认只显示候选编号和图像。
+
 ## 当前状态
 
 - [x] PP-OCRv5单图与manifest批量推理

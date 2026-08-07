@@ -36,7 +36,8 @@ human relevance judgments do not yet exist.
 
 ## Audit boundary
 
-- Query wording is frozen, but candidate relevance and answerability are not.
+- Query wording is frozen. The 20-item task judges pooled candidate relevance,
+  not corpus answerability.
 - Reviewer packets contain no run IDs, scores, ranks, acceptance decisions, or
   expected answerability.
 - The holdout remains sealed until the parser, prompts, thresholds,
@@ -75,8 +76,9 @@ query-ID/packet mismatch.
 ## Completed review and model-assisted audit
 
 The active review now contains 52 preserved human judgments: 40 primary and
-12 secondary. On the 12 double-reviewed queries, answerability exact agreement
-is 91.7% (Cohen kappa 0.797); pooled candidate binary agreement is 95.8%
+12 secondary. On the 12 double-reviewed queries, the legacy answerability
+field—now interpreted only as pooled relevance—has exact agreement of 91.7%
+(Cohen kappa 0.797); pooled candidate binary agreement is 95.8%
 (kappa 0.645). These figures describe reviewer agreement, not retrieval
 accuracy.
 
@@ -109,14 +111,16 @@ On calibration, geometric aggregation over condition scores was selected at a
 0.45 threshold using a fixed 0.01 grid, an explicit false-accept reduction
 constraint, and a reject-all prohibition.
 
-Pool-conditioned calibration results over 39 effective queries (23 answerable,
-16 no-answer; `v17_visual_033` excluded for an unstable referent):
+Pool-conditioned calibration results over 39 effective queries (23 with a
+relevant candidate in the 20-item pool, 16 with no relevant candidate in that
+pool; `v17_visual_033` excluded for an unstable referent):
 
 - V16 quality-hybrid Recall@3: 34.8%.
 - V17 quality-hybrid Recall@3: 69.6%; paired difference +34.8 points, grouped
   Bootstrap 95% CI +8.7 to +59.1.
-- V16 false-accept rate: 62.5%.
-- Selected V17 false-accept rate: 31.3%, a 50% relative reduction; paired
+- V16 pool-conditioned false-accept rate: 62.5%.
+- Selected V17 pool-conditioned false-accept rate: 31.3%, a 50% relative
+  reduction; paired
   difference CI -60.0 to 0.0 points.
 - V16 end-to-end Top-1: 23.1%.
 - Selected V17 end-to-end Top-1: 51.3%; paired difference +28.2 points, CI
@@ -124,8 +128,9 @@ Pool-conditioned calibration results over 39 effective queries (23 answerable,
 - Selected V17 coverage: 43.6% (17/39 accepted), so the result is not produced
   by rejecting every query.
 
-These are calibration results on model-assisted labels, not final benchmark
-claims. The cross-encoder still confuses some `behind`/`in front of` and
+These are 20-pool calibration diagnostics on model-assisted labels, not
+corpus-level open-set results or final benchmark claims. The cross-encoder
+still confuses some `behind`/`in front of` and
 `above`/`below` counterfactuals, and the false-accept interval reaches zero.
 The 40-query holdout remains unopened and must stay sealed until an independent
 human labeling plan and the final method lock are accepted.

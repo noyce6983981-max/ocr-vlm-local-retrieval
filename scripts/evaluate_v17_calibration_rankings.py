@@ -1,4 +1,4 @@
-"""Evaluate V17 calibration rankings and open-set decisions on audited labels.
+"""Evaluate V17 calibration rankings on audited pooled-relevance labels.
 
 The calibration candidate pool contains the union of the top three results from
 each retrieval route.  Consequently, this script intentionally reports only
@@ -23,6 +23,12 @@ if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
 from ocr_vlm_retrieval.evaluation.human_evaluation import grouped_paired_bootstrap
+from ocr_vlm_retrieval.evaluation.judgments import (
+    NO_RELEVANT_CANDIDATE_IN_POOL,
+    POOLED_RELEVANCE_TASK,
+    RELEVANT_CANDIDATE_IN_POOL,
+    normalize_pool_judgment,
+)
 
 RUN_NAMES = (
     "bm25",
@@ -160,36 +166,39 @@ def evaluate(
 
     paired_rows: list[dict[str, Any]] = []
     excluded_query_ids: list[str] = []
-    answerable_ids: list[str] = []
-    no_answer_ids: list[str] = []
+    relevant_in_pool_ids: list[str] = []
+    no_relevant_in_pool_ids: list[str] = []
     for query_id in sorted(judgment_by_id):
-        judgment = judgment_by_id[query_id]
-        answerability = str(judgment.get("answerability", "")).strip()
-        if answerability == "excluded":
+        judgment = normalize_pool_judgment(judgment_by_id[query_id])
+        pool_relevance = str(judgment["pool_relevance"])
+        if pool_relevance == "excluded":
             excluded_query_ids.append(query_id)
             continue
-        if answerability not in {"answerable", "no_answer"}:
+        if pool_relevance not in {
+            RELEVANT_CANDIDATE_IN_POOL,
+            NO_RELEVANT_CANDIDATE_IN_POOL,
+        }:
             raise ValueError(
-                f"Unsupported answerability for {query_id}: {answerability!r}"
+                f"Unsupported pool relevance for {query_id}: {pool_relevance!r}"
             )
         relevant = {
             str(item_id)
             for item_id, value in judgment.get("candidate_relevance", {}).items()
             if bool(value)
         }
-        if answerability == "answerable" and not relevant:
-            raise ValueError(f"Answerable query {query_id} has no relevant candidate")
-        if answerability == "no_answer" and relevant:
-            raise ValueError(f"No-answer query {query_id} has relevant candidates")
-        (answerable_ids if answerability == "answerable" else no_answer_ids).append(
-            query_id
+        target_ids = (
+            relevant_in_pool_ids
+            if pool_relevance == RELEVANT_CANDIDATE_IN_POOL
+            else no_relevant_in_pool_ids
         )
+        target_ids.append(query_id)
 
         row: dict[str, Any] = {
             "query_id": query_id,
             "group_id": str(packet_by_id[query_id].get("group_id", "")).strip(),
             "query_family": packet_by_id[query_id].get("query_family"),
-            "answerability": answerability,
+            "task_id": POOLED_RELEVANCE_TASK,
+            "pool_relevance": pool_relevance,
             "relevant_item_ids": sorted(relevant),
         }
         if not row["group_id"]:
@@ -213,87 +222,117 @@ def evaluate(
             top1_relevant = bool(row[f"{version}_quality_hybrid_r_at_1"])
             row[f"{version}_accepted"] = accepted
             row[f"{version}_acceptance_reason"] = reason
-            row[f"{version}_false_accept"] = float(
-                answerability == "no_answer" and accepted
+            row[f"{version}_pool_conditioned_false_accept"] = float(
+                pool_relevance == NO_RELEVANT_CANDIDATE_IN_POOL and accepted
             )
-            row[f"{version}_correct"] = float(
-                (answerability == "answerable" and accepted and top1_relevant)
-                or (answerability == "no_answer" and not accepted)
+            row[f"{version}_pool_conditioned_correct"] = float(
+                (
+                    pool_relevance == RELEVANT_CANDIDATE_IN_POOL
+                    and accepted
+                    and top1_relevant
+                )
+                or (
+                    pool_relevance == NO_RELEVANT_CANDIDATE_IN_POOL
+                    and not accepted
+                )
             )
         paired_rows.append(row)
 
-    answerable_rows = [
-        row for row in paired_rows if row["answerability"] == "answerable"
+    relevant_in_pool_rows = [
+        row
+        for row in paired_rows
+        if row["pool_relevance"] == RELEVANT_CANDIDATE_IN_POOL
     ]
-    no_answer_rows = [row for row in paired_rows if row["answerability"] == "no_answer"]
+    no_relevant_in_pool_rows = [
+        row
+        for row in paired_rows
+        if row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+    ]
     ranking_metrics: dict[str, dict[str, Any]] = {}
     for name in evaluated_run_names:
         ranking_metrics[name] = {
-            "answerable_query_count": len(answerable_rows),
+            "relevant_in_pool_query_count": len(relevant_in_pool_rows),
             "recall_at_1": mean(
-                float(row[f"{name}_r_at_1"]) for row in answerable_rows
+                float(row[f"{name}_r_at_1"]) for row in relevant_in_pool_rows
             ),
             "recall_at_3": mean(
-                float(row[f"{name}_r_at_3"]) for row in answerable_rows
+                float(row[f"{name}_r_at_3"]) for row in relevant_in_pool_rows
             ),
-            "mrr_at_3": mean(float(row[f"{name}_mrr_at_3"]) for row in answerable_rows),
+            "mrr_at_3": mean(
+                float(row[f"{name}_mrr_at_3"])
+                for row in relevant_in_pool_rows
+            ),
         }
 
-    open_set: dict[str, dict[str, Any]] = {}
+    pool_conditioned: dict[str, dict[str, Any]] = {}
     for version in SYSTEM_VERSIONS:
-        accepted_answerable = sum(
-            bool(row[f"{version}_accepted"]) for row in answerable_rows
+        accepted_relevant = sum(
+            bool(row[f"{version}_accepted"]) for row in relevant_in_pool_rows
         )
-        false_accepts = sum(bool(row[f"{version}_accepted"]) for row in no_answer_rows)
-        rejected_no_answer = len(no_answer_rows) - false_accepts
-        correct = sum(float(row[f"{version}_correct"]) for row in paired_rows)
+        false_accepts = sum(
+            bool(row[f"{version}_accepted"])
+            for row in no_relevant_in_pool_rows
+        )
+        rejected_empty_pool = len(no_relevant_in_pool_rows) - false_accepts
+        correct = sum(
+            float(row[f"{version}_pool_conditioned_correct"])
+            for row in paired_rows
+        )
         accepted_total = sum(bool(row[f"{version}_accepted"]) for row in paired_rows)
-        open_set[version] = {
-            "answerable_query_count": len(answerable_rows),
-            "answerable_accepted_count": accepted_answerable,
-            "answerable_acceptance_rate": (
-                accepted_answerable / len(answerable_rows) if answerable_rows else 0.0
+        pool_conditioned[version] = {
+            "relevant_in_pool_query_count": len(relevant_in_pool_rows),
+            "relevant_in_pool_accepted_count": accepted_relevant,
+            "relevant_in_pool_acceptance_rate": (
+                accepted_relevant / len(relevant_in_pool_rows)
+                if relevant_in_pool_rows
+                else 0.0
             ),
-            "no_answer_query_count": len(no_answer_rows),
-            "no_answer_rejected_count": rejected_no_answer,
-            "no_answer_rejection_rate": (
-                rejected_no_answer / len(no_answer_rows) if no_answer_rows else 0.0
+            "no_relevant_in_pool_query_count": len(no_relevant_in_pool_rows),
+            "no_relevant_in_pool_rejected_count": rejected_empty_pool,
+            "no_relevant_in_pool_rejection_rate": (
+                rejected_empty_pool / len(no_relevant_in_pool_rows)
+                if no_relevant_in_pool_rows
+                else 0.0
             ),
-            "false_accept_count": false_accepts,
-            "false_accept_rate": (
-                false_accepts / len(no_answer_rows) if no_answer_rows else 0.0
+            "pool_conditioned_false_accept_count": false_accepts,
+            "pool_conditioned_false_accept_rate": (
+                false_accepts / len(no_relevant_in_pool_rows)
+                if no_relevant_in_pool_rows
+                else 0.0
             ),
             "accepted_query_count": accepted_total,
             "end_to_end_correct_count": int(correct),
-            "end_to_end_accuracy": correct / len(paired_rows) if paired_rows else 0.0,
+            "pool_conditioned_end_to_end_accuracy": (
+                correct / len(paired_rows) if paired_rows else 0.0
+            ),
             "degenerate_reject_all": accepted_total == 0,
         }
 
     bootstrap = {
-        "answerable_recall_at_3_v17_minus_v16": grouped_paired_bootstrap(
-            answerable_rows,
+        "relevant_in_pool_recall_at_3_v17_minus_v16": grouped_paired_bootstrap(
+            relevant_in_pool_rows,
             baseline_field="v16_quality_hybrid_r_at_3",
             contender_field="v17_quality_hybrid_r_at_3",
             repetitions=bootstrap_repetitions,
             seed=seed,
         ),
-        "no_answer_false_accept_v17_minus_v16": grouped_paired_bootstrap(
-            no_answer_rows,
-            baseline_field="v16_false_accept",
-            contender_field="v17_false_accept",
+        "pool_conditioned_false_accept_v17_minus_v16": grouped_paired_bootstrap(
+            no_relevant_in_pool_rows,
+            baseline_field="v16_pool_conditioned_false_accept",
+            contender_field="v17_pool_conditioned_false_accept",
             repetitions=bootstrap_repetitions,
             seed=seed,
         ),
         "end_to_end_correct_v17_minus_v16": grouped_paired_bootstrap(
             paired_rows,
-            baseline_field="v16_correct",
-            contender_field="v17_correct",
+            baseline_field="v16_pool_conditioned_correct",
+            contender_field="v17_pool_conditioned_correct",
             repetitions=bootstrap_repetitions,
             seed=seed,
         ),
     }
-    baseline_far = open_set["v16"]["false_accept_rate"]
-    contender_far = open_set["v17"]["false_accept_rate"]
+    baseline_far = pool_conditioned["v16"]["pool_conditioned_false_accept_rate"]
+    contender_far = pool_conditioned["v17"]["pool_conditioned_false_accept_rate"]
     relative_far_reduction = (
         (baseline_far - contender_far) / baseline_far if baseline_far else None
     )
@@ -303,6 +342,7 @@ def evaluate(
     )
     report: dict[str, Any] = {
         "status": "calibration_only_model_assisted_labels",
+        "task_id": POOLED_RELEVANCE_TASK,
         "label_provenance": {
             "artifact": (
                 "data/evaluation/v17/human_study/calibration/"
@@ -321,16 +361,17 @@ def evaluate(
             "supported_ranking_cutoffs": [1, 3],
             "holdout_read": False,
             "evaluated_query_count": len(paired_rows),
-            "answerable_query_count": len(answerable_ids),
-            "no_answer_query_count": len(no_answer_ids),
+            "relevant_in_pool_query_count": len(relevant_in_pool_ids),
+            "no_relevant_in_pool_query_count": len(no_relevant_in_pool_ids),
+            "corpus_answerability_evaluated": False,
             "excluded_query_ids": excluded_query_ids,
             "evaluated_run_names": list(evaluated_run_names),
         },
         "ranking_metrics": ranking_metrics,
-        "open_set_quality_hybrid": open_set,
+        "pool_conditioned_selective_retrieval": pool_conditioned,
         "paired_group_bootstrap": bootstrap,
         "research_hypotheses": {
-            "h1_false_accept_relative_reduction_at_least_30_percent": {
+            "h1_pool_conditioned_false_accept_relative_reduction_at_least_30_percent": {
                 "relative_reduction": relative_far_reduction,
                 "point_estimate_passed": bool(
                     relative_far_reduction is not None
@@ -339,23 +380,25 @@ def evaluate(
                 "valid_success": bool(
                     relative_far_reduction is not None
                     and relative_far_reduction >= 0.30
-                    and not open_set["v17"]["degenerate_reject_all"]
+                    and not pool_conditioned["v17"]["degenerate_reject_all"]
                 ),
             },
-            "h2_answerable_recall_at_3_loss_no_more_than_3pp": {
+            "h2_relevant_in_pool_recall_at_3_loss_no_more_than_3pp": {
                 "difference_v17_minus_v16": r3_delta,
                 "point_estimate_passed": r3_delta >= -0.03,
             },
         },
         "diagnosis": {
             "ranking_improved": r3_delta > 0.0,
-            "acceptance_guard_degenerate": open_set["v17"]["degenerate_reject_all"],
+            "acceptance_guard_degenerate": pool_conditioned["v17"][
+                "degenerate_reject_all"
+            ],
             "conclusion": (
                 "V17 improves candidate ranking on calibration, but its current "
                 "attribute acceptance guard rejects every evaluated query. H1 is "
                 "therefore not a valid success and the guard must be revised before "
                 "freezing."
-                if open_set["v17"]["degenerate_reject_all"]
+                if pool_conditioned["v17"]["degenerate_reject_all"]
                 else "V17 does not exhibit reject-all degeneration on calibration."
             ),
         },

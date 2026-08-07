@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "amendment_id": "003",
+  "study_name": "V17-Compositional-80 Pilot",
+  "status": "evaluation_semantics_corrected_before_holdout",
+  "effective_date": "2026-08-07",
+  "depends_on": [
+    "data/evaluation/v17/protocol_frozen_v1.json",
+    "data/evaluation/v17/amendments/001_scope_changed_to_compositional_80.json",
+    "data/evaluation/v17/amendments/002_b3_failed_b5_selected.json"
+  ],
+  "reason": "Absence of a relevant candidate from a 20-item pooled ranking set does not establish absence of an answer from the 1,482-item corpus.",
+  "evaluation_tasks": {
+    "pooled_relevance": {
+      "purpose": "Judge ranking relevance within the fixed 20-candidate pool.",
+      "canonical_labels": [
+        "relevant_candidate_in_pool",
+        "no_relevant_candidate_in_pool",
+        "uncertain",
+        "excluded"
+      ],
+      "supported_metrics": [
+        "Recall@1",
+        "Recall@3",
+        "MRR@3",
+        "pool-conditioned selective-retrieval diagnostics"
+      ],
+      "forbidden_claim": "no_answer_in_corpus"
+    },
+    "corpus_answerability": {
+      "purpose": "Judge corpus-level answerability only after independent review of a high-recall pool.",
+      "retrieval_depths": {
+        "dense_text": 100,
+        "bm25": 100,
+        "global_visual": 100,
+        "v16_quality_hybrid": 100,
+        "v17_quality_hybrid": 100,
+        "candidate_verifier": 50
+      },
+      "expansion_sources": [
+        "same_source",
+        "near_duplicate",
+        "category_neighbor",
+        "counterfactual"
+      ],
+      "required_no_answer_receipt_fields": [
+        "pool_sha256",
+        "retrieval_runs",
+        "candidate_count",
+        "reviewer_count",
+        "adjudicated",
+        "known_relevant_outside_pool"
+      ],
+      "canonical_no_answer_label": "corpus_no_answer_after_high_recall_pooling"
+    }
+  },
+  "legacy_compatibility": {
+    "answerable": "relevant_candidate_in_pool",
+    "no_answer": "no_relevant_candidate_in_pool",
+    "rule": "Legacy calibration rows are mapped in memory for audit compatibility and are never upgraded into corpus-answerability labels."
+  },
+  "current_result_boundary": "The reported 31.25% value is a pool-conditioned, model-assisted calibration false-accept diagnostic. It is not a corpus-level open-set false-accept rate.",
+  "review_blinding": {
+    "pooled_relevance_ui_visible_fields": [
+      "candidate_id",
+      "image"
+    ],
+    "hidden_fields": [
+      "item_id",
+      "title",
+      "filename",
+      "dataset",
+      "source_path",
+      "source_question",
+      "retrieval_method",
+      "score",
+      "rank",
+      "ocr_preview"
+    ]
+  },
+  "holdout_impact": "The holdout remains sealed and unexecuted. Corpus-answerability pooling for holdout is forbidden until the final method lock and one-shot runner exist."
+}

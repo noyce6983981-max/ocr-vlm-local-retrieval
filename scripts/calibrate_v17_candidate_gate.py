@@ -19,6 +19,12 @@ if str(PACKAGE_ROOT) not in sys.path:
     sys.path.insert(0, str(PACKAGE_ROOT))
 
 from ocr_vlm_retrieval.evaluation.human_evaluation import grouped_paired_bootstrap
+from ocr_vlm_retrieval.evaluation.judgments import (
+    NO_RELEVANT_CANDIDATE_IN_POOL,
+    POOLED_RELEVANCE_TASK,
+    RELEVANT_CANDIDATE_IN_POOL,
+    normalize_pool_judgment,
+)
 
 AGGREGATORS = ("full_query", "attribute_mean", "attribute_geometric", "weakest")
 METHOD_PRIORITY = {
@@ -113,48 +119,63 @@ def threshold_metrics(
     rows: list[Mapping[str, Any]], *, field: str, threshold: float
 ) -> dict[str, Any]:
     accepted = [float(row[field]) >= threshold for row in rows]
-    answerable = [row for row in rows if row["answerability"] == "answerable"]
-    no_answer = [row for row in rows if row["answerability"] == "no_answer"]
+    relevant_in_pool = [
+        row
+        for row in rows
+        if row["pool_relevance"] == RELEVANT_CANDIDATE_IN_POOL
+    ]
+    no_relevant_in_pool = [
+        row
+        for row in rows
+        if row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+    ]
     relevant_count = sum(bool(row["top1_relevant"]) for row in rows)
     accepted_relevant = sum(
         decision and bool(row["top1_relevant"])
         for decision, row in zip(accepted, rows, strict=True)
     )
     false_accepts = sum(
-        decision and row["answerability"] == "no_answer"
+        decision and row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
         for decision, row in zip(accepted, rows, strict=True)
     )
     correct = sum(
         (
-            row["answerability"] == "answerable"
+            row["pool_relevance"] == RELEVANT_CANDIDATE_IN_POOL
             and decision
             and bool(row["top1_relevant"])
         )
-        or (row["answerability"] == "no_answer" and not decision)
+        or (
+            row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+            and not decision
+        )
         for decision, row in zip(accepted, rows, strict=True)
     )
     return {
         "threshold": round(threshold, 2),
         "accepted_query_count": sum(accepted),
         "coverage": sum(accepted) / len(rows),
-        "answerable_accepted_count": sum(
+        "relevant_in_pool_accepted_count": sum(
             decision
             for decision, row in zip(accepted, rows, strict=True)
-            if row["answerability"] == "answerable"
+            if row["pool_relevance"] == RELEVANT_CANDIDATE_IN_POOL
         ),
-        "answerable_acceptance_rate": sum(
+        "relevant_in_pool_acceptance_rate": sum(
             decision
             for decision, row in zip(accepted, rows, strict=True)
-            if row["answerability"] == "answerable"
+            if row["pool_relevance"] == RELEVANT_CANDIDATE_IN_POOL
         )
-        / len(answerable),
+        / len(relevant_in_pool),
         "top1_relevant_accepted_count": accepted_relevant,
         "top1_relevant_acceptance_rate": accepted_relevant / relevant_count,
-        "false_accept_count": false_accepts,
-        "false_accept_rate": false_accepts / len(no_answer),
-        "no_answer_rejection_rate": 1.0 - false_accepts / len(no_answer),
+        "pool_conditioned_false_accept_count": false_accepts,
+        "pool_conditioned_false_accept_rate": (
+            false_accepts / len(no_relevant_in_pool)
+        ),
+        "no_relevant_in_pool_rejection_rate": (
+            1.0 - false_accepts / len(no_relevant_in_pool)
+        ),
         "end_to_end_correct_count": correct,
-        "end_to_end_accuracy": correct / len(rows),
+        "pool_conditioned_end_to_end_accuracy": correct / len(rows),
         "degenerate_reject_all": not any(accepted),
     }
 
@@ -173,7 +194,10 @@ def calibrate(
         raise ValueError("Candidate verification must be complete")
     if verification.get("judgments_read") is not False:
         raise ValueError("Verification artifact must certify judgments_read=false")
-    judgment_by_id = keyed_rows(judgments, label="judgment")
+    judgment_by_id = {
+        query_id: normalize_pool_judgment(row)
+        for query_id, row in keyed_rows(judgments, label="judgment").items()
+    }
     baseline_by_id = keyed_rows(baseline_rows, label="baseline")
     verification_by_id = keyed_rows(
         verification.get("results", []), label="verification"
@@ -183,7 +207,7 @@ def calibrate(
     evaluated_judgment_ids = {
         query_id
         for query_id, row in judgment_by_id.items()
-        if row.get("answerability") != "excluded"
+        if row.get("pool_relevance") != "excluded"
     }
     if not evaluated_judgment_ids.issubset(baseline_by_id):
         raise ValueError("Baseline decisions do not cover every query")
@@ -192,12 +216,15 @@ def calibrate(
     excluded: list[str] = []
     for query_id in sorted(judgment_by_id):
         judgment = judgment_by_id[query_id]
-        answerability = str(judgment.get("answerability", ""))
-        if answerability == "excluded":
+        pool_relevance = str(judgment["pool_relevance"])
+        if pool_relevance == "excluded":
             excluded.append(query_id)
             continue
-        if answerability not in {"answerable", "no_answer"}:
-            raise ValueError(f"Unsupported answerability for {query_id}")
+        if pool_relevance not in {
+            RELEVANT_CANDIDATE_IN_POOL,
+            NO_RELEVANT_CANDIDATE_IN_POOL,
+        }:
+            raise ValueError(f"Unsupported pool relevance for {query_id}")
         candidates = verification_by_id[query_id].get("candidates", [])
         if len(candidates) != 1:
             raise ValueError("Gate calibration requires Top-1 verification scores")
@@ -212,11 +239,17 @@ def calibrate(
         row = {
             "query_id": query_id,
             "group_id": verification_by_id[query_id].get("group_id"),
-            "answerability": answerability,
+            "task_id": POOLED_RELEVANCE_TASK,
+            "pool_relevance": pool_relevance,
             "top1_item_id": item_id,
             "top1_relevant": bool(relevance.get(item_id, False)),
             "v16_accepted": bool(baseline_by_id[query_id]["v16_accepted"]),
-            "baseline_v16_correct": float(baseline_by_id[query_id]["v16_correct"]),
+            "baseline_v16_pool_conditioned_correct": float(
+                baseline_by_id[query_id].get(
+                    "v16_pool_conditioned_correct",
+                    baseline_by_id[query_id].get("v16_correct", 0.0),
+                )
+            ),
             "full_query": float(candidate["full_query_score"]),
             "attribute_mean": mean(requirement_scores),
             "attribute_geometric": geometric_mean(requirement_scores),
@@ -226,19 +259,27 @@ def calibrate(
             raise ValueError(f"Verification {query_id} has no group_id")
         rows.append(row)
 
-    no_answer_rows = [row for row in rows if row["answerability"] == "no_answer"]
-    baseline_far = mean(float(row["v16_accepted"]) for row in no_answer_rows)
+    no_relevant_in_pool_rows = [
+        row
+        for row in rows
+        if row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+    ]
+    baseline_far = mean(
+        float(row["v16_accepted"]) for row in no_relevant_in_pool_rows
+    )
     method_reports: dict[str, Any] = {}
     eligible_selections: list[tuple[tuple[float, ...], str, dict[str, Any]]] = []
     for method in AGGREGATORS:
         curve: list[dict[str, Any]] = []
         for index in range(101):
             metrics = threshold_metrics(rows, field=method, threshold=index / 100)
-            far = float(metrics["false_accept_rate"])
+            far = float(metrics["pool_conditioned_false_accept_rate"])
             relative_reduction = (
                 (baseline_far - far) / baseline_far if baseline_far else None
             )
-            metrics["false_accept_relative_reduction_vs_v16"] = relative_reduction
+            metrics[
+                "pool_conditioned_false_accept_relative_reduction_vs_v16"
+            ] = relative_reduction
             metrics["eligible"] = bool(
                 relative_reduction is not None
                 and relative_reduction >= min_far_relative_reduction
@@ -253,16 +294,16 @@ def calibrate(
             selected = min(
                 eligible,
                 key=lambda point: (
-                    -float(point["end_to_end_accuracy"]),
+                    -float(point["pool_conditioned_end_to_end_accuracy"]),
                     -float(point["top1_relevant_acceptance_rate"]),
-                    float(point["false_accept_rate"]),
+                    float(point["pool_conditioned_false_accept_rate"]),
                     float(point["threshold"]),
                 ),
             )
             cross_method_key = (
-                -float(selected["end_to_end_accuracy"]),
+                -float(selected["pool_conditioned_end_to_end_accuracy"]),
                 -float(selected["top1_relevant_acceptance_rate"]),
-                float(selected["false_accept_rate"]),
+                float(selected["pool_conditioned_false_accept_rate"]),
                 float(METHOD_PRIORITY[method]),
             )
             eligible_selections.append((cross_method_key, method, selected))
@@ -288,38 +329,47 @@ def calibrate(
                 "selected_score": row[selected_method],
                 "selected_threshold": selected_threshold,
                 "v17_accepted": accepted,
-                "v16_false_accept": float(
-                    row["answerability"] == "no_answer" and row["v16_accepted"]
+                "v16_pool_conditioned_false_accept": float(
+                    row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+                    and row["v16_accepted"]
                 ),
-                "v17_false_accept": float(
-                    row["answerability"] == "no_answer" and accepted
+                "v17_pool_conditioned_false_accept": float(
+                    row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+                    and accepted
                 ),
-                "v16_correct": row["baseline_v16_correct"],
-                "v17_correct": float(
+                "v16_pool_conditioned_correct": row[
+                    "baseline_v16_pool_conditioned_correct"
+                ],
+                "v17_pool_conditioned_correct": float(
                     (
-                        row["answerability"] == "answerable"
+                        row["pool_relevance"] == RELEVANT_CANDIDATE_IN_POOL
                         and accepted
                         and row["top1_relevant"]
                     )
-                    or (row["answerability"] == "no_answer" and not accepted)
+                    or (
+                        row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+                        and not accepted
+                    )
                 ),
             }
         )
-    selected_no_answer = [
-        row for row in decisions if row["answerability"] == "no_answer"
+    selected_no_relevant = [
+        row
+        for row in decisions
+        if row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
     ]
     bootstrap = {
-        "false_accept_v17_minus_v16": grouped_paired_bootstrap(
-            selected_no_answer,
-            baseline_field="v16_false_accept",
-            contender_field="v17_false_accept",
+        "pool_conditioned_false_accept_v17_minus_v16": grouped_paired_bootstrap(
+            selected_no_relevant,
+            baseline_field="v16_pool_conditioned_false_accept",
+            contender_field="v17_pool_conditioned_false_accept",
             repetitions=bootstrap_repetitions,
             seed=seed,
         ),
         "end_to_end_correct_v17_minus_v16": grouped_paired_bootstrap(
             decisions,
-            baseline_field="v16_correct",
-            contender_field="v17_correct",
+            baseline_field="v16_pool_conditioned_correct",
+            contender_field="v17_pool_conditioned_correct",
             repetitions=bootstrap_repetitions,
             seed=seed,
         ),
@@ -333,18 +383,22 @@ def calibrate(
         "parser_policy_sha256": verification.get("policy_sha256"),
         "verification_ranking_sha256": verification.get("ranking_sha256"),
         "selection_constraints": {
-            "minimum_false_accept_relative_reduction": min_far_relative_reduction,
+            "minimum_pool_conditioned_false_accept_relative_reduction": (
+                min_far_relative_reduction
+            ),
             "minimum_top1_relevant_acceptance": min_relevant_acceptance,
             "reject_all_forbidden": True,
         },
         "selection_rule": (
             "Among 0.01-spaced thresholds satisfying the constraints, maximize "
             "end-to-end accuracy, then relevant-candidate acceptance, then minimize "
-            "false acceptance; prefer geometric evidence when methods tie."
+            "pool-conditioned false acceptance; prefer geometric evidence when "
+            "methods tie."
         ),
     }
     report = {
         "status": "calibration_complete_holdout_not_run",
+        "task_id": POOLED_RELEVANCE_TASK,
         "label_provenance": {
             "type": "model_assisted_visual_audit",
             "human_gold": False,
@@ -353,8 +407,9 @@ def calibrate(
             "evaluated_query_count": len(rows),
             "excluded_query_ids": excluded,
             "holdout_read": False,
+            "corpus_answerability_evaluated": False,
         },
-        "baseline_v16_false_accept_rate": baseline_far,
+        "baseline_v16_pool_conditioned_false_accept_rate": baseline_far,
         "aggregator_comparison": method_reports,
         "selected_gate": selected_gate,
         "selected_operating_point": selected_metrics,

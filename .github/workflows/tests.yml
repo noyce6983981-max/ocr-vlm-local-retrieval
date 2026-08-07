@@ -26,22 +26,32 @@ jobs:
         run: >-
           python -m ruff check
           src/ocr_vlm_retrieval
+          scripts/adjudicate_v17_calibration.py
+          scripts/build_v17_answerability_pool.py
           scripts/build_v17_human_pool.py
+          scripts/calibrate_v17_candidate_gate.py
+          scripts/evaluate_v17_calibration_rankings.py
           scripts/evaluate_v17_human_study.py
           scripts/freeze_v17_query_set.py
           scripts/minimal_repro.py
           scripts/prepare_v17_query_proposals.py
           scripts/score_visual_attribute_queries.py
           scripts/v17_query_review_app.py
+          scripts/v17_relevance_review_app.py
+          tests/test_adjudicate_v17_calibration.py
           tests/test_attribute_coverage.py
+          tests/test_calibrate_v17_candidate_gate.py
           tests/test_cpu_import_boundaries.py
           tests/test_runtime_boundaries.py
           tests/test_minimal_repro.py
+          tests/test_evaluate_v17_calibration_rankings.py
           tests/test_v17_human_evaluation.py
           tests/test_v17_human_evaluation_e2e.py
+          tests/test_v17_answerability_pooling.py
           tests/test_v17_query_collection.py
           tests/test_v17_protocol_governance.py
           tests/test_v17_query_review_app.py
+          tests/test_v17_relevance_review_app.py
       - name: Type check core package
         run: python -m mypy src/ocr_vlm_retrieval
       - name: Run tests with core coverage gate

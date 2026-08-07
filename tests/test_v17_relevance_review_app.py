@@ -6,6 +6,7 @@ from scripts.v17_relevance_review_app import (
     install_translation_guard,
     moved_query_position,
     packet_index,
+    packet_pool_sha256,
     updated_relevance_draft,
 )
 
@@ -63,3 +64,14 @@ def test_query_position_navigation_is_bounded() -> None:
     assert moved_query_position(40, 1, 40) == 40
     with pytest.raises(ValueError, match="total must be positive"):
         moved_query_position(1, 1, 0)
+
+
+def test_legacy_packet_gets_stable_pool_hash() -> None:
+    packet = {
+        "query_id": "q1",
+        "study_fingerprint": "study",
+        "candidates": [{"item_id": "b"}, {"item_id": "a"}],
+    }
+    assert packet_pool_sha256(packet) == packet_pool_sha256(packet)
+    explicit = {**packet, "pool_sha256": "frozen"}
+    assert packet_pool_sha256(explicit) == "frozen"

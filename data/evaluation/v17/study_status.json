@@ -3,7 +3,7 @@
   "study_name": "V17-Compositional-80 Pilot",
   "version": "V17",
   "updated_date": "2026-08-07",
-  "stage": "calibration_method_candidate_selected_holdout_sealed",
+  "stage": "evaluation_tasks_separated_answerability_review_pending_holdout_sealed",
   "protocol_chain": [
     {
       "path": "data/evaluation/v17/protocol_frozen_v1.json",
@@ -19,6 +19,11 @@
       "path": "data/evaluation/v17/amendments/002_b3_failed_b5_selected.json",
       "sha256": "b32d3266e2eaffcfa72683321e3a07755b59a5b6c06580d5a7787de6646cee5c",
       "role": "calibration_method_selection_amendment"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/003_separate_pooled_relevance_from_corpus_answerability.json",
+      "sha256": "10b99cd7465607cb841e0c608688f7d2ea5c986971f01e4942d0b010cae67e9b",
+      "role": "evaluation_semantics_amendment"
     }
   ],
   "effective_scope": {
@@ -33,7 +38,20 @@
     "approved_query_count": 80,
     "retrieval_executed_during_collection": false
   },
+  "evaluation_tasks": {
+    "pooled_relevance": {
+      "status": "calibration_review_complete_with_legacy_rows_mapped_in_memory",
+      "canonical_negative_label": "no_relevant_candidate_in_pool",
+      "corpus_claim_supported": false
+    },
+    "corpus_answerability": {
+      "status": "high_recall_pooling_implemented_review_not_executed",
+      "canonical_negative_label": "corpus_no_answer_after_high_recall_pooling",
+      "independent_human_review_complete": false
+    }
+  },
   "calibration": {
+    "task_id": "pooled_relevance",
     "retrieval_executed": true,
     "query_count": 40,
     "effective_query_count": 39,
@@ -65,10 +83,10 @@
     "descriptive_pool_conditioned_metrics": {
       "v16_quality_hybrid_recall_at_3": 0.34782608695652173,
       "v17_quality_hybrid_recall_at_3": 0.6956521739130435,
-      "v16_false_accept_rate": 0.625,
-      "v17_false_accept_rate": 0.3125,
-      "v16_end_to_end_top1": 0.23076923076923078,
-      "v17_end_to_end_top1": 0.5128205128205128
+      "v16_pool_conditioned_false_accept_rate": 0.625,
+      "v17_pool_conditioned_false_accept_rate": 0.3125,
+      "v16_pool_conditioned_end_to_end_top1": 0.23076923076923078,
+      "v17_pool_conditioned_end_to_end_top1": 0.5128205128205128
     }
   },
   "holdout": {
@@ -81,7 +99,7 @@
     "one_shot_receipt_exists": false
   },
   "required_before_holdout": [
-    "Separate pooled ranking relevance from corpus answerability.",
+    "Execute and independently review the calibration high-recall corpus-answerability pool.",
     "Complete calibration-only Top-K and contrastive-relation comparisons.",
     "Collect independent blinded human holdout labels under the final protocol.",
     "Lock code, prompts, model revision, weights, inference settings, data hashes, aggregation, and threshold.",

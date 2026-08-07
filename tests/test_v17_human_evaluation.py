@@ -17,6 +17,12 @@ from ocr_vlm_retrieval.evaluation.human_evaluation import (
     pool_ranked_runs,
     validate_annotation_coverage,
 )
+from ocr_vlm_retrieval.evaluation.judgments import (
+    NO_RELEVANT_CANDIDATE_IN_POOL,
+    POOLED_RELEVANCE_TASK,
+    RELEVANT_CANDIDATE_IN_POOL,
+    normalize_pool_judgment,
+)
 from scripts.build_v17_human_pool import build_pools
 
 
@@ -60,6 +66,8 @@ def test_blind_pool_removes_scores_methods_and_ranks() -> None:
     assert "v17" not in serialized
     assert "score" not in serialized
     assert "rank" not in serialized
+    assert "Shared" not in serialized
+    assert "source_relpath" not in serialized
 
 
 def _judgment(
@@ -72,7 +80,12 @@ def _judgment(
     return {
         "query_id": query_id,
         "reviewer_id": reviewer_id,
-        "answerability": "answerable" if answerable else "no_answer",
+        "task_id": POOLED_RELEVANCE_TASK,
+        "pool_relevance": (
+            RELEVANT_CANDIDATE_IN_POOL
+            if answerable
+            else NO_RELEVANT_CANDIDATE_IN_POOL
+        ),
         "candidate_relevance": relevance or {"a": False, "b": False},
     }
 
@@ -111,7 +124,7 @@ def test_agreement_reports_raw_kappa_and_conflict_rate() -> None:
     ]
     report = agreement_report(judgments)
     assert report["double_reviewed_query_count"] == 2
-    assert report["answerability_raw_agreement"] == 0.5
+    assert report["pool_relevance_raw_agreement"] == 0.5
     assert report["candidate_raw_agreement"] == 0.5
     assert report["conflict_query_ids"] == ["q2"]
     assert report["adjudication_rate"] == 0.5
@@ -224,3 +237,26 @@ def test_duplicate_reviewer_judgment_is_rejected() -> None:
     ]
     with pytest.raises(ValueError, match="Duplicate judgment"):
         agreement_report(duplicate)
+
+
+def test_legacy_answerability_is_only_mapped_to_pool_relevance() -> None:
+    normalized = normalize_pool_judgment(
+        {
+            "answerability": "no_answer",
+            "candidate_relevance": {"a": False},
+        }
+    )
+    assert normalized["task_id"] == POOLED_RELEVANCE_TASK
+    assert normalized["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+
+
+def test_annotation_coverage_checks_every_candidate_for_each_reviewer() -> None:
+    queries = [{"query_id": "q1", "split": "calibration"}]
+    coverage = validate_annotation_coverage(
+        queries,
+        [_judgment("q1", "r1", answerable=False, relevance={"a": False})],
+        candidate_ids_by_query={"q1": ["a", "b"]},
+        calibration_double_fraction=0.0,
+    )
+    assert not coverage["valid"]
+    assert "missing=['b']" in coverage["failures"][0]

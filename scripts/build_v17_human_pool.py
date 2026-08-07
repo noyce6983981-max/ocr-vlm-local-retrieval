@@ -27,6 +27,7 @@ from ocr_vlm_retrieval.evaluation.human_evaluation import (
     blind_candidate_pool,
     pool_ranked_runs,
 )
+from ocr_vlm_retrieval.evaluation.judgments import POOLED_RELEVANCE_TASK
 
 
 def read_rows(path: Path) -> list[dict[str, Any]]:
@@ -94,6 +95,27 @@ def study_fingerprint(
             sort_keys=True,
             separators=(",", ":"),
         ).encode()
+    ).hexdigest()
+
+
+def candidate_pool_sha256(
+    query_id: str,
+    study_fingerprint_value: str,
+    item_ids: list[str],
+) -> str:
+    material = {
+        "task_id": POOLED_RELEVANCE_TASK,
+        "query_id": query_id,
+        "study_fingerprint": study_fingerprint_value,
+        "item_ids": sorted(item_ids),
+    }
+    return hashlib.sha256(
+        json.dumps(
+            material,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
     ).hexdigest()
 
 
@@ -192,13 +214,20 @@ def build_pools(
                 row for row in pooled if str(row["item_id"]) not in guaranteed_ids
             ]
             pooled = (guaranteed + fillers)[:pool_size]
+        pool_sha256 = candidate_pool_sha256(
+            query_id,
+            fingerprint,
+            [str(row["item_id"]) for row in pooled],
+        )
         shared = {
+            "task_id": POOLED_RELEVANCE_TASK,
             "query_id": query_id,
             "query": str(query["query"]),
             "split": str(query["split"]),
             "group_id": str(query["group_id"]),
             "query_family": str(query.get("query_family", "")),
             "route": str(query.get("route", "")),
+            "pool_sha256": pool_sha256,
         }
         audit_rows.append(
             {

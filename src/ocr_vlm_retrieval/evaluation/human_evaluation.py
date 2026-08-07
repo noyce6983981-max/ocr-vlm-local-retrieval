@@ -14,7 +14,8 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
-VALID_ANSWERABILITY = {"answerable", "no_answer", "excluded", "uncertain"}
+from ocr_vlm_retrieval.evaluation.judgments import normalize_pool_judgment
+
 REVIEW_METADATA_FIELDS = (
     "title",
     "source_name",
@@ -24,6 +25,7 @@ REVIEW_METADATA_FIELDS = (
     "image_path",
     "ocr_text_preview",
 )
+REVIEW_ASSET_FIELDS = ("thumbnail_path", "image_path")
 
 
 def _item_id(row: Mapping[str, Any]) -> str:
@@ -123,14 +125,19 @@ def blind_candidate_pool(
             f"{study_fingerprint}\0{query_id}\0{item_id}".encode()
         ).hexdigest(),
     )
-    metadata_by_id = {
-        _item_id(row): dict(row.get("review_metadata", {})) for row in pooled_rows
+    asset_by_id = {
+        _item_id(row): {
+            field: row.get("review_metadata", {}).get(field)
+            for field in REVIEW_ASSET_FIELDS
+            if row.get("review_metadata", {}).get(field) is not None
+        }
+        for row in pooled_rows
     }
     return [
         {
             "candidate_id": f"C{index:03d}",
             "item_id": item_id,
-            "review_metadata": metadata_by_id[item_id],
+            "review_asset": asset_by_id[item_id],
         }
         for index, item_id in enumerate(ordered, start=1)
     ]
@@ -143,28 +150,16 @@ def _normalize_judgments(
     for source in judgments:
         query_id = str(source.get("query_id", "")).strip()
         reviewer_id = str(source.get("reviewer_id", "")).strip()
-        answerability = str(source.get("answerability", "")).strip()
         if not query_id or not reviewer_id:
             raise ValueError("Every judgment needs query_id and reviewer_id")
-        if answerability not in VALID_ANSWERABILITY:
-            raise ValueError(f"Invalid answerability value: {answerability!r}")
         if reviewer_id in by_query[query_id]:
             raise ValueError(
                 f"Duplicate judgment for query={query_id}, reviewer={reviewer_id}"
             )
-        relevance_source = source.get("candidate_relevance", {})
-        if not isinstance(relevance_source, Mapping):
-            raise ValueError("candidate_relevance must be an object")
-        relevance = {
-            str(item_id).strip(): bool(value)
-            for item_id, value in relevance_source.items()
-            if str(item_id).strip()
-        }
-        if answerability == "no_answer" and any(relevance.values()):
-            raise ValueError("A no-answer judgment cannot mark a candidate relevant")
+        normalized = normalize_pool_judgment(source)
         by_query[query_id][reviewer_id] = {
-            "answerability": answerability,
-            "candidate_relevance": relevance,
+            "pool_relevance": normalized["pool_relevance"],
+            "candidate_relevance": normalized["candidate_relevance"],
         }
     return by_query
 
@@ -174,6 +169,7 @@ def validate_annotation_coverage(
     judgments: Iterable[Mapping[str, Any]],
     *,
     calibration_double_fraction: float = 0.30,
+    candidate_ids_by_query: Mapping[str, Sequence[str]] | None = None,
 ) -> dict[str, Any]:
     """Enforce full holdout double review and calibration overlap."""
 
@@ -208,6 +204,19 @@ def validate_annotation_coverage(
             calibration_double += int(reviewer_count >= 2)
             if reviewer_count < 1:
                 failures.append(f"{query_id}: calibration needs one reviewer")
+        if candidate_ids_by_query is not None:
+            expected = set(candidate_ids_by_query.get(query_id, ()))
+            if not expected:
+                failures.append(f"{query_id}: candidate pool is missing")
+            for reviewer_id, judgment in normalized.get(query_id, {}).items():
+                actual = set(judgment["candidate_relevance"])
+                if actual != expected:
+                    missing = sorted(expected - actual)
+                    extra = sorted(actual - expected)
+                    failures.append(
+                        f"{query_id}/{reviewer_id}: incomplete candidate coverage; "
+                        f"missing={missing}, extra={extra}"
+                    )
     required_double = math.ceil(calibration_total * calibration_double_fraction)
     if calibration_double < required_double:
         failures.append(
@@ -243,42 +252,66 @@ def _cohen_kappa_binary(pairs: Sequence[tuple[bool, bool]]) -> float | None:
     return (observed - expected) / (1.0 - expected)
 
 
+def _cohen_kappa_multiclass(
+    pairs: Sequence[tuple[str, str]],
+) -> float | None:
+    if not pairs:
+        return None
+    observed = sum(left == right for left, right in pairs) / len(pairs)
+    categories = {value for pair in pairs for value in pair}
+    expected = sum(
+        (sum(left == category for left, _ in pairs) / len(pairs))
+        * (sum(right == category for _, right in pairs) / len(pairs))
+        for category in categories
+    )
+    if math.isclose(expected, 1.0):
+        return 1.0 if math.isclose(observed, 1.0) else 0.0
+    return (observed - expected) / (1.0 - expected)
+
+
 def agreement_report(
     judgments: Iterable[Mapping[str, Any]],
 ) -> dict[str, Any]:
     """Report agreement over queries with exactly two independent reviewers."""
 
     normalized = _normalize_judgments(judgments)
-    answerability_pairs: list[tuple[bool, bool]] = []
+    pool_relevance_pairs: list[tuple[str, str]] = []
     relevance_pairs: list[tuple[bool, bool]] = []
     conflict_queries: list[str] = []
+    conflict_types: Counter[str] = Counter()
     double_reviewed = 0
     for query_id, by_reviewer in sorted(normalized.items()):
         if len(by_reviewer) != 2:
             continue
         double_reviewed += 1
         first, second = [by_reviewer[key] for key in sorted(by_reviewer)]
-        answerability_pair = (
-            first["answerability"] == "answerable",
-            second["answerability"] == "answerable",
+        pool_relevance_pair = (
+            str(first["pool_relevance"]),
+            str(second["pool_relevance"]),
         )
-        answerability_pairs.append(answerability_pair)
-        common_items = sorted(
-            set(first["candidate_relevance"])
-            & set(second["candidate_relevance"])
-        )
-        query_conflict = answerability_pair[0] != answerability_pair[1]
-        for item_id in common_items:
+        pool_relevance_pairs.append(pool_relevance_pair)
+        first_items = set(first["candidate_relevance"])
+        second_items = set(second["candidate_relevance"])
+        if first_items != second_items:
+            raise ValueError(
+                f"Candidate coverage differs between reviewers for {query_id}"
+            )
+        query_conflict = pool_relevance_pair[0] != pool_relevance_pair[1]
+        if query_conflict:
+            conflict_types["pool_relevance"] += 1
+        for item_id in sorted(first_items):
             pair = (
                 first["candidate_relevance"][item_id],
                 second["candidate_relevance"][item_id],
             )
             relevance_pairs.append(pair)
-            query_conflict = query_conflict or pair[0] != pair[1]
+            if pair[0] != pair[1]:
+                query_conflict = True
+                conflict_types["candidate_relevance"] += 1
         if query_conflict:
             conflict_queries.append(query_id)
 
-    def raw_agreement(pairs: Sequence[tuple[bool, bool]]) -> float | None:
+    def raw_agreement(pairs: Sequence[tuple[object, object]]) -> float | None:
         if not pairs:
             return None
         return sum(left == right for left, right in pairs) / len(pairs)
@@ -288,13 +321,16 @@ def agreement_report(
     )
     return {
         "double_reviewed_query_count": double_reviewed,
-        "answerability_pair_count": len(answerability_pairs),
-        "answerability_raw_agreement": raw_agreement(answerability_pairs),
-        "answerability_cohen_kappa": _cohen_kappa_binary(answerability_pairs),
+        "pool_relevance_pair_count": len(pool_relevance_pairs),
+        "pool_relevance_raw_agreement": raw_agreement(pool_relevance_pairs),
+        "pool_relevance_cohen_kappa": _cohen_kappa_multiclass(
+            pool_relevance_pairs
+        ),
         "candidate_pair_count": len(relevance_pairs),
         "candidate_raw_agreement": raw_agreement(relevance_pairs),
         "candidate_cohen_kappa": _cohen_kappa_binary(relevance_pairs),
         "conflict_query_ids": conflict_queries,
+        "conflict_type_counts": dict(sorted(conflict_types.items())),
         "adjudication_rate": adjudication_rate,
     }
 

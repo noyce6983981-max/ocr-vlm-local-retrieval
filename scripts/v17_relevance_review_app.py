@@ -6,13 +6,25 @@ import hashlib
 import json
 import math
 import os
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PACKAGE_ROOT = PROJECT_ROOT / "src"
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
 import streamlit as st
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+from ocr_vlm_retrieval.evaluation.judgments import (
+    NO_RELEVANT_CANDIDATE_IN_POOL,
+    POOLED_RELEVANCE_TASK,
+    RELEVANT_CANDIDATE_IN_POOL,
+    normalize_pool_judgment,
+)
+
 PACKETS_PATH = (
     PROJECT_ROOT / "data/evaluation/v17/human_study/calibration/review_packets.jsonl"
 )
@@ -113,7 +125,9 @@ def packet_index(
 
 
 def candidate_image_path(candidate: dict[str, Any]) -> Path | None:
-    raw_path = str(candidate.get("review_metadata", {}).get("image_path", ""))
+    raw_path = str(candidate.get("review_asset", {}).get("image_path", ""))
+    if not raw_path:
+        raw_path = str(candidate.get("review_metadata", {}).get("image_path", ""))
     if not raw_path:
         return None
     path = Path(raw_path)
@@ -157,18 +171,40 @@ def moved_query_position(position: int, delta: int, total: int) -> int:
     return min(max(position + delta, 1), total)
 
 
+def packet_pool_sha256(packet: dict[str, Any]) -> str:
+    existing = str(packet.get("pool_sha256", "")).strip()
+    if existing:
+        return existing
+    material = {
+        "task_id": POOLED_RELEVANCE_TASK,
+        "query_id": str(packet["query_id"]),
+        "study_fingerprint": str(packet["study_fingerprint"]),
+        "item_ids": sorted(
+            str(candidate["item_id"]) for candidate in packet["candidates"]
+        ),
+    }
+    return hashlib.sha256(
+        json.dumps(
+            material,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+
+
 def move_query_position(cursor_key: str, delta: int, total: int) -> None:
     current = int(st.session_state.get(cursor_key, 1))
     st.session_state[cursor_key] = moved_query_position(current, delta, total)
 
 
 def main() -> None:
-    st.set_page_config(page_title="V17 相关性盲审", layout="wide")
+    st.set_page_config(page_title="V17 池内相关性盲审", layout="wide")
     install_translation_guard()
-    st.title("V17 校准集相关性盲审")
+    st.title("V17 校准集池内相关性盲审")
     st.caption(
         "判断候选页是否同时满足查询的全部必要条件。页面不会显示检索方法、"
-        "分数、原始排名、系统接受决定或预期答案。"
+        "分数、原始排名、文件名、数据集、来源路径、系统接受决定或预期答案。"
     )
     st.warning(
         "为避免浏览器自动翻译破坏页面状态或改变冻结查询语义，本页已禁用自动"
@@ -182,6 +218,12 @@ def main() -> None:
     fingerprints = {str(row.get("study_fingerprint", "")) for row in packets}
     if len(fingerprints) != 1 or not next(iter(fingerprints)):
         st.error("审核数据包的 study_fingerprint 不一致。")
+        return
+    task_ids = {
+        str(row.get("task_id", POOLED_RELEVANCE_TASK)) for row in packets
+    }
+    if task_ids != {POOLED_RELEVANCE_TASK}:
+        st.error("当前页面只接受 pooled_relevance 审核数据包。")
         return
     active_fingerprint = next(iter(fingerprints))
     judgments = [
@@ -307,7 +349,6 @@ def main() -> None:
     for offset, candidate in enumerate(page_candidates):
         item_id = str(candidate["item_id"])
         candidate_id = str(candidate["candidate_id"])
-        metadata = dict(candidate.get("review_metadata", {}))
         state_key = f"relevant::{reviewer_id}::{selected_id}::{item_id}"
         if state_key not in st.session_state:
             st.session_state[state_key] = bool(
@@ -325,38 +366,32 @@ def main() -> None:
                 on_change=remember_relevance,
                 args=(draft_key, item_id, state_key),
             )
-            st.caption(
-                " · ".join(
-                    str(value)
-                    for value in (
-                        metadata.get("title"),
-                        metadata.get("source_name"),
-                        metadata.get("source_relpath"),
-                        (
-                            f"第 {metadata['page_number']} 页"
-                            if metadata.get("page_number") is not None
-                            else None
-                        ),
-                    )
-                    if value
-                )
-            )
 
     st.progress(len(st.session_state[seen_key]) / page_count)
     st.caption(
         f"已查看 {len(st.session_state[seen_key])}/{page_count} 个候选分页；"
         "提交前必须逐页查看。"
     )
-    answerability_options = ("uncertain", "answerable", "no_answer", "excluded")
-    current_answerability = str(existing.get("answerability", "uncertain"))
-    answerability = st.radio(
-        "整条查询的答案性",
-        answerability_options,
-        index=answerability_options.index(current_answerability),
+    pool_relevance_options = (
+        "uncertain",
+        RELEVANT_CANDIDATE_IN_POOL,
+        NO_RELEVANT_CANDIDATE_IN_POOL,
+        "excluded",
+    )
+    current_pool_relevance = (
+        str(normalize_pool_judgment(existing)["pool_relevance"])
+        if existing
+        else "uncertain"
+    )
+    pool_relevance = st.radio(
+        "20 候选池内是否存在完整相关候选",
+        pool_relevance_options,
+        index=pool_relevance_options.index(current_pool_relevance),
         horizontal=True,
         help=(
-            "answerable：池中至少一个完整相关候选；no_answer：池中没有完整相关"
-            "候选；uncertain：证据不足；excluded：查询本身无效或无法判定。"
+            "relevant_candidate_in_pool：池中至少一个完整相关候选；"
+            "no_relevant_candidate_in_pool：池中没有完整相关候选。这个任务"
+            "不能判定整个语料库是否无答案。"
         ),
     )
     notes = st.text_area("审核备注（可选）", value=str(existing.get("notes", "")))
@@ -372,21 +407,25 @@ def main() -> None:
         }
         relevant_count = sum(relevance.values())
         if (
-            answerability == "answerable"
+            pool_relevance == RELEVANT_CANDIDATE_IN_POOL
             and relevant_count == 0
-            and not known_relevant_outside
         ):
-            st.error("选择 answerable 时，至少应标记一个完整相关候选。")
+            st.error("选择池内存在相关候选时，至少应标记一个完整相关候选。")
             return
-        if answerability == "no_answer" and relevant_count > 0:
-            st.error("选择 no_answer 时，不能同时标记相关候选。")
+        if (
+            pool_relevance == NO_RELEVANT_CANDIDATE_IN_POOL
+            and relevant_count > 0
+        ):
+            st.error("选择池内无相关候选时，不能同时标记相关候选。")
             return
         save_judgment(
             {
                 "query_id": selected_id,
                 "reviewer_id": reviewer_id,
                 "reviewer_role": "primary" if role.startswith("第一") else "secondary",
-                "answerability": answerability,
+                "task_id": POOLED_RELEVANCE_TASK,
+                "pool_relevance": pool_relevance,
+                "pool_sha256": packet_pool_sha256(packet),
                 "candidate_relevance": relevance,
                 "notes": notes.strip(),
                 "reviewed_at": datetime.now(UTC).isoformat(timespec="seconds"),

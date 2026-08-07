@@ -55,3 +55,20 @@ def test_study_status_hashes_protocol_chain_and_keeps_holdout_sealed() -> None:
     assert status["holdout"]["retrieval_executed"] is False
     assert status["holdout"]["final_method_locked"] is False
     assert status["public_claim_boundary"]["latest_independent_result"] == "V16"
+
+
+def test_pool_relevance_is_not_promoted_to_corpus_answerability() -> None:
+    amendment = read_json(
+        V17_ROOT
+        / "amendments/003_separate_pooled_relevance_from_corpus_answerability.json"
+    )
+    status = read_json(V17_ROOT / "study_status.json")
+    assert amendment["evaluation_tasks"]["pooled_relevance"][
+        "forbidden_claim"
+    ] == "no_answer_in_corpus"
+    assert status["evaluation_tasks"]["pooled_relevance"][
+        "corpus_claim_supported"
+    ] is False
+    assert status["evaluation_tasks"]["corpus_answerability"][
+        "independent_human_review_complete"
+    ] is False

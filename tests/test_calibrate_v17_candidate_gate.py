@@ -48,27 +48,32 @@ def judgments():
     return [
         {
             "query_id": "q1",
-            "answerability": "answerable",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "relevant_candidate_in_pool",
             "candidate_relevance": {"item_q1": True},
         },
         {
             "query_id": "q2",
-            "answerability": "no_answer",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "no_relevant_candidate_in_pool",
             "candidate_relevance": {"item_q2": False},
         },
         {
             "query_id": "q3",
-            "answerability": "no_answer",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "no_relevant_candidate_in_pool",
             "candidate_relevance": {"item_q3": False},
         },
         {
             "query_id": "q4",
-            "answerability": "answerable",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "relevant_candidate_in_pool",
             "candidate_relevance": {"item_q4": True},
         },
         {
             "query_id": "q5",
-            "answerability": "excluded",
+            "task_id": "pooled_relevance",
+            "pool_relevance": "excluded",
             "candidate_relevance": {"item_q5": False},
         },
     ]
@@ -98,10 +103,17 @@ def test_calibrate_selects_non_degenerate_geometric_gate() -> None:
     assert gate["threshold"] == 0.21
     assert report["scope"]["excluded_query_ids"] == ["q5"]
     assert not report["selected_operating_point"]["degenerate_reject_all"]
-    assert report["selected_operating_point"]["false_accept_rate"] == 0.5
+    assert (
+        report["selected_operating_point"][
+            "pool_conditioned_false_accept_rate"
+        ]
+        == 0.5
+    )
     assert len(decisions) == 4
     assert (
-        report["paired_group_bootstrap"]["false_accept_v17_minus_v16"]["repetitions"]
+        report["paired_group_bootstrap"][
+            "pool_conditioned_false_accept_v17_minus_v16"
+        ]["repetitions"]
         == 25
     )
 

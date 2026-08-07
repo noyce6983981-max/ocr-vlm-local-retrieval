@@ -21,6 +21,7 @@ from ocr_vlm_retrieval.evaluation.human_evaluation import (
     grouped_paired_bootstrap,
     validate_annotation_coverage,
 )
+from ocr_vlm_retrieval.evaluation.judgments import POOLED_RELEVANCE_TASK
 from scripts.build_v17_human_pool import read_rows
 
 
@@ -47,6 +48,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--queries", type=Path, required=True)
     parser.add_argument("--judgments", type=Path, required=True)
     parser.add_argument(
+        "--packets",
+        type=Path,
+        help="Optional reviewer packets used to enforce candidate-level coverage.",
+    )
+    parser.add_argument(
         "--paired-records",
         type=Path,
         help=(
@@ -71,8 +77,23 @@ def main() -> None:
     args = parse_args()
     queries = read_rows(project_path(args.queries))
     judgments = read_rows(project_path(args.judgments))
-    coverage = validate_annotation_coverage(queries, judgments)
+    candidate_ids_by_query = None
+    if args.packets:
+        packets = read_rows(project_path(args.packets))
+        candidate_ids_by_query = {
+            str(row["query_id"]): [
+                str(candidate.get("item_id", candidate.get("candidate_id", "")))
+                for candidate in row["candidates"]
+            ]
+            for row in packets
+        }
+    coverage = validate_annotation_coverage(
+        queries,
+        judgments,
+        candidate_ids_by_query=candidate_ids_by_query,
+    )
     report: dict[str, Any] = {
+        "task_id": POOLED_RELEVANCE_TASK,
         "annotation_coverage": coverage,
         "agreement": agreement_report(judgments),
     }
