@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "amendment_id": "001",
+  "study_name": "V17-Compositional-80 Pilot",
+  "status": "accepted_before_holdout",
+  "effective_date": "2026-08-07",
+  "original_protocol": {
+    "path": "data/evaluation/v17/protocol_frozen_v1.json",
+    "sha256": "acb8720ea827e95976b05a081d3dcd5f269308ea8b3d2d16a6c8e2ca208bf674",
+    "immutable": true
+  },
+  "reason": "The preregistered 200-query, five-route study was not collected. The only completed and frozen query set contains 80 compositional visual queries. Recording the executed scope as a pilot avoids presenting an uncollected 200-query design as the active study.",
+  "scope_changes": [
+    {
+      "json_pointer": "/human_evaluation/target_query_count",
+      "original_value": 200,
+      "effective_value": 80
+    },
+    {
+      "json_pointer": "/human_evaluation/calibration_count",
+      "original_value": 100,
+      "effective_value": 40
+    },
+    {
+      "json_pointer": "/human_evaluation/holdout_count",
+      "original_value": 100,
+      "effective_value": 40
+    },
+    {
+      "json_pointer": "/human_evaluation/query_composition",
+      "original_value": {
+        "compositional_visual": 80,
+        "visual_metadata": 30,
+        "text_evidence": 30,
+        "mixed": 30,
+        "topic_discovery": 30
+      },
+      "effective_value": {
+        "compositional_visual": 80
+      }
+    }
+  ],
+  "effective_scope": {
+    "query_count": 80,
+    "calibration_count": 40,
+    "holdout_count": 40,
+    "route": "compositional_visual",
+    "frozen_query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979",
+    "freeze_receipt": "data/evaluation/v17/frozen_query_set/freeze_receipt.json"
+  },
+  "not_part_of_this_pilot": [
+    "visual_metadata",
+    "text_evidence",
+    "mixed",
+    "topic_discovery"
+  ],
+  "holdout_impact": "The 40-query compositional holdout remains sealed and unexecuted. This amendment changes study scope only and does not authorize a holdout run."
+}

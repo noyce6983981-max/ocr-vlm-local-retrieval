@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "amendment_id": "002",
+  "study_name": "V17-Compositional-80 Pilot",
+  "status": "calibration_method_candidate_selected_not_finally_locked",
+  "effective_date": "2026-08-07",
+  "depends_on": [
+    "data/evaluation/v17/protocol_frozen_v1.json",
+    "data/evaluation/v17/amendments/001_scope_changed_to_compositional_80.json"
+  ],
+  "selection_source": {
+    "split": "calibration",
+    "effective_query_count": 39,
+    "excluded_query_ids": [
+      "v17_visual_033"
+    ],
+    "label_provenance": "model-assisted calibration audit; not independent human holdout labels",
+    "pool_boundary": "Twenty candidates per query formed from the union of every run's Top-3 followed by RRF fill.",
+    "query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979"
+  },
+  "failed_candidate": {
+    "method_id": "B3",
+    "name": "weakest-attribute conservative coverage over single-image global vectors",
+    "finding": "The strict coverage operating points rejected all 39 effective calibration queries.",
+    "decision": "Do not promote B3 as the V17 method."
+  },
+  "selected_calibration_candidate": {
+    "method_family": "B5",
+    "name": "candidate-level Qwen3-VL cross-encoder attribute verification",
+    "instantiation": {
+      "verified_rank_depth": 1,
+      "aggregation": "geometric",
+      "threshold": 0.45,
+      "model": "Qwen3-VL-Reranker-2B"
+    },
+    "config": {
+      "path": "config/v17_candidate_verification_gate.json",
+      "sha256": "58ed33f9f0d6a4b2659ff8f7a361d2c467453e06fce13d824e8cc60fb931e124"
+    },
+    "decision": "Retain as the current calibration candidate for further Top-K and contrastive-relation comparisons."
+  },
+  "reported_calibration_boundary": {
+    "ranking_metrics": "Pool-supported Recall@1, Recall@3, and MRR@3 only.",
+    "rejection_metrics": "Pool-conditioned and model-assisted; not a corpus-level open-set result.",
+    "holdout_result": false
+  },
+  "known_limitations": [
+    "Directional relation counterfactuals remain unreliable.",
+    "The false-accept paired confidence interval reaches zero.",
+    "Top-K depth has not been compared under the frozen calibration split.",
+    "Prompts, model revision, weights, inference settings, and code revision are not yet fully locked."
+  ],
+  "holdout_impact": "The selected method is not a final method lock. The holdout remains sealed; any calibration-only method comparison must finish before the one-shot holdout runner is created."
+}

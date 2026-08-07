@@ -51,7 +51,10 @@ DATA_FILES = {
     "data/evaluation/v16/holdout/first_run_receipt.json",
     "data/evaluation/v16/holdout/frozen_queries.csv",
     "data/evaluation/v16/selected_config_lock.json",
-    "data/evaluation/v17/research_protocol.json",
+    "data/evaluation/v17/amendments/001_scope_changed_to_compositional_80.json",
+    "data/evaluation/v17/amendments/002_b3_failed_b5_selected.json",
+    "data/evaluation/v17/protocol_frozen_v1.json",
+    "data/evaluation/v17/study_status.json",
 }
 EXCLUDED_FILES = {
     "records/presentation/INTERVIEW_PACKAGE.md",

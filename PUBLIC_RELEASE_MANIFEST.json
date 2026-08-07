@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source_revision": "7f5f212e07f438651615aa29fb4a8512a9e6080e",
-  "file_count": 289,
+  "file_count": 294,
   "files": [
     {
       "path": ".gitattributes",
@@ -9,7 +9,7 @@
     },
     {
       "path": ".github/workflows/tests.yml",
-      "sha256": "3710801199ed94b100845f8bfaaf91848ff6b1e1612ad4764eff4e177ee957a4"
+      "sha256": "8dd3603b477c3a85fae17d12190dd2a0094e3e8de4950facce51a97b5f329183"
     },
     {
       "path": ".gitignore",
@@ -29,7 +29,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "9f3fa1f0cd791b8d43150b65d5634c44466670a8b3857bd0cbd7669d516524de"
+      "sha256": "2d4f434747f927fc6af1e7f6fb355e9152f822783dcb81eb0b6ba41ab2bda323"
     },
     {
       "path": "SECURITY.md",
@@ -152,8 +152,20 @@
       "sha256": "ce746036e3109947d0b8f2ea2ba84153fb4fec6cdf09d8e3c6f2e3b3cb625c8d"
     },
     {
-      "path": "data/evaluation/v17/research_protocol.json",
+      "path": "data/evaluation/v17/amendments/001_scope_changed_to_compositional_80.json",
+      "sha256": "00d78e328231b3f78b94ffd0525b8f4d3d0a2aeb64e489e4eaee049eeb09c131"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/002_b3_failed_b5_selected.json",
+      "sha256": "b32d3266e2eaffcfa72683321e3a07755b59a5b6c06580d5a7787de6646cee5c"
+    },
+    {
+      "path": "data/evaluation/v17/protocol_frozen_v1.json",
       "sha256": "acb8720ea827e95976b05a081d3dcd5f269308ea8b3d2d16a6c8e2ca208bf674"
+    },
+    {
+      "path": "data/evaluation/v17/study_status.json",
+      "sha256": "bbb46bde9b6e58f1218ad9b4788afad23f53e1e49816fe1fe24883bab9f71860"
     },
     {
       "path": "data/manifest/dataset_v1_manifest.jsonl",
@@ -365,7 +377,7 @@
     },
     {
       "path": "records/experiments/retrieval_v17_research_protocol_2026-08-07.md",
-      "sha256": "d315ce8ec69ea18e15da751ab40ae373da8443eccd123e7e509b775e221c73cb"
+      "sha256": "831271a1a68ffde7129d49e60f9fa6da8898c8e13bb114f0d04dac0dc5f47c96"
     },
     {
       "path": "records/experiments/retrieval_v2_final_report.md",
@@ -705,7 +717,7 @@
     },
     {
       "path": "scripts/evaluate_text_retrieval.py",
-      "sha256": "820f300a42ff5be7c991ee4e61e3698767fc42babc94e79a7ac88a7e88b84d0a"
+      "sha256": "c346461a7b177b7b9b734e9a54d3bd4cb03d189314669994718dbbb31e0302d2"
     },
     {
       "path": "scripts/evaluate_v17_calibration_rankings.py",
@@ -721,7 +733,7 @@
     },
     {
       "path": "scripts/export_public_release.py",
-      "sha256": "39f8ab1fd744802569f872bf472230616c245faa48726f6ef3695b955cfc8634"
+      "sha256": "fc36573985106cb7d6c2104fd73e00a547842e325046eb760e3e8dbbcd480d98"
     },
     {
       "path": "scripts/fetch_qwen3_vl_code.ps1",
@@ -745,7 +757,7 @@
     },
     {
       "path": "scripts/index_user_text.py",
-      "sha256": "027cb58de8d9846920ae2fb3be2f89b38e9c2c83d06dbee2f5dee84a73b77010"
+      "sha256": "6c6ee3ce3df4982d066da2cce8f43f818cebd59191250ed515004fbe43863a6f"
     },
     {
       "path": "scripts/index_user_visual.py",
@@ -881,7 +893,7 @@
     },
     {
       "path": "scripts/score_text_query.py",
-      "sha256": "1def2d7f5347fad0a4d87fe12d9879d63e5ace65811f9dee22da377fa61006a9"
+      "sha256": "62352d6c7b0051a5950bc630799d23150b5fd4665a872d76741fa5fe5dfbfe62"
     },
     {
       "path": "scripts/score_v17_candidate_verification.py",
@@ -925,11 +937,11 @@
     },
     {
       "path": "scripts/train_learned_gate.py",
-      "sha256": "c28177b2b5adead6cb7128040439de043efad573a6fdb319dedd1732a5774eca"
+      "sha256": "a276bbd83ddc16514353d659ef8ee2c6409d47cac2c44ded7cfa2bf25240ed90"
     },
     {
       "path": "scripts/train_preference_gate.py",
-      "sha256": "c4ac60e8ee49d600d1e928f636e484e7a4d08361edc3a20aafb895bdea5aa0d6"
+      "sha256": "9e5d41bc1a82f63b5c9b6896ff1764383411733d0ff1f4ba68a0b260211eceb6"
     },
     {
       "path": "scripts/v17_query_review_app.py",
@@ -1040,6 +1052,10 @@
       "sha256": "7de82b09cb90ffc39eed7b40ecf72600a22db44f2a86ac9ee971dc26dce07da3"
     },
     {
+      "path": "tests/test_cpu_import_boundaries.py",
+      "sha256": "6f3840f4f17172c6c13f011e74ca3325107d655db8c7fff7704a2d9b1d426d94"
+    },
+    {
       "path": "tests/test_data_pipeline.py",
       "sha256": "160b61af6aac06e12315d2b644b81657510657f6fbe7aafac2a97a084d037eb7"
     },
@@ -1146,6 +1162,10 @@
     {
       "path": "tests/test_v17_human_evaluation_e2e.py",
       "sha256": "6594d5694d902b9624ef753eb6573dfb7dcbd1b4169eef4a11023c899b0e95b9"
+    },
+    {
+      "path": "tests/test_v17_protocol_governance.py",
+      "sha256": "fac54f08ce84ef5c264b2559b2bf5d7e42f04164a94b1739ecbf0fbea1fcf27e"
     },
     {
       "path": "tests/test_v17_query_collection.py",

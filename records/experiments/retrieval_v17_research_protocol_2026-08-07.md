@@ -1,5 +1,7 @@
 # V17 研究协议：复合视觉查询的必要属性覆盖
 
+> 状态修正（2026-08-07）：本文保留最初的 200 查询、五路线研究计划，不回写历史。实际冻结和执行的研究范围是 `V17-Compositional-80 Pilot`：80 条复合视觉查询，校准与留出各 40 条。生效范围以追加修正和 `study_status.json` 为准。
+
 日期：2026-08-07  
 状态：在人类查询收集前定义；尚无 V17 泛化成绩
 
@@ -60,4 +62,4 @@
 
 V16 的独立留出结果不参与 V17 门槛、提示词或聚合选择。V17 在新校准集完成后锁定解析器、提示词、阈值、聚合方式、代码提交和配置 SHA-256；随后最终留出集只运行一次。运行后任何方法修改进入 V18，并使用新的留出集。
 
-机器可读协议：`data/evaluation/v17/research_protocol.json`。
+机器可读原始协议：`data/evaluation/v17/protocol_frozen_v1.json`；追加修正：`data/evaluation/v17/amendments/`；当前状态：`data/evaluation/v17/study_status.json`。

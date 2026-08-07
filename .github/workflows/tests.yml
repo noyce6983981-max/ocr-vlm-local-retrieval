@@ -40,6 +40,7 @@ jobs:
           tests/test_v17_human_evaluation.py
           tests/test_v17_human_evaluation_e2e.py
           tests/test_v17_query_collection.py
+          tests/test_v17_protocol_governance.py
           tests/test_v17_query_review_app.py
       - name: Type check core package
         run: python -m mypy src/ocr_vlm_retrieval

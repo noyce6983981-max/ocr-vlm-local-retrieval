@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "study_name": "V17-Compositional-80 Pilot",
+  "version": "V17",
+  "updated_date": "2026-08-07",
+  "stage": "calibration_method_candidate_selected_holdout_sealed",
+  "protocol_chain": [
+    {
+      "path": "data/evaluation/v17/protocol_frozen_v1.json",
+      "sha256": "acb8720ea827e95976b05a081d3dcd5f269308ea8b3d2d16a6c8e2ca208bf674",
+      "role": "immutable_original_protocol"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/001_scope_changed_to_compositional_80.json",
+      "sha256": "00d78e328231b3f78b94ffd0525b8f4d3d0a2aeb64e489e4eaee049eeb09c131",
+      "role": "effective_scope_amendment"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/002_b3_failed_b5_selected.json",
+      "sha256": "b32d3266e2eaffcfa72683321e3a07755b59a5b6c06580d5a7787de6646cee5c",
+      "role": "calibration_method_selection_amendment"
+    }
+  ],
+  "effective_scope": {
+    "query_count": 80,
+    "calibration_count": 40,
+    "holdout_count": 40,
+    "route": "compositional_visual",
+    "frozen_query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979"
+  },
+  "query_collection": {
+    "wording_review_complete": true,
+    "approved_query_count": 80,
+    "retrieval_executed_during_collection": false
+  },
+  "calibration": {
+    "retrieval_executed": true,
+    "query_count": 40,
+    "effective_query_count": 39,
+    "active_pool_candidate_count_per_query": 20,
+    "pool_supports": [
+      "Recall@1",
+      "Recall@3",
+      "MRR@3"
+    ],
+    "pool_does_not_support": [
+      "unbiased Recall@10",
+      "unbiased Recall@20",
+      "unbiased nDCG@10",
+      "corpus-level no-answer claims"
+    ],
+    "label_provenance": {
+      "preserved_human_judgments": 52,
+      "double_reviewed_queries": 12,
+      "method_selection_layer": "separate model-assisted calibration audit",
+      "independent_human_gold": false
+    },
+    "current_candidate": {
+      "method": "candidate_cross_encoder_attribute_geometric",
+      "model": "Qwen3-VL-Reranker-2B",
+      "verified_rank_depth": 1,
+      "threshold": 0.45,
+      "final_method_locked": false
+    },
+    "descriptive_pool_conditioned_metrics": {
+      "v16_quality_hybrid_recall_at_3": 0.34782608695652173,
+      "v17_quality_hybrid_recall_at_3": 0.6956521739130435,
+      "v16_false_accept_rate": 0.625,
+      "v17_false_accept_rate": 0.3125,
+      "v16_end_to_end_top1": 0.23076923076923078,
+      "v17_end_to_end_top1": 0.5128205128205128
+    }
+  },
+  "holdout": {
+    "query_count": 40,
+    "sealed": true,
+    "retrieval_executed": false,
+    "scored": false,
+    "human_relevance_judgments_complete": false,
+    "final_method_locked": false,
+    "one_shot_receipt_exists": false
+  },
+  "required_before_holdout": [
+    "Separate pooled ranking relevance from corpus answerability.",
+    "Complete calibration-only Top-K and contrastive-relation comparisons.",
+    "Collect independent blinded human holdout labels under the final protocol.",
+    "Lock code, prompts, model revision, weights, inference settings, data hashes, aggregation, and threshold.",
+    "Validate a one-shot runner that refuses repeat execution."
+  ],
+  "public_claim_boundary": {
+    "latest_independent_result": "V16",
+    "v17_status": "calibration candidate only",
+    "v17_metrics": "pool-conditioned, model-assisted calibration diagnostics; not final benchmark results"
+  }
+}
