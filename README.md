@@ -24,7 +24,7 @@ V17-Compositional-80 Pilot 针对“一个高相似属性掩盖其他必要条�
 
 方向反事实方案在最佳点把误接收率压到 18.8%，但同时损失相关查询覆盖，因此没有被选择；K=5 也没有稳定优于 K=3。OCR 精确/模糊证据优先级已经实现，但本轮查询没有显式给出待匹配文字，不能估计 OCR 分支增益。独立 parser 诊断使用 Codex 辅助校准参考（不是人工金标准），需求级 F1 为 82.7%，方向关系查询准确率 77.5%，属性绑定准确率 75.0%。
 
-这些数字是基础 20 候选池加 7 个显式 Top-5 校准扩展候选条件下的模型辅助结果，不是语料库级开放集结论、独立人工金标准或最终留出成绩；原 20 候选池及其哈希未被改写。最终留出集保持封存。原始协议、追加修正和当前状态分别见 `data/evaluation/v17/protocol_frozen_v1.json`、`data/evaluation/v17/amendments/` 和 `data/evaluation/v17/study_status.json`；当前 Top-K 校准候选见 `config/v17_candidate_verification_gate_topk_candidate.json`，尚未升级为最终方法锁。
+这些数字是基础 20 候选池加 7 个显式 Top-5 校准扩展候选条件下的模型辅助结果，不是语料库级开放集结论、独立人工金标准或最终留出成绩；原 20 候选池及其哈希未被改写。K=3 方法现已写入 `config/v17_method_lock.json`：代码提交、方法与治理文件、提示词、模型全目录、推理参数、数据和校准产物均受 SHA-256 约束。`scripts/run_v17_holdout_once.py` 默认只做只读预检；缺少两名独立盲审、完整候选覆盖、独立冲突裁决和精确输入哈希授权时拒绝执行，receipt 一旦原子创建便永久拒绝重跑。最终 40 条留出仍未运行且未授权，V16 继续作为最新独立成绩。原始协议、追加修正和当前状态分别见 `data/evaluation/v17/protocol_frozen_v1.json`、`data/evaluation/v17/amendments/` 和 `data/evaluation/v17/study_status.json`。
 
 V17 现在把评测拆成两个独立任务：20 项池只标注 `pooled_relevance` 并报告 R@1、R@3 和 MRR@3；语料库可回答性必须另建 Dense、BM25、全局视觉、V16、V17 的 Top-100 与候选验证器 Top-50 高召回池，再加入同来源、近重复、类别近邻和反事实候选。只有两名独立审核者完成并裁决后，才允许使用 `corpus_no_answer_after_high_recall_pooling`。审核界面默认只显示候选编号和图像。
 

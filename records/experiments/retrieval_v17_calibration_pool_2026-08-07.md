@@ -205,6 +205,31 @@ Governance and reproducibility:
 - `outputs/evaluation/v17/calibration/parser_v3/candidate_gate_topk_calibration_report.json`
 - `outputs/evaluation/v17/calibration/parser_v3/parser_requirement_metrics.json`
 
-These remain pool-conditioned calibration diagnostics. The final method is not
-locked, corpus answerability has not received two-reviewer adjudication, and
-the 40-query holdout remains sealed.
+These remain pool-conditioned calibration diagnostics. Corpus answerability
+has not received two-reviewer adjudication, and the 40-query holdout remains
+sealed.
+
+## Final method lock and one-shot final-evaluation guard
+
+The selected K=3 method is now frozen in `config/v17_method_lock.json`. The
+lock binds the calibration-selected source commit, nine method files, three
+governance files, the exact verification prompts, the frozen query-set
+fingerprint and file bytes, parser and ranking fingerprints, five private
+runtime artifacts, all 16 local Qwen reranker files, and the inference and
+aggregation settings. The model downloader did not persist a remote revision;
+this limitation is explicit rather than replaced with a guessed revision. The
+complete 4,271,051,812-byte local snapshot is instead bound by manifest SHA-256
+`af310f8b0b664b4ca85d486b1614f3b2909104dbb046535e5d258d5aa74705b8`.
+
+`scripts/run_v17_holdout_once.py` defaults to read-only preflight. Execution
+requires an explicit `--execute` plus an authorization document proving two
+complete independent blind reviews, no model-assisted labels, independent
+conflict adjudication, and exact hashes for the verifier output, adjudicated
+judgments, and frozen V16 baseline. It atomically creates an exclusive receipt
+before invoking the evaluator. A receipt blocks every retry, including after a
+failed evaluator process, and the output is also create-only.
+
+The guard has deliberately not been authorized or executed. No receipt or V17
+holdout result exists, and V16 remains the latest independent public result.
+Governance is recorded in
+`data/evaluation/v17/amendments/005_method_locked_holdout_execution_guarded.json`.

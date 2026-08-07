@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "amendment_id": "V17-A005",
+  "date": "2026-08-07",
+  "title": "Freeze the complete V17 method and guard final evaluation with a one-shot receipt",
+  "parent_amendment": {
+    "path": "data/evaluation/v17/amendments/004_topk_calibration_selects_k3_full_query.json",
+    "sha256": "890d72ce8e16744e977d96a17a5eeda072e1c3477275fa537f456e4a652d36c2"
+  },
+  "method_lock": {
+    "path": "config/v17_method_lock.json",
+    "sha256": "1c1ab2b5d42621cdac65f8fc444f103a749067b7bdae833ca9fb434ee14879b9",
+    "method_source_git_commit_sha": "1b277eb6e2ac6f11d0abb22d20927cd44bf4e4e1",
+    "locked_file_count": 9,
+    "governance_file_count": 3,
+    "runtime_file_count": 5,
+    "git_tree_clean_required": true
+  },
+  "frozen_method": {
+    "model": "Qwen/Qwen3-VL-Reranker-2B",
+    "model_weight_manifest_sha256": "af310f8b0b664b4ca85d486b1614f3b2909104dbb046535e5d258d5aa74705b8",
+    "model_source_revision": "unrecorded_at_download_2026-07-29",
+    "model_revision_limitation": "The remote revision was not persisted at download time; all 16 local model files and 4,271,051,812 bytes are bound by the complete manifest hash.",
+    "verification_prompt_sha256": "cee251b6ae499798f2f0a70863a89b61c3438b9384fe5055fd3e5ac12da69140",
+    "top_k": 3,
+    "max_length": 1024,
+    "max_pixels": 147456,
+    "dtype": "float16",
+    "attention": "sdpa",
+    "aggregation": "full_query",
+    "threshold": 0.51,
+    "selection_policy": "highest_retrieval_rank_among_passed",
+    "contrastive_relations": false,
+    "relation_margin_threshold": 0.0
+  },
+  "one_shot_guard": {
+    "preflight_script": "scripts/run_v17_holdout_once.py",
+    "evaluator_script": "scripts/evaluate_v17_locked_holdout.py",
+    "default_action": "read_only_preflight",
+    "execution_requires_explicit_flag": "--execute",
+    "receipt_create_mode": "atomic_create_exclusive",
+    "rerun_after_receipt": "forbidden_even_after_failure",
+    "current_receipt_exists": false
+  },
+  "execution_authorization": {
+    "current_status": "not_authorized",
+    "minimum_independent_primary_reviewers": 2,
+    "full_candidate_coverage_required": true,
+    "blinded_to_method_outputs_required": true,
+    "model_assisted_labels_forbidden": true,
+    "independent_conflict_adjudicator_required": true,
+    "exact_verification_judgment_and_baseline_hashes_required": true
+  },
+  "holdout_status": {
+    "sealed": true,
+    "query_count": 40,
+    "retrieval_executed": false,
+    "verification_scored": false,
+    "human_relevance_judgments_complete": false,
+    "final_evaluation_executed": false
+  },
+  "upgrade_rule": "Any locked method or governance change requires V18. The V17 final holdout cannot be overwritten or rerun.",
+  "claim_boundary": "V17 remains a locked calibration-selected method with no final holdout result. V16 remains the latest independent public result."
+}

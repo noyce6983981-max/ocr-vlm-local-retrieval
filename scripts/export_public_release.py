@@ -57,6 +57,8 @@ DATA_FILES = {
     "003_separate_pooled_relevance_from_corpus_answerability.json",
     "data/evaluation/v17/amendments/"
     "004_topk_calibration_selects_k3_full_query.json",
+    "data/evaluation/v17/amendments/"
+    "005_method_locked_holdout_execution_guarded.json",
     "data/evaluation/v17/parser/calibration_parser_reference.jsonl",
     "data/evaluation/v17/human_study/calibration/"
     "top5_extension_judgments.jsonl",

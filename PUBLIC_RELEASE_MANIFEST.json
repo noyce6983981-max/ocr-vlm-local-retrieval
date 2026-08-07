@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "source_revision": "7f5f212e07f438651615aa29fb4a8512a9e6080e",
-  "file_count": 312,
+  "source_revision": "1b277eb6e2ac6f11d0abb22d20927cd44bf4e4e1",
+  "file_count": 319,
   "files": [
     {
       "path": ".gitattributes",
@@ -29,7 +29,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "f37109e7f99aaf1f25964821f13817ef9f9aa11ce12a356b0bc000ed40e2dfe0"
+      "sha256": "dd959d49623e967f4eb7153944d0ec1c1a865ff77775490f9fbbf501537d41e5"
     },
     {
       "path": "SECURITY.md",
@@ -62,6 +62,10 @@
     {
       "path": "config/v17_candidate_verification_gate_topk_candidate.json",
       "sha256": "d6187abb81497a757d6bc84c1be44bce98fcdd79a59254e21b4e333d0bff67d9"
+    },
+    {
+      "path": "config/v17_method_lock.json",
+      "sha256": "1c1ab2b5d42621cdac65f8fc444f103a749067b7bdae833ca9fb434ee14879b9"
     },
     {
       "path": "correction_app.py",
@@ -172,6 +176,10 @@
       "sha256": "890d72ce8e16744e977d96a17a5eeda072e1c3477275fa537f456e4a652d36c2"
     },
     {
+      "path": "data/evaluation/v17/amendments/005_method_locked_holdout_execution_guarded.json",
+      "sha256": "1afdc0bdd1b91806b8bc26ea9f564452475c77e5d2d5f8e61b1498574bc0f06a"
+    },
+    {
       "path": "data/evaluation/v17/human_study/calibration/top5_extension_judgments.jsonl",
       "sha256": "dcde605ff963eda7ec9638b1a8d829ef39d23b3ab4bd85329481bae1a25eab14"
     },
@@ -189,7 +197,7 @@
     },
     {
       "path": "data/evaluation/v17/study_status.json",
-      "sha256": "74e892cd79eba95cb33249d0401d461abc551aaf9d09daceeef35387461f2c21"
+      "sha256": "08c707af95b2ee69b8dff8848b6013ac053fd63c00b646eb77fdc003c1499ac8"
     },
     {
       "path": "data/manifest/dataset_v1_manifest.jsonl",
@@ -221,7 +229,7 @@
     },
     {
       "path": "records/COMMANDS.md",
-      "sha256": "ae9978c438786ca3b86fcb8e057ca1f95c40911ca284fd7f7658b0df1d730038"
+      "sha256": "1756808e6afff8526185c47f011c5494ca7b23f6b559e8fc554713809f8b0de8"
     },
     {
       "path": "records/CONTRIBUTION_LOG.md",
@@ -389,7 +397,7 @@
     },
     {
       "path": "records/experiments/retrieval_v17_calibration_pool_2026-08-07.md",
-      "sha256": "65e637de27a440ef8aecb1bfbc22cb3899544bdfe68f1851196119442962923a"
+      "sha256": "29329c9e750dd3953907b9c3bf25317b40c507d2f3773eb3968bb48b1f644ecd"
     },
     {
       "path": "records/experiments/retrieval_v17_gpu_smoke_2026-08-07.md",
@@ -756,6 +764,10 @@
       "sha256": "c5c3c4f2f009c09b3308dcdbcb65876e39a94c819f39a89d7f1f716b478dd92b"
     },
     {
+      "path": "scripts/evaluate_v17_locked_holdout.py",
+      "sha256": "e6f818c9b7b5ba2726b50b6da8e3faceeaaef9c47689f62a44df408632aa9db3"
+    },
+    {
       "path": "scripts/evaluate_v17_parser.py",
       "sha256": "e9b08bf9bb387402077083ad020251178153eec7baa359e811952a54b77643b0"
     },
@@ -765,7 +777,7 @@
     },
     {
       "path": "scripts/export_public_release.py",
-      "sha256": "6b1a304c795b4feb69b7732ddccc0f0a546ea832fc08f83dc48a412bd08212ae"
+      "sha256": "a2b8a1e9c2eaed0c84ddd967f77904d18f9ac5c8692793dfdd18b411c4d31db5"
     },
     {
       "path": "scripts/fetch_qwen3_vl_code.ps1",
@@ -908,6 +920,10 @@
       "sha256": "b86105370221d413d194d8d4c0eb031c7c8ce494225b76f5725ca6a01c2c09fd"
     },
     {
+      "path": "scripts/run_v17_holdout_once.py",
+      "sha256": "f0af92553e183256445cb65696849f9f17c605e0d200bcdbe724584986ebdf7e"
+    },
+    {
       "path": "scripts/score_bm25_query.py",
       "sha256": "9dfd09c5a8ae9d75a4a9e0de3ebffd78deaf3455c6204efc40fd735574e6faa7"
     },
@@ -1006,6 +1022,10 @@
     {
       "path": "src/ocr_vlm_retrieval/evaluation/pooling.py",
       "sha256": "2c370706c58356235a331490bec7fe84172191b62e705c78d17fb50b7f82f1ac"
+    },
+    {
+      "path": "src/ocr_vlm_retrieval/evaluation/protocol_lock.py",
+      "sha256": "0727f584cd5dd9bdd79eb896339989971541921be7a699051ea3ecd68a866b07"
     },
     {
       "path": "src/ocr_vlm_retrieval/evaluation/query_collection.py",
@@ -1228,12 +1248,20 @@
       "sha256": "e56c84e7c493ea032320e230186dfebffe24d5dfb872f68efd96d07195ad2657"
     },
     {
+      "path": "tests/test_v17_locked_holdout.py",
+      "sha256": "09c939196bc5cdf6f78b219eac076587912e32bccd7b9c9d0b826f949aa003b0"
+    },
+    {
       "path": "tests/test_v17_parser_metrics.py",
       "sha256": "f0b79916c719d8b21883304b05cc806f3d50d773849d562c73a76919dc334361"
     },
     {
       "path": "tests/test_v17_protocol_governance.py",
-      "sha256": "391917dd1b62b389b8db4a47de26d9db24ac731813e8d208c9f53fd4e0cbc423"
+      "sha256": "74baef0717c9bc9562355d73a1ebd822b72b2fceee28765ca113241ff0a3cf82"
+    },
+    {
+      "path": "tests/test_v17_protocol_lock.py",
+      "sha256": "01b334a5a17a14f7dc1e07af0ac4cad5fb5ec348e805f492273e6b01fe3356fd"
     },
     {
       "path": "tests/test_v17_query_collection.py",

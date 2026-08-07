@@ -265,6 +265,21 @@ K=5 评分按查询原子保存，进程中断后使用相同参数会从已完�
 `config/v17_candidate_verification_gate_topk_candidate.json`，不会覆盖历史
 Top-1 配置，也不会打开留出集。
 
+## V17 最终方法锁只读预检
+
+以下命令会验证方法代码、提示词、4.25GB 本地模型目录、冻结查询与校准产物，
+但不会打开或执行最终留出集：
+
+```powershell
+$runtimeRoot = "D:\private-v17-runtime"
+.\.venv\Scripts\python.exe scripts\run_v17_holdout_once.py --runtime-root $runtimeRoot
+```
+
+正常的当前结果应为 `blocked`，唯一阻塞项是尚无独立人工审核授权。不要添加
+`--execute`；只有两名审核者独立完成全部候选盲审、第三人完成冲突裁决，且授权
+文件绑定全部输入哈希后，才允许进行唯一一次最终评测。receipt 创建后即使评测
+进程失败也禁止重跑，任何方法变化必须升级到 V18。
+
 ## 重新采集并审计200页公开候选集
 
 ```powershell

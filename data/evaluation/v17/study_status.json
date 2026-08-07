@@ -3,7 +3,7 @@
   "study_name": "V17-Compositional-80 Pilot",
   "version": "V17",
   "updated_date": "2026-08-07",
-  "stage": "topk_calibration_complete_method_lock_pending_holdout_sealed",
+  "stage": "method_locked_holdout_sealed_execution_not_authorized",
   "protocol_chain": [
     {
       "path": "data/evaluation/v17/protocol_frozen_v1.json",
@@ -29,6 +29,11 @@
       "path": "data/evaluation/v17/amendments/004_topk_calibration_selects_k3_full_query.json",
       "sha256": "890d72ce8e16744e977d96a17a5eeda072e1c3477275fa537f456e4a652d36c2",
       "role": "topk_method_selection_amendment"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/005_method_locked_holdout_execution_guarded.json",
+      "sha256": "1afdc0bdd1b91806b8bc26ea9f564452475c77e5d2d5f8e61b1498574bc0f06a",
+      "role": "final_method_lock_and_one_shot_execution_guard"
     }
   ],
   "effective_scope": {
@@ -94,7 +99,9 @@
       "selection_policy": "highest_retrieval_rank_among_passed",
       "config_path": "config/v17_candidate_verification_gate_topk_candidate.json",
       "config_sha256": "d6187abb81497a757d6bc84c1be44bce98fcdd79a59254e21b4e333d0bff67d9",
-      "final_method_locked": false
+      "final_method_locked": true,
+      "method_lock_path": "config/v17_method_lock.json",
+      "method_lock_sha256": "1c1ab2b5d42621cdac65f8fc444f103a749067b7bdae833ca9fb434ee14879b9"
     },
     "descriptive_pool_conditioned_metrics": {
       "v16_quality_hybrid_recall_at_3": 0.34782608695652173,
@@ -129,18 +136,19 @@
     "retrieval_executed": false,
     "scored": false,
     "human_relevance_judgments_complete": false,
-    "final_method_locked": false,
+    "final_method_locked": true,
+    "evaluation_authorized": false,
     "one_shot_receipt_exists": false
   },
   "required_before_holdout": [
     "Execute and independently review the calibration high-recall corpus-answerability pool.",
-    "Collect independent blinded human holdout labels under the final protocol.",
-    "Lock code, prompts, model revision, weights, inference settings, data hashes, aggregation, and threshold.",
-    "Validate a one-shot runner that refuses repeat execution."
+    "Collect two complete, independent, blinded human holdout reviews without model-assisted labels.",
+    "Adjudicate conflicts with a reviewer independent of the two primary reviewers.",
+    "Issue an authorization binding the exact verification, adjudicated judgment, baseline, and method-lock hashes."
   ],
   "public_claim_boundary": {
     "latest_independent_result": "V16",
-    "v17_status": "calibration candidate only",
+    "v17_status": "method locked; final holdout sealed and not authorized",
     "v17_metrics": "pool-conditioned, model-assisted calibration diagnostics; not final benchmark results"
   }
 }

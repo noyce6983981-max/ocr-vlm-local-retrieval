@@ -61,7 +61,9 @@ def test_study_status_hashes_protocol_chain_and_keeps_holdout_sealed() -> None:
     assert scope["route"] == "compositional_visual"
     assert status["holdout"]["sealed"] is True
     assert status["holdout"]["retrieval_executed"] is False
-    assert status["holdout"]["final_method_locked"] is False
+    assert status["holdout"]["final_method_locked"] is True
+    assert status["holdout"]["evaluation_authorized"] is False
+    assert status["holdout"]["one_shot_receipt_exists"] is False
     assert status["public_claim_boundary"]["latest_independent_result"] == "V16"
 
 
@@ -121,3 +123,32 @@ def test_topk_selection_is_calibration_only_and_config_is_hashed() -> None:
     config = selected["config"]
     assert sha256(PROJECT_ROOT / config["path"]) == config["sha256"]
     assert status["calibration"]["current_candidate"]["verified_rank_depth"] == 3
+
+
+def test_final_method_lock_does_not_claim_a_holdout_result() -> None:
+    amendment = read_json(
+        V17_ROOT / "amendments/005_method_locked_holdout_execution_guarded.json"
+    )
+    lock_path = PROJECT_ROOT / amendment["method_lock"]["path"]
+    lock = read_json(lock_path)
+
+    assert sha256(lock_path) == amendment["method_lock"]["sha256"]
+    assert lock["status"] == "method_locked_holdout_sealed"
+    assert lock["holdout"]["status"] == "sealed_not_run"
+    for relative, expected in {
+        **lock["locked_files"],
+        **lock["governance_files"],
+    }.items():
+        assert sha256(PROJECT_ROOT / relative) == expected
+    assert lock["inference"]["top_k"] == 3
+    assert lock["aggregation"] == {
+        "method": "full_query",
+        "threshold": 0.51,
+        "selection_policy": "highest_retrieval_rank_among_passed",
+        "contrastive_relations": False,
+        "relation_margin_threshold": 0.0,
+    }
+    assert amendment["execution_authorization"]["current_status"] == (
+        "not_authorized"
+    )
+    assert amendment["one_shot_guard"]["current_receipt_exists"] is False

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "study_name": "V17-Compositional-80 Pilot",
+  "status": "method_locked_holdout_sealed",
+  "locked_date": "2026-08-07",
+  "git_commit_sha": "1b277eb6e2ac6f11d0abb22d20927cd44bf4e4e1",
+  "git_tree_clean_required": true,
+  "git_commit_role": "last calibration-selected method source commit; governance wrappers are independently hash-locked below",
+  "locked_files": {
+    "config/v17_attribute_coverage.json": "b34262e133bd9e6f2b5ed632d6608706c7c4e185dfff3078816661b48d6b073c",
+    "config/v17_candidate_verification_gate_topk_candidate.json": "d6187abb81497a757d6bc84c1be44bce98fcdd79a59254e21b4e333d0bff67d9",
+    "scripts/calibrate_v17_candidate_gate.py": "7756560c75a76a09a717002f486058da1e2c820f7e7b0e85c7e49a456fcc806f",
+    "scripts/score_v17_candidate_verification.py": "f43bd06d66a61d2b3b393c9b02580290de9db120cdac31b218a5aad8970fcf72",
+    "src/ocr_vlm_retrieval/evaluation/judgments.py": "fbb649c96f98ae7c3616d238517dc8f2014afe922a2fccc8a4ca49a0baaa0825",
+    "src/ocr_vlm_retrieval/gating/attribute_coverage.py": "ddfef977b1debf897ce40e1318db554e125f95487c2e671ff97300d820c082e0",
+    "src/ocr_vlm_retrieval/gating/candidate_verification.py": "0a04ce47114c5e3d0cb99a6f468e5bb4d73abb3775bf9eda37eff26078a697de",
+    "src/ocr_vlm_retrieval/gating/contrastive_relations.py": "55a883f1f0e4e028687d2b151f2d1aa021f73c81c5fd508ee7da13b44a0b3ffd",
+    "src/ocr_vlm_retrieval/gating/gate_calibration.py": "dd2c06ca5d032341d48c8d10bee32bac19b3bffab316d0041644cde0ba377010"
+  },
+  "governance_files": {
+    "scripts/evaluate_v17_locked_holdout.py": "e6f818c9b7b5ba2726b50b6da8e3faceeaaef9c47689f62a44df408632aa9db3",
+    "scripts/run_v17_holdout_once.py": "f0af92553e183256445cb65696849f9f17c605e0d200bcdbe724584986ebdf7e",
+    "src/ocr_vlm_retrieval/evaluation/protocol_lock.py": "0727f584cd5dd9bdd79eb896339989971541921be7a699051ea3ecd68a866b07"
+  },
+  "query_set_path": "data/evaluation/v17/frozen_query_set/frozen_queries.jsonl",
+  "query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979",
+  "query_set_file_sha256": "06d119d79f9c189c0b7ab4482c89a014ec4d302e08d2a253f12f899e2208765e",
+  "parser_policy_sha256": "b34262e133bd9e6f2b5ed632d6608706c7c4e185dfff3078816661b48d6b073c",
+  "candidate_ranking_sha256": "c16ba2d7de504532b224f08d76539e9622a97e539e2c6262c2f084f17d85a5ff",
+  "verification_prompt_sha256": "cee251b6ae499798f2f0a70863a89b61c3438b9384fe5055fd3e5ac12da69140",
+  "verification_prompt_text": {
+    "full_query_instruction": "Verify exact full-query satisfaction in this one candidate image. Every necessary object, visual attribute, spatial or directional relation, and requested text condition must hold in the same image. A partial or near-neighbor match is negative.",
+    "attribute_instruction": "Verify only the stated necessary visual condition in this candidate. For directional relations and attribute bindings, require the exact direction and the same referenced object; partial evidence is negative."
+  },
+  "model": {
+    "name": "Qwen/Qwen3-VL-Reranker-2B",
+    "path": "models/qwen3-vl-reranker-2b",
+    "source": "ModelScope snapshot_download",
+    "source_revision": "unrecorded_at_download_2026-07-29",
+    "source_revision_limitation": "The downloader call did not persist a remote revision. The exact local snapshot is bound by its complete file manifest instead.",
+    "weight_manifest_sha256": "af310f8b0b664b4ca85d486b1614f3b2909104dbb046535e5d258d5aa74705b8",
+    "weight_file_count": 16,
+    "weight_total_bytes": 4271051812
+  },
+  "inference": {
+    "top_k": 3,
+    "max_length": 1024,
+    "max_pixels": 147456,
+    "dtype": "float16",
+    "attention": "sdpa",
+    "ocr_root": "outputs/user_library/ocr/json",
+    "ocr_minimum_confidence": 0.35,
+    "ocr_fuzzy_threshold": 0.88,
+    "ocr_precedence": [
+      "exact",
+      "fuzzy",
+      "visual_verifier_fallback"
+    ]
+  },
+  "aggregation": {
+    "method": "full_query",
+    "threshold": 0.51,
+    "selection_policy": "highest_retrieval_rank_among_passed",
+    "contrastive_relations": false,
+    "relation_margin_threshold": 0.0
+  },
+  "calibration": {
+    "report_sha256": "05e0b26394484c3471b5173f0bd53fc08a7360b453ceac7c07fec87c07dbe9ff",
+    "verification_sha256": "a91e3e3aa75aa9522cf9f7b5df2a7f9ef70243332cf93a52c5275836bdf2d8a7",
+    "paired_decisions_sha256": "616076bd60039adeaf9b04e10d0f3e38136f48c399069541ae0efd820c76a84d",
+    "label_provenance": "model_assisted_not_human_gold",
+    "holdout_read_during_selection": false
+  },
+  "runtime_files": {
+    "data/evaluation/v17/frozen_query_set/freeze_receipt.json": "cfb077de0182e9db5bf11130df3659782537c46609be087c5c1daa3885a674b3",
+    "data/evaluation/v17/frozen_query_set/frozen_queries.jsonl": "06d119d79f9c189c0b7ab4482c89a014ec4d302e08d2a253f12f899e2208765e",
+    "outputs/evaluation/v17/calibration/parser_v3/candidate_attribute_verification_top5_contrastive.json": "a91e3e3aa75aa9522cf9f7b5df2a7f9ef70243332cf93a52c5275836bdf2d8a7",
+    "outputs/evaluation/v17/calibration/parser_v3/candidate_gate_topk_calibration_report.json": "05e0b26394484c3471b5173f0bd53fc08a7360b453ceac7c07fec87c07dbe9ff",
+    "outputs/evaluation/v17/calibration/parser_v3/candidate_gate_topk_paired_decisions.jsonl": "616076bd60039adeaf9b04e10d0f3e38136f48c399069541ae0efd820c76a84d"
+  },
+  "holdout": {
+    "query_count": 40,
+    "split": "holdout",
+    "status": "sealed_not_run",
+    "retrieval_executed": false,
+    "verification_scored": false,
+    "independent_human_judgments_complete": false,
+    "evaluation_authorized": false,
+    "one_shot_receipt_exists": false
+  },
+  "execution": {
+    "evaluator_script": "scripts/evaluate_v17_locked_holdout.py",
+    "authorization": "data/evaluation/v17/human_study/holdout/final_evaluation_authorization.json",
+    "verification": "outputs/evaluation/v17/holdout/candidate_attribute_verification_top3_locked.json",
+    "judgments": "data/evaluation/v17/human_study/holdout/adjudicated_judgments.jsonl",
+    "baseline_records": "outputs/evaluation/v17/holdout/v16_baseline_records.jsonl",
+    "output": "outputs/evaluation/v17/holdout/v17_locked_holdout_report.json",
+    "receipt": "outputs/evaluation/v17/holdout/v17_one_shot_receipt.json",
+    "bootstrap_repetitions": 10000,
+    "bootstrap_seed": 17,
+    "default_mode": "preflight_only",
+    "explicit_execute_flag": "--execute"
+  },
+  "upgrade_rule": "Any change to a locked method file, governance file, prompt, model manifest, inference setting, aggregation, threshold, or data hash requires V18; V17 holdout reruns are forbidden."
+}
