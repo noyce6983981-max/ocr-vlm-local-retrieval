@@ -3,7 +3,7 @@
   "study_name": "V17-Compositional-80 Pilot",
   "version": "V17",
   "updated_date": "2026-08-08",
-  "stage": "holdout_human_review_complete_verification_not_run",
+  "stage": "holdout_evaluated_once_rerun_forbidden",
   "protocol_chain": [
     {
       "path": "data/evaluation/v17/protocol_frozen_v1.json",
@@ -60,7 +60,7 @@
   },
   "evaluation_tasks": {
     "pooled_relevance": {
-      "status": "calibration_review_complete_with_seven_candidate_top5_extension",
+      "status": "final_pooled_relevance_holdout_evaluated_once",
       "canonical_negative_label": "no_relevant_candidate_in_pool",
       "corpus_claim_supported": false
     },
@@ -144,24 +144,39 @@
     "query_count": 40,
     "sealed": true,
     "retrieval_executed": true,
-    "scored": false,
+    "scored": true,
     "human_relevance_judgments_complete": true,
     "primary_independent_reviewer_count": 2,
     "independent_adjudicator_count": 1,
     "adjudicated_query_count": 14,
     "model_assisted_labels_used": false,
     "final_method_locked": true,
-    "evaluation_authorized": false,
-    "one_shot_receipt_exists": false
+    "evaluation_authorized": true,
+    "one_shot_receipt_exists": true,
+    "rerun_forbidden": true,
+    "method_tuned_on_holdout": false,
+    "summary_path": "data/evaluation/v17/final_holdout_summary.json",
+    "summary_sha256": "5036936147d438427cdaa6a389e4fb2cbfe91a5f8dd985cc6d3e43431e9988dc",
+    "private_report_sha256": "a0ebf2e839903fbde2660d2b76572fccc17c641aaf7c3dc941929f5860578fc8",
+    "one_shot_receipt_sha256": "d361bc0bad865b3c116d42ce7134633a88c14db05afe554a3e74ed949aafb834",
+    "metrics": {
+      "v16_pool_conditioned_end_to_end_accuracy": 0.15,
+      "v17_pool_conditioned_end_to_end_accuracy": 0.475,
+      "end_to_end_paired_difference": 0.32499999999999996,
+      "end_to_end_group_bootstrap_95_ci": [0.14625435540069762, 0.5],
+      "v16_pool_conditioned_false_accept_rate": 0.625,
+      "v17_pool_conditioned_false_accept_rate": 0.375,
+      "false_accept_paired_difference": -0.25,
+      "false_accept_group_bootstrap_95_ci": [-0.75, 0.25],
+      "retrieval_recall_at_3": 0.8125,
+      "selected_relevant_query_rate": 0.4375
+    }
   },
-  "required_before_holdout": [
-    "Run the locked label-blind Qwen3-VL Top-3 candidate verification.",
-    "Freeze the label-blind V16 acceptance and selected-item baseline decisions.",
-    "Issue an authorization binding the exact verification, adjudicated judgment, baseline, and method-lock hashes."
-  ],
+  "required_before_holdout": [],
   "public_claim_boundary": {
-    "latest_independent_result": "V16",
-    "v17_status": "method lock revision 3; holdout retrieval and independent human adjudication complete; verification and final evaluation pending",
-    "v17_metrics": "pool-conditioned, model-assisted calibration diagnostics; not final benchmark results"
+    "latest_independent_result": "V17 pooled-relevance holdout",
+    "v17_status": "one-shot holdout complete; rerun forbidden",
+    "v17_metrics": "V16-to-V17 pool-conditioned end-to-end +32.5pp, grouped-bootstrap 95% CI +14.6 to +50.0pp; false-accept reduction directional but not statistically conclusive",
+    "corpus_level_no_answer_claim_supported": false
   }
 }

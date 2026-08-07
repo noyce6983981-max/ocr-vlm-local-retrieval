@@ -64,9 +64,13 @@ def test_study_status_hashes_protocol_chain_and_keeps_holdout_sealed() -> None:
     assert status["holdout"]["human_relevance_judgments_complete"] is True
     assert status["holdout"]["model_assisted_labels_used"] is False
     assert status["holdout"]["final_method_locked"] is True
-    assert status["holdout"]["evaluation_authorized"] is False
-    assert status["holdout"]["one_shot_receipt_exists"] is False
-    assert status["public_claim_boundary"]["latest_independent_result"] == "V16"
+    assert status["holdout"]["evaluation_authorized"] is True
+    assert status["holdout"]["one_shot_receipt_exists"] is True
+    assert status["holdout"]["scored"] is True
+    assert status["holdout"]["rerun_forbidden"] is True
+    assert status["public_claim_boundary"]["latest_independent_result"] == (
+        "V17 pooled-relevance holdout"
+    )
 
 
 def test_pool_relevance_is_not_promoted_to_corpus_answerability() -> None:
@@ -176,3 +180,24 @@ def test_final_method_lock_does_not_claim_a_holdout_result() -> None:
     assert amendment["holdout_safeguards"][
         "holdout_metrics_computed_before_revision"
     ] is False
+
+
+def test_final_holdout_summary_is_one_shot_and_claim_bounded() -> None:
+    status = read_json(V17_ROOT / "study_status.json")
+    summary_path = PROJECT_ROOT / status["holdout"]["summary_path"]
+    summary = read_json(summary_path)
+
+    assert sha256(summary_path) == status["holdout"]["summary_sha256"]
+    assert summary["status"] == "v17_holdout_evaluated_once"
+    assert summary["locked_method"]["method_tuned_on_holdout"] is False
+    assert summary["review_protocol"]["model_assisted_labels_used"] is False
+    assert summary["rerun_policy"] == "forbidden"
+    difference = summary["metrics"]["end_to_end_paired_difference"]
+    interval = summary["metrics"]["end_to_end_group_bootstrap_95_ci"]
+    assert difference == 0.32499999999999996
+    assert interval[0] > 0
+    false_accept_interval = summary["metrics"][
+        "false_accept_group_bootstrap_95_ci"
+    ]
+    assert false_accept_interval[0] < 0 < false_accept_interval[1]
+    assert "not a corpus-level no-answer estimate" in summary["claim_boundary"]

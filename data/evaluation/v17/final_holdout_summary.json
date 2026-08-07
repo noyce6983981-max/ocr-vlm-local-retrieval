@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "status": "v17_holdout_evaluated_once",
+  "study_name": "V17-Compositional-80 Pilot",
+  "task_id": "pooled_relevance",
+  "query_count": 40,
+  "group_count": 28,
+  "pool_relevance_counts": {
+    "relevant_candidate_in_pool": 32,
+    "no_relevant_candidate_in_pool": 8
+  },
+  "review_protocol": {
+    "primary_independent_reviewer_count": 2,
+    "independent_adjudicator_count": 1,
+    "adjudicated_query_count": 14,
+    "pool_relevance_cohen_kappa_before_adjudication": 0.7879858657243817,
+    "candidate_relevance_cohen_kappa_before_adjudication": 0.8272262616082359,
+    "model_assisted_labels_used": false
+  },
+  "locked_method": {
+    "top_k": 3,
+    "aggregation": "full_query",
+    "threshold": 0.51,
+    "selection_policy": "highest_retrieval_rank_among_passed",
+    "contrastive_relations": false,
+    "method_tuned_on_holdout": false
+  },
+  "metrics": {
+    "retrieval_recall_at_3": 0.8125,
+    "selected_relevant_query_rate": 0.4375,
+    "acceptance_coverage": 0.525,
+    "v16_pool_conditioned_end_to_end_accuracy": 0.15,
+    "v17_pool_conditioned_end_to_end_accuracy": 0.475,
+    "end_to_end_paired_difference": 0.32499999999999996,
+    "end_to_end_group_bootstrap_95_ci": [
+      0.14625435540069762,
+      0.5
+    ],
+    "v16_pool_conditioned_false_accept_rate": 0.625,
+    "v17_pool_conditioned_false_accept_rate": 0.375,
+    "false_accept_paired_difference": -0.25,
+    "false_accept_group_bootstrap_95_ci": [
+      -0.75,
+      0.25
+    ],
+    "no_relevant_in_pool_rejection_rate": 0.625,
+    "mean_verified_candidate_count": 2.175
+  },
+  "bootstrap": {
+    "repetitions": 10000,
+    "seed": 17,
+    "sampling_unit": "group_id"
+  },
+  "artifact_sha256": {
+    "method_lock": "256d3dfe5027dc3ea8a0a795c4d6829c4b95acef558f2ff86446dac4c89b150f",
+    "authorization": "80b26a8628390adce50d7ed0419a6f79dd4f9a95ad01598573d646f44666e8ef",
+    "one_shot_receipt": "d361bc0bad865b3c116d42ce7134633a88c14db05afe554a3e74ed949aafb834",
+    "verification": "a6fb059a6414581a8e887877ef8ad86ecef91dc519346a693c54805c4f609f90",
+    "adjudicated_judgments": "16a3229068685979c4731025685a18eba3d0071f0cffcb5adacea68038218595",
+    "v16_baseline_records": "b155d077d8c3e18ed8c0c8d0c3f3ec51c5236b6340966a964609e10ac2f7006e",
+    "full_private_report": "a0ebf2e839903fbde2660d2b76572fccc17c641aaf7c3dc941929f5860578fc8"
+  },
+  "claim_boundary": "Final V17-Compositional-80 pooled-relevance holdout only; not a corpus-level no-answer estimate. The end-to-end improvement has a positive grouped-bootstrap interval. The false-accept reduction is directional but its interval crosses zero because only eight queries have no relevant candidate in the 20-item pool.",
+  "rerun_policy": "forbidden"
+}
