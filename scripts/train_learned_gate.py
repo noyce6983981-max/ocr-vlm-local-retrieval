@@ -10,8 +10,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import torch
-from torch import nn
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -119,6 +117,9 @@ def retrieval_metrics(
 
 
 def main() -> None:
+    import torch
+    from torch import nn
+
     args = parse_args()
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
