@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from scripts.calibrate_v17_candidate_gate import calibrate
+from scripts.calibrate_v17_candidate_gate import (
+    calibrate,
+    merge_judgment_extensions,
+)
 
 
 def verification():
@@ -131,20 +134,32 @@ def test_calibrate_rejects_verifier_that_read_judgments() -> None:
         )
 
 
-def test_calibrate_requires_top1_verification() -> None:
+def test_calibrate_requires_complete_requested_topk_verification() -> None:
     payload = verification()
-    payload["results"][0]["candidates"].append(
-        {
-            "item_id": "second",
-            "full_query_score": 0.4,
-            "requirement_scores": {"r1": 0.4},
-        }
-    )
 
-    with pytest.raises(ValueError, match="Top-1"):
+    with pytest.raises(ValueError, match="only supports K=1"):
         calibrate(
             verification=payload,
             judgments=judgments(),
             baseline_rows=baseline_rows(),
             bootstrap_repetitions=2,
+            top_k_values=(1, 3),
+            require_requested_top_k=True,
         )
+
+
+def test_judgment_extension_adds_labels_without_mutating_base() -> None:
+    base = judgments()
+    merged = merge_judgment_extensions(
+        base,
+        [
+            {
+                "query_id": "q1",
+                "split": "calibration",
+                "candidate_relevance": {"new_item": False},
+            }
+        ],
+    )
+
+    assert merged[0]["candidate_relevance"]["new_item"] is False
+    assert "new_item" not in base[0]["candidate_relevance"]

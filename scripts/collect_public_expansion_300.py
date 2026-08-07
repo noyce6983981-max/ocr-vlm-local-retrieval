@@ -30,7 +30,6 @@ from scripts.collect_public_dataset_200 import (
     XFUND_URL,
     commons_files,
     normalized_jpeg_bytes,
-    request_bytes,
     request_json,
     strip_html,
 )

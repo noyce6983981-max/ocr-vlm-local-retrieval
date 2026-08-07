@@ -9,6 +9,7 @@ scores cannot leak audited labels into inference.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import os
@@ -29,6 +30,19 @@ if str(PACKAGE_ROOT) not in sys.path:
 from ocr_vlm_retrieval.gating.attribute_coverage import (
     decompose_visual_query,
     load_attribute_policy,
+)
+from ocr_vlm_retrieval.gating.candidate_verification import (
+    ATTRIBUTE_INSTRUCTION,
+    FULL_QUERY_INSTRUCTION,
+    build_ocr_evidence,
+    load_ocr_lines,
+    resolve_requirement_scores,
+    verification_prompt_payload,
+)
+from ocr_vlm_retrieval.gating.contrastive_relations import (
+    build_relation_counterfactual,
+    counterfactual_prompt,
+    relation_margin,
 )
 
 
@@ -67,6 +81,35 @@ def write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def resume_results(
+    output_path: Path,
+    *,
+    run_identity: Mapping[str, Any],
+    ordered_query_ids: list[str],
+) -> tuple[list[dict[str, Any]], float, float]:
+    """Resume only an exact schema-v2 prefix from the same calibration run."""
+
+    if not output_path.is_file():
+        return [], 0.0, 0.0
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    if int(payload.get("schema_version", 0)) != 2:
+        raise ValueError("Existing verification output is not resumable schema v2")
+    for key, expected in run_identity.items():
+        if payload.get(key) != expected:
+            raise ValueError(f"Existing verification output mismatches {key}")
+    results = payload.get("results", [])
+    if not isinstance(results, list):
+        raise ValueError("Existing verification results must be a list")
+    completed_ids = [str(row.get("query_id", "")) for row in results]
+    if completed_ids != ordered_query_ids[: len(completed_ids)]:
+        raise ValueError("Existing verification results are not an ordered prefix")
+    return (
+        [dict(row) for row in results],
+        float(payload.get("elapsed_seconds", 0.0)),
+        float(payload.get("peak_reserved_gib", 0.0)),
+    )
+
+
 def keyed_rows(
     rows: Iterable[Mapping[str, Any]], *, label: str
 ) -> dict[str, dict[str, Any]]:
@@ -79,6 +122,41 @@ def keyed_rows(
             raise ValueError(f"Duplicate {label} row for {query_id}")
         result[query_id] = dict(source)
     return result
+
+
+def merge_packet_extensions(
+    packets: Iterable[Mapping[str, Any]],
+    extensions: Iterable[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Append audited calibration candidates without mutating the base pool."""
+
+    base_rows = [copy.deepcopy(dict(row)) for row in packets]
+    by_id = keyed_rows(base_rows, label="packet")
+    for extension in extensions:
+        query_id = str(extension.get("query_id", "")).strip()
+        if query_id not in by_id:
+            raise ValueError(f"Packet extension has unknown query_id {query_id!r}")
+        if extension.get("split") != "calibration":
+            raise ValueError("Packet extensions must be calibration-only")
+        base = by_id[query_id]
+        if str(extension.get("query", "")) != str(base.get("query", "")):
+            raise ValueError(f"Packet extension query mismatch for {query_id}")
+        candidates = base.get("candidates", [])
+        extension_candidates = extension.get("candidates", [])
+        if not isinstance(candidates, list) or not isinstance(
+            extension_candidates, list
+        ):
+            raise ValueError("Packet candidates must be lists")
+        known = {str(row.get("item_id", "")) for row in candidates}
+        for candidate in extension_candidates:
+            item_id = str(candidate.get("item_id", "")).strip()
+            if not item_id or item_id in known:
+                raise ValueError(
+                    f"Packet extension candidate {item_id!r} is invalid or duplicated"
+                )
+            candidates.append(dict(candidate))
+            known.add(item_id)
+    return base_rows
 
 
 def build_verification_tasks(
@@ -152,6 +230,14 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--packet-extension",
+        type=Path,
+        default=Path(
+            "data/evaluation/v17/human_study/calibration/"
+            "top5_extension_review_packets.jsonl"
+        ),
+    )
+    parser.add_argument(
         "--policy",
         type=Path,
         default=Path("config/v17_attribute_coverage.json"),
@@ -166,12 +252,24 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path(
             "outputs/evaluation/v17/calibration/parser_v3/"
-            "candidate_attribute_verification.json"
+            "candidate_attribute_verification_top5_contrastive.json"
         ),
     )
-    parser.add_argument("--top-k", type=int, default=1)
+    parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument("--max-length", type=int, default=1024)
     parser.add_argument("--max-pixels", type=int, default=384 * 384)
+    parser.add_argument(
+        "--ocr-root",
+        type=Path,
+        default=Path("outputs/user_library/ocr/json"),
+    )
+    parser.add_argument("--ocr-min-confidence", type=float, default=0.35)
+    parser.add_argument("--ocr-fuzzy-threshold", type=float, default=0.88)
+    parser.add_argument(
+        "--restart",
+        action="store_true",
+        help="Ignore a partial schema-v2 checkpoint and start this output again.",
+    )
     parser.add_argument(
         "--limit",
         type=int,
@@ -187,12 +285,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     packets_path = project_path(args.packets)
+    packet_extension_path = project_path(args.packet_extension)
     ranking_path = project_path(args.ranking)
     policy_path = project_path(args.policy)
     model_path = project_path(args.model)
     output_path = project_path(args.output)
+    ocr_root = project_path(args.ocr_root)
     tasks = build_verification_tasks(
-        read_jsonl(packets_path),
+        merge_packet_extensions(
+            read_jsonl(packets_path),
+            read_jsonl(packet_extension_path),
+        ),
         read_jsonl(ranking_path),
         top_k=args.top_k,
     )
@@ -201,6 +304,40 @@ def main() -> None:
             raise ValueError("limit must be positive")
         tasks = tasks[: args.limit]
     policy = load_attribute_policy(policy_path)
+
+    run_identity = {
+        "scope": "v17_calibration_ranked_candidates_only",
+        "judgments_read": False,
+        "query_count": len(tasks),
+        "top_k": args.top_k,
+        "model": "Qwen3-VL-Reranker-2B",
+        "model_path": model_path.relative_to(PROJECT_ROOT).as_posix(),
+        "verification_prompts": verification_prompt_payload(),
+        "policy_sha256": file_sha256(policy_path),
+        "packets_sha256": file_sha256(packets_path),
+        "packet_extension_sha256": file_sha256(packet_extension_path),
+        "ranking_sha256": file_sha256(ranking_path),
+        "ocr_policy": {
+            "root": args.ocr_root.as_posix(),
+            "minimum_confidence": args.ocr_min_confidence,
+            "fuzzy_threshold": args.ocr_fuzzy_threshold,
+            "precedence": ["exact", "fuzzy", "visual_verifier_fallback"],
+        },
+    }
+    if args.restart:
+        results: list[dict[str, Any]] = []
+        previous_elapsed = 0.0
+        previous_peak_gib = 0.0
+    else:
+        results, previous_elapsed, previous_peak_gib = resume_results(
+            output_path,
+            run_identity=run_identity,
+            ordered_query_ids=[str(task["query_id"]) for task in tasks],
+        )
+    pending_tasks = tasks[len(results) :]
+    if not pending_tasks:
+        print(output_path)
+        return
 
     import torch
 
@@ -223,19 +360,7 @@ def main() -> None:
         low_cpu_mem_usage=True,
     )
     load_seconds = time.perf_counter() - run_started
-    results: list[dict[str, Any]] = []
-    full_instruction = (
-        "Verify exact full-query satisfaction in this one candidate image. "
-        "Every necessary object, visual attribute, spatial or directional "
-        "relation, and requested text condition must hold in the same image. "
-        "A partial or near-neighbor match is negative."
-    )
-    attribute_instruction = (
-        "Verify only the stated necessary visual condition in this candidate. "
-        "For directional relations and attribute bindings, require the exact "
-        "direction and the same referenced object; partial evidence is negative."
-    )
-    for index, task in enumerate(tasks, start=1):
+    for index, task in enumerate(pending_tasks, start=len(results) + 1):
         print(f"[{index:02d}/{len(tasks)}] {task['query_id']}", flush=True)
         plan = decompose_visual_query(task["query"], policy)
         documents = [
@@ -245,7 +370,7 @@ def main() -> None:
         query_started = time.perf_counter()
         full_scores = model.process(
             {
-                "instruction": full_instruction,
+                "instruction": FULL_QUERY_INSTRUCTION,
                 "query": {"text": task["query"]},
                 "documents": documents,
             }
@@ -254,21 +379,80 @@ def main() -> None:
         for requirement in plan.requirements:
             scores_by_requirement[requirement.requirement_id] = model.process(
                 {
-                    "instruction": attribute_instruction,
+                    "instruction": ATTRIBUTE_INSTRUCTION,
                     "query": {"text": requirement.prompt},
                     "documents": documents,
                 }
             )
+        counterfactual_rows: dict[str, dict[str, Any]] = {}
+        for requirement in plan.requirements:
+            if requirement.kind != "relation":
+                continue
+            counterfactual = build_relation_counterfactual(requirement.value)
+            if counterfactual is None:
+                continue
+            negative_prompt = counterfactual_prompt(counterfactual)
+            counterfactual_rows[requirement.requirement_id] = {
+                **counterfactual.to_dict(),
+                "negative_prompt": negative_prompt,
+                "negative_scores": model.process(
+                    {
+                        "instruction": ATTRIBUTE_INSTRUCTION,
+                        "query": {"text": negative_prompt},
+                        "documents": documents,
+                    }
+                ),
+                "absolute_threshold": requirement.threshold,
+            }
         candidate_rows = []
         for candidate_index, candidate in enumerate(task["candidates"]):
+            model_requirement_scores = {
+                requirement_id: round(float(values[candidate_index]), 8)
+                for requirement_id, values in scores_by_requirement.items()
+            }
+            ocr_path = ocr_root / f"{candidate['item_id']}.json"
+            ocr_lines = load_ocr_lines(
+                ocr_path,
+                minimum_confidence=args.ocr_min_confidence,
+            )
+            ocr_evidence = build_ocr_evidence(
+                plan,
+                ocr_lines,
+                fuzzy_threshold=args.ocr_fuzzy_threshold,
+            )
+            resolved_scores, score_sources = resolve_requirement_scores(
+                model_requirement_scores,
+                ocr_evidence,
+            )
+            contrastive_evidence = []
+            for requirement_id, row in counterfactual_rows.items():
+                positive_score = float(model_requirement_scores[requirement_id])
+                negative_score = float(row["negative_scores"][candidate_index])
+                contrastive_evidence.append(
+                    {
+                        "requirement_id": requirement_id,
+                        "positive_value": row["positive_value"],
+                        "negative_value": row["negative_value"],
+                        "positive_marker": row["positive_marker"],
+                        "negative_marker": row["negative_marker"],
+                        "negative_prompt": row["negative_prompt"],
+                        "positive_score": round(positive_score, 8),
+                        "negative_score": round(negative_score, 8),
+                        "margin": round(
+                            relation_margin(positive_score, negative_score), 8
+                        ),
+                        "absolute_threshold": row["absolute_threshold"],
+                    }
+                )
             candidate_rows.append(
                 {
                     **candidate,
                     "full_query_score": round(float(full_scores[candidate_index]), 8),
-                    "requirement_scores": {
-                        requirement_id: round(float(values[candidate_index]), 8)
-                        for requirement_id, values in scores_by_requirement.items()
-                    },
+                    "requirement_scores": model_requirement_scores,
+                    "resolved_requirement_scores": resolved_scores,
+                    "requirement_score_sources": score_sources,
+                    "ocr_evidence": ocr_evidence,
+                    "contrastive_relation_evidence": contrastive_evidence,
                 }
             )
         results.append(
@@ -284,21 +468,17 @@ def main() -> None:
         write_json_atomic(
             output_path,
             {
+                "schema_version": 2,
                 "status": "partial" if index < len(tasks) else "complete",
-                "scope": "v17_calibration_ranked_candidates_only",
-                "judgments_read": False,
-                "query_count": len(tasks),
+                **run_identity,
                 "completed_query_count": len(results),
-                "top_k": args.top_k,
-                "model": "Qwen3-VL-Reranker-2B",
-                "model_path": model_path.relative_to(PROJECT_ROOT).as_posix(),
-                "policy_sha256": file_sha256(policy_path),
-                "packets_sha256": file_sha256(packets_path),
-                "ranking_sha256": file_sha256(ranking_path),
                 "load_seconds": round(load_seconds, 3),
-                "elapsed_seconds": round(time.perf_counter() - run_started, 3),
-                "peak_reserved_gib": round(
-                    torch.cuda.max_memory_reserved() / 1024**3, 3
+                "elapsed_seconds": round(
+                    previous_elapsed + time.perf_counter() - run_started, 3
+                ),
+                "peak_reserved_gib": max(
+                    previous_peak_gib,
+                    round(torch.cuda.max_memory_reserved() / 1024**3, 3),
                 ),
                 "results": results,
             },

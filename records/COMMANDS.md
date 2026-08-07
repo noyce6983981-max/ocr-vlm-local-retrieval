@@ -250,6 +250,21 @@ V16 选定配置位于 `outputs/evaluation/library_retrieval/v16/selected_retrie
 .\.venv-vl\Scripts\python.exe scripts\evaluate_reranker.py
 ```
 
+## V17 校准集 Top-K 候选验证与 parser 诊断
+
+以下命令只读取校准集；不要把参数改到最终留出集：
+
+```powershell
+.\.venv-vl\Scripts\python.exe scripts\score_v17_candidate_verification.py --top-k 5
+.\.venv\Scripts\python.exe scripts\calibrate_v17_candidate_gate.py
+.\.venv\Scripts\python.exe scripts\evaluate_v17_parser.py
+```
+
+K=5 评分按查询原子保存，进程中断后使用相同参数会从已完成前缀继续。
+校准脚本从同一份 K=5 评分派生 K=1/3/5，默认把新候选配置写入
+`config/v17_candidate_verification_gate_topk_candidate.json`，不会覆盖历史
+Top-1 配置，也不会打开留出集。
+
 ## 重新采集并审计200页公开候选集
 
 ```powershell

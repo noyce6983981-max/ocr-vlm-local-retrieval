@@ -55,6 +55,13 @@ DATA_FILES = {
     "data/evaluation/v17/amendments/002_b3_failed_b5_selected.json",
     "data/evaluation/v17/amendments/"
     "003_separate_pooled_relevance_from_corpus_answerability.json",
+    "data/evaluation/v17/amendments/"
+    "004_topk_calibration_selects_k3_full_query.json",
+    "data/evaluation/v17/parser/calibration_parser_reference.jsonl",
+    "data/evaluation/v17/human_study/calibration/"
+    "top5_extension_judgments.jsonl",
+    "data/evaluation/v17/human_study/calibration/"
+    "top5_extension_review_packets.jsonl",
     "data/evaluation/v17/protocol_frozen_v1.json",
     "data/evaluation/v17/study_status.json",
 }

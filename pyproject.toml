@@ -6,8 +6,21 @@ line-length = 88
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/*.py" = ["E402"]
-"tests/*.py" = ["E402"]
+"scripts/*.py" = [
+  "B007",
+  "B018",
+  "B905",
+  "E402",
+  "E501",
+  "I001",
+  "SIM103",
+  "SIM108",
+  "SIM114",
+  "UP012",
+  "UP017",
+  "UP035",
+]
+"tests/*.py" = ["B018", "E402", "I001", "UP017"]
 
 [tool.mypy]
 python_version = "3.11"

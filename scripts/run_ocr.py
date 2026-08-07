@@ -12,8 +12,8 @@ os.environ.setdefault("PADDLE_PDX_MODEL_SOURCE", "BOS")
 # In the dedicated OCR environment, ModelScope uses CPU-only PyTorch while
 # PaddlePaddle uses the GPU. Import CPU PyTorch first, then Paddle, to keep
 # Windows DLL initialization deterministic.
-import torch
-import paddle
+import torch  # noqa: F401
+import paddle  # noqa: F401
 from paddleocr import PaddleOCR
 
 

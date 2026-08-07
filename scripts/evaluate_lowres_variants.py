@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import torch
 from FlagEmbedding import BGEM3FlagModel
 
 

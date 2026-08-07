@@ -3,7 +3,7 @@
   "study_name": "V17-Compositional-80 Pilot",
   "version": "V17",
   "updated_date": "2026-08-07",
-  "stage": "evaluation_tasks_separated_answerability_review_pending_holdout_sealed",
+  "stage": "topk_calibration_complete_method_lock_pending_holdout_sealed",
   "protocol_chain": [
     {
       "path": "data/evaluation/v17/protocol_frozen_v1.json",
@@ -24,6 +24,11 @@
       "path": "data/evaluation/v17/amendments/003_separate_pooled_relevance_from_corpus_answerability.json",
       "sha256": "10b99cd7465607cb841e0c608688f7d2ea5c986971f01e4942d0b010cae67e9b",
       "role": "evaluation_semantics_amendment"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/004_topk_calibration_selects_k3_full_query.json",
+      "sha256": "890d72ce8e16744e977d96a17a5eeda072e1c3477275fa537f456e4a652d36c2",
+      "role": "topk_method_selection_amendment"
     }
   ],
   "effective_scope": {
@@ -40,7 +45,7 @@
   },
   "evaluation_tasks": {
     "pooled_relevance": {
-      "status": "calibration_review_complete_with_legacy_rows_mapped_in_memory",
+      "status": "calibration_review_complete_with_seven_candidate_top5_extension",
       "canonical_negative_label": "no_relevant_candidate_in_pool",
       "corpus_claim_supported": false
     },
@@ -56,10 +61,17 @@
     "query_count": 40,
     "effective_query_count": 39,
     "active_pool_candidate_count_per_query": 20,
+    "top5_extension": {
+      "candidate_count": 7,
+      "affected_query_count": 7,
+      "base_pool_mutated": false,
+      "label_provenance": "model_assisted_not_human_gold"
+    },
     "pool_supports": [
       "Recall@1",
       "Recall@3",
-      "MRR@3"
+      "MRR@3",
+      "V17-run Recall@5 after the explicit seven-candidate extension"
     ],
     "pool_does_not_support": [
       "unbiased Recall@10",
@@ -74,19 +86,41 @@
       "independent_human_gold": false
     },
     "current_candidate": {
-      "method": "candidate_cross_encoder_attribute_geometric",
+      "method": "candidate_cross_encoder_full_query_rank_first",
       "model": "Qwen3-VL-Reranker-2B",
-      "verified_rank_depth": 1,
-      "threshold": 0.45,
+      "verified_rank_depth": 3,
+      "threshold": 0.51,
+      "contrastive_relations": false,
+      "selection_policy": "highest_retrieval_rank_among_passed",
+      "config_path": "config/v17_candidate_verification_gate_topk_candidate.json",
+      "config_sha256": "d6187abb81497a757d6bc84c1be44bce98fcdd79a59254e21b4e333d0bff67d9",
       "final_method_locked": false
     },
     "descriptive_pool_conditioned_metrics": {
       "v16_quality_hybrid_recall_at_3": 0.34782608695652173,
       "v17_quality_hybrid_recall_at_3": 0.6956521739130435,
       "v16_pool_conditioned_false_accept_rate": 0.625,
-      "v17_pool_conditioned_false_accept_rate": 0.3125,
+      "v17_top1_pool_conditioned_false_accept_rate": 0.3125,
+      "v17_top3_pool_conditioned_false_accept_rate": 0.25,
       "v16_pool_conditioned_end_to_end_top1": 0.23076923076923078,
-      "v17_pool_conditioned_end_to_end_top1": 0.5128205128205128
+      "v17_candidate_gate_top1": 0.5128205128205128,
+      "v17_candidate_gate_top3": 0.5641025641025641
+    },
+    "topk_ablation": {
+      "evaluated_k": [1, 3, 5],
+      "selected_k": 3,
+      "top5_selected": false,
+      "contrastive_relations_selected": false,
+      "contrastive_failure_note": "Lower false acceptance did not compensate for lost relevant-query success under the frozen selection rule.",
+      "explicit_ocr_requirement_count": 0,
+      "ocr_effect_estimated": false
+    },
+    "parser_diagnostic": {
+      "reference_provenance": "codex_assisted_calibration_reference",
+      "human_gold": false,
+      "requirement_f1": 0.8271186440677967,
+      "directional_relation_query_accuracy": 0.775,
+      "attribute_binding_query_accuracy": 0.75
     }
   },
   "holdout": {
@@ -100,7 +134,6 @@
   },
   "required_before_holdout": [
     "Execute and independently review the calibration high-recall corpus-answerability pool.",
-    "Complete calibration-only Top-K and contrastive-relation comparisons.",
     "Collect independent blinded human holdout labels under the final protocol.",
     "Lock code, prompts, model revision, weights, inference settings, data hashes, aggregation, and threshold.",
     "Validate a one-shot runner that refuses repeat execution."

@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "amendment_id": "V17-A004",
+  "date": "2026-08-07",
+  "title": "Top-K calibration selects K=3 rank-first full-query verification",
+  "parent_amendment": {
+    "path": "data/evaluation/v17/amendments/003_separate_pooled_relevance_from_corpus_answerability.json",
+    "sha256": "10b99cd7465607cb841e0c608688f7d2ea5c986971f01e4942d0b010cae67e9b"
+  },
+  "scope": {
+    "split": "calibration",
+    "holdout_read": false,
+    "query_count": 40,
+    "effective_query_count": 39,
+    "label_provenance": "model_assisted_calibration_not_human_gold",
+    "task_id": "pooled_relevance"
+  },
+  "candidate_pool_extension": {
+    "reason": "The original six-route Top-3 pool did not contain seven candidates from the V17 ranking Top-5.",
+    "missing_candidate_count": 7,
+    "affected_query_count": 7,
+    "review_packets": {
+      "path": "data/evaluation/v17/human_study/calibration/top5_extension_review_packets.jsonl",
+      "sha256": "742ace780105d5f3ac396c64ec41688ff0c6f6be43e5a5b7f1bbfba09e68554d"
+    },
+    "judgments": {
+      "path": "data/evaluation/v17/human_study/calibration/top5_extension_judgments.jsonl",
+      "sha256": "dcde605ff963eda7ec9638b1a8d829ef39d23b3ab4bd85329481bae1a25eab14",
+      "reviewer_type": "model_assisted",
+      "human_gold": false
+    },
+    "base_pool_mutated": false
+  },
+  "comparison_grid": {
+    "top_k": [1, 3, 5],
+    "aggregators": [
+      "full_query",
+      "attribute_mean",
+      "attribute_geometric",
+      "weakest"
+    ],
+    "thresholds": "0.00 through 1.00 in 0.01 increments",
+    "contrastive_relation_margins": [0.0, 0.03, 0.05, 0.08, 0.1],
+    "selection_policy": "highest_retrieval_rank_among_passed",
+    "near_optimal_accuracy_tolerance": 0.03,
+    "selection_rule": "Choose the smallest K within 0.03 absolute pool-conditioned accuracy of the best eligible operating point, then maximize accuracy and relevant-query success and minimize false acceptance."
+  },
+  "selected_calibration_candidate": {
+    "config": {
+      "path": "config/v17_candidate_verification_gate_topk_candidate.json",
+      "sha256": "d6187abb81497a757d6bc84c1be44bce98fcdd79a59254e21b4e333d0bff67d9"
+    },
+    "top_k": 3,
+    "method": "full_query",
+    "threshold": 0.51,
+    "contrastive_relations": false,
+    "relation_margin_threshold": 0.0,
+    "selection_policy": "highest_retrieval_rank_among_passed",
+    "pool_conditioned_metrics": {
+      "retrieval_recall_at_3": 0.6956521739130435,
+      "end_to_end_accuracy": 0.5641025641025641,
+      "false_accept_rate": 0.25,
+      "acceptance_coverage": 0.48717948717948717,
+      "selected_relevant_query_rate": 0.43478260869565216,
+      "mean_verified_candidate_count": 2.1025641025641026
+    },
+    "change_from_top1_candidate": {
+      "end_to_end_accuracy_absolute": 0.05128205128205132,
+      "false_accept_rate_absolute": -0.0625,
+      "selected_relevant_query_count": 1
+    }
+  },
+  "ablation_findings": {
+    "top1_best_end_to_end_accuracy": 0.5128205128205128,
+    "top3_best_end_to_end_accuracy": 0.5641025641025641,
+    "top5_best_end_to_end_accuracy": 0.5641025641025641,
+    "top5_noncontrastive_best_end_to_end_accuracy": 0.5128205128205128,
+    "contrastive_relation_result": "Contrastive verification reduced false acceptance to 0.1875 at its best eligible points, but its hard relation constraint reduced relevant-query success; it was not selected.",
+    "attribute_aggregation_result": "Attribute aggregators remained in the ablation but the selected K=3 operating point used the exact full-query verifier score.",
+    "ocr_result": "Deterministic exact/fuzzy OCR precedence was implemented, but no calibration query supplied an explicit target text term; OCR benefit is not estimable on this sample."
+  },
+  "paired_group_bootstrap": {
+    "repetitions": 10000,
+    "seed": 17,
+    "pool_conditioned_false_accept_v17_minus_v16": {
+      "difference": -0.375,
+      "confidence_interval_95": [-0.625, -0.13333333333333333]
+    },
+    "pool_conditioned_end_to_end_correct_v17_minus_v16": {
+      "difference": 0.3333333333333333,
+      "confidence_interval_95": [0.1891891891891892, 0.5]
+    },
+    "limitation": "Intervals are calibration diagnostics and do not adjust for operating-point selection."
+  },
+  "parser_diagnostic": {
+    "reference_path": "data/evaluation/v17/parser/calibration_parser_reference.jsonl",
+    "reference_sha256": "772c5cb205d23f86daa40fe8145b4112728c0181b796bab07c3891940e7e93fc",
+    "human_gold": false,
+    "requirement_precision": 0.8652482269503546,
+    "requirement_recall": 0.7922077922077922,
+    "requirement_f1": 0.8271186440677967,
+    "directional_relation_query_accuracy": 0.775,
+    "attribute_binding_query_accuracy": 0.75
+  },
+  "private_artifact_hashes": {
+    "top5_verification_sha256": "a91e3e3aa75aa9522cf9f7b5df2a7f9ef70243332cf93a52c5275836bdf2d8a7",
+    "calibration_report_sha256": "05e0b26394484c3471b5173f0bd53fc08a7360b453ceac7c07fec87c07dbe9ff",
+    "paired_decisions_sha256": "616076bd60039adeaf9b04e10d0f3e38136f48c399069541ae0efd820c76a84d",
+    "parser_report_sha256": "c8cb24f9cd1a087ffc1fb4485a7c98840a5cb3bb55385b27be731ded825b745e"
+  },
+  "method_lock_status": {
+    "final_method_locked": false,
+    "holdout_status": "sealed_not_run",
+    "next_action": "Create the full method lock and validate the one-shot holdout runner without opening the holdout."
+  },
+  "claim_boundary": "All numbers in this amendment are pool-conditioned, model-assisted calibration diagnostics, not final holdout or corpus-answerability results."
+}

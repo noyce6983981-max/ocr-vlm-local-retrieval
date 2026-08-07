@@ -15,6 +15,14 @@ def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    return [
+        json.loads(line)
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -72,3 +80,44 @@ def test_pool_relevance_is_not_promoted_to_corpus_answerability() -> None:
     assert status["evaluation_tasks"]["corpus_answerability"][
         "independent_human_review_complete"
     ] is False
+
+
+def test_parser_reference_is_calibration_only_and_not_human_gold() -> None:
+    rows = read_jsonl(V17_ROOT / "parser/calibration_parser_reference.jsonl")
+
+    assert len(rows) == 40
+    assert len({row["query_id"] for row in rows}) == 40
+    assert {row["split"] for row in rows} == {"calibration"}
+    assert {row["provenance"] for row in rows} == {
+        "codex_assisted_calibration_reference"
+    }
+
+
+def test_top5_extension_is_small_calibration_only_and_model_assisted() -> None:
+    root = V17_ROOT / "human_study/calibration"
+    packets = read_jsonl(root / "top5_extension_review_packets.jsonl")
+    judgments = read_jsonl(root / "top5_extension_judgments.jsonl")
+
+    assert len(packets) == len(judgments) == 7
+    assert {row["query_id"] for row in packets} == {
+        row["query_id"] for row in judgments
+    }
+    assert {row["split"] for row in packets + judgments} == {"calibration"}
+    assert all(row["human_gold"] is False for row in judgments)
+    assert all(row["reviewer_type"] == "model_assisted" for row in judgments)
+
+
+def test_topk_selection_is_calibration_only_and_config_is_hashed() -> None:
+    amendment = read_json(
+        V17_ROOT / "amendments/004_topk_calibration_selects_k3_full_query.json"
+    )
+    status = read_json(V17_ROOT / "study_status.json")
+    selected = amendment["selected_calibration_candidate"]
+
+    assert selected["top_k"] == 3
+    assert selected["contrastive_relations"] is False
+    assert amendment["scope"]["holdout_read"] is False
+    assert amendment["method_lock_status"]["final_method_locked"] is False
+    config = selected["config"]
+    assert sha256(PROJECT_ROOT / config["path"]) == config["sha256"]
+    assert status["calibration"]["current_candidate"]["verified_rank_depth"] == 3

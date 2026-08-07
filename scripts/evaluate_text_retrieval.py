@@ -205,7 +205,6 @@ def main() -> None:
     results: list[dict[str, Any]] = []
     for query, score_row, index_row in zip(queries, scores, indices):
         ranking = document_ranking(score_row, index_row, metadata)
-        expected = query["expected_item_id"]
         relevant = relevant_item_ids(query)
         rank = next(
             (

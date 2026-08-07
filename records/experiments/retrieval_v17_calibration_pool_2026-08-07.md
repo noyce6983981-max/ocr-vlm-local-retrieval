@@ -142,3 +142,69 @@ Additional artifacts:
 - `outputs/evaluation/v17/calibration/parser_v3/candidate_attribute_verification.json`
 - `outputs/evaluation/v17/calibration/parser_v3/candidate_gate_calibration_report.json`
 - `config/v17_candidate_verification_gate.json`
+
+## Top-K, contrastive-relation, OCR, and parser follow-up
+
+The original 20-item pool contained every V17 Top-3 candidate but missed seven
+items from ranks 4-5. Those seven images were reviewed separately for
+calibration and stored in append-only extension files; the original packets
+and judgments were not changed. The extension is model-assisted and is not
+human gold.
+
+One complete K=5 verifier artifact then supplied the common scores used to
+derive K=1, K=3, and K=5. Every operating point returned the highest original
+retrieval rank that passed, so a higher verifier score could not reorder two
+passing candidates. The grid also compared exact positive-vs-inverse relation
+margins and deterministic OCR precedence. The fixed selection rule retained
+operating points within 0.03 absolute accuracy of the best result, then chose
+the smallest K.
+
+Selected calibration candidate over the same 39 effective queries:
+
+- K=3, full-query verifier score, threshold 0.51.
+- Original-rank-first among passing candidates.
+- Pool-conditioned end-to-end accuracy: 56.4% (old K=1 candidate: 51.3%).
+- Pool-conditioned false-accept rate: 25.0% (old K=1 candidate: 31.3%).
+- Relevant-query success: 43.5% (10/23), one more correct relevant query than
+  the K=1 candidate.
+- Acceptance coverage: 48.7%; mean candidates inspected under the sequential
+  decision rule: 2.10.
+- V16-to-selected end-to-end paired difference: +33.3 points, grouped
+  Bootstrap 95% CI +18.9 to +50.0.
+- V16-to-selected false-accept paired difference: -37.5 points, grouped
+  Bootstrap 95% CI -62.5 to -13.3.
+
+The contrastive-relation branch was not selected. At its best eligible points
+it reduced false acceptance to 18.8%, but the hard relation condition also
+reduced relevant-query success. K=5 did not improve the best accuracy beyond
+K=3 and required more candidate checks. No calibration query contained an
+explicit target OCR phrase, so the implemented exact/fuzzy OCR precedence has
+no effect estimate in this experiment.
+
+The independent parser diagnostic used a 40-query Codex-assisted calibration
+reference, explicitly marked as non-human-gold. Requirement precision, recall,
+and F1 were 86.5%, 79.2%, and 82.7%; directional-relation query accuracy was
+77.5%, and attribute-binding accuracy was 75.0%. Nine queries exposed nested
+relation or binding granularity errors that should not be attributed to the
+retrieval model.
+
+The K=5 GPU scorer used a resumable checkpoint. One forced interruption after
+query 1 was resumed at query 2; the combined artifact reports 118.88 seconds
+and 4.02 GiB peak reserved VRAM. Because candidates were batch-scored, this is
+not a sequential production latency measurement; inspected-candidate count is
+only a cost proxy.
+
+Governance and reproducibility:
+
+- `data/evaluation/v17/amendments/004_topk_calibration_selects_k3_full_query.json`
+- `data/evaluation/v17/human_study/calibration/top5_extension_review_packets.jsonl`
+- `data/evaluation/v17/human_study/calibration/top5_extension_judgments.jsonl`
+- `data/evaluation/v17/parser/calibration_parser_reference.jsonl`
+- `config/v17_candidate_verification_gate_topk_candidate.json`
+- `outputs/evaluation/v17/calibration/parser_v3/candidate_attribute_verification_top5_contrastive.json`
+- `outputs/evaluation/v17/calibration/parser_v3/candidate_gate_topk_calibration_report.json`
+- `outputs/evaluation/v17/calibration/parser_v3/parser_requirement_metrics.json`
+
+These remain pool-conditioned calibration diagnostics. The final method is not
+locked, corpus answerability has not received two-reviewer adjudication, and
+the 40-query holdout remains sealed.
