@@ -22,6 +22,12 @@ from ocr_vlm_retrieval.evaluation.protocol_lock import (
     resolve_relative_path,
     validate_method_lock,
 )
+from scripts.evaluate_v17_locked_holdout import (
+    read_jsonl as read_holdout_jsonl,
+)
+from scripts.evaluate_v17_locked_holdout import (
+    validate_locked_holdout_inputs,
+)
 
 REQUIRED_REVIEW_FLAGS = (
     "independent_reviews",
@@ -146,6 +152,21 @@ def preflight_holdout(
                 input_paths=paths,
             )
         )
+    input_validation_errors: list[str] = []
+    if all(paths[key].is_file() for key in INPUT_KEYS):
+        try:
+            validate_locked_holdout_inputs(
+                method_lock=lock,
+                verification=read_json(paths["verification"]),
+                judgments=read_holdout_jsonl(paths["judgments"]),
+                baseline_rows=read_holdout_jsonl(paths["baseline_records"]),
+            )
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            input_validation_errors.append(str(error))
+    else:
+        input_validation_errors.append(
+            "verification, judgments, and baseline records must all exist"
+        )
     one_shot_errors = []
     if paths["receipt"].exists():
         one_shot_errors.append("one-shot receipt already exists")
@@ -157,6 +178,7 @@ def preflight_holdout(
     errors = [
         *[str(error) for error in lock_validation["errors"]],
         *authorization_errors,
+        *input_validation_errors,
         *one_shot_errors,
     ]
     return {
@@ -165,6 +187,7 @@ def preflight_holdout(
         "method_lock_sha256": method_lock_hash,
         "method_lock_validation": lock_validation,
         "authorization_errors": authorization_errors,
+        "input_validation_errors": input_validation_errors,
         "one_shot_errors": one_shot_errors,
         "errors": errors,
         "paths": {key: str(value) for key, value in paths.items()},

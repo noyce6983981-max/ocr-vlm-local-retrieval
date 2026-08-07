@@ -154,6 +154,37 @@ def validate_method_lock(
             elif hashlib.sha256(snapshot.stdout).hexdigest() != str(expected):
                 errors.append(f"Git snapshot hash mismatch: {relative}")
 
+    retrieval_dependencies = lock.get("retrieval_dependency_files", {})
+    if not isinstance(retrieval_dependencies, Mapping):
+        errors.append("retrieval_dependency_files must be a mapping")
+        retrieval_dependencies = {}
+    for relative, expected in retrieval_dependencies.items():
+        try:
+            path = resolve_relative_path(project_root, str(relative))
+        except ValueError as error:
+            errors.append(str(error))
+            continue
+        if not path.is_file():
+            errors.append(f"retrieval dependency is missing: {relative}")
+            continue
+        if file_sha256(path) != str(expected):
+            errors.append(f"retrieval dependency hash mismatch: {relative}")
+        if commit:
+            snapshot = _git(
+                project_root,
+                "show",
+                f"{commit}:{relative}",
+                check=False,
+            )
+            if snapshot.returncode:
+                errors.append(
+                    f"retrieval dependency absent from Git snapshot: {relative}"
+                )
+            elif hashlib.sha256(snapshot.stdout).hexdigest() != str(expected):
+                errors.append(
+                    f"retrieval dependency Git snapshot mismatch: {relative}"
+                )
+
     governance_files = lock.get("governance_files", {})
     if not isinstance(governance_files, Mapping):
         errors.append("governance_files must be a mapping")
@@ -183,6 +214,55 @@ def validate_method_lock(
             errors.append(f"runtime file is missing: {relative}")
         elif file_sha256(path) != str(expected):
             errors.append(f"runtime file hash mismatch: {relative}")
+
+    ranking_policy = lock.get("candidate_ranking_policy")
+    ranking_policy_hash = str(lock.get("candidate_ranking_policy_sha256", ""))
+    if not ranking_policy_hash or canonical_json_sha256(
+        ranking_policy
+    ) != ranking_policy_hash:
+        errors.append("candidate ranking policy hash mismatch")
+    if isinstance(ranking_policy, Mapping) and ranking_policy.get(
+        "retrieval_dependency_manifest_sha256"
+    ) != canonical_json_sha256(dict(retrieval_dependencies)):
+        errors.append("retrieval dependency manifest hash mismatch")
+
+    holdout_inputs = lock.get("holdout_inputs", {})
+    if not isinstance(holdout_inputs, Mapping):
+        errors.append("holdout_inputs must be a mapping")
+        holdout_inputs = {}
+    holdout_artifacts = (
+        "retrieval_receipt",
+        "review_packets",
+        "adjudicated_judgments",
+        "adjudication_report",
+        "v17_candidate_ranking",
+        "v16_baseline_ranking",
+    )
+    for artifact in holdout_artifacts:
+        relative = str(holdout_inputs.get(f"{artifact}_path", "")).strip()
+        expected = str(holdout_inputs.get(f"{artifact}_sha256", "")).strip()
+        if not relative or not expected:
+            errors.append(f"holdout input binding is missing: {artifact}")
+            continue
+        try:
+            path = resolve_relative_path(runtime_root, relative)
+        except ValueError as error:
+            errors.append(str(error))
+            continue
+        if not path.is_file():
+            errors.append(f"holdout input is missing: {artifact}")
+        elif file_sha256(path) != expected:
+            errors.append(f"holdout input hash mismatch: {artifact}")
+
+    execution = lock.get("execution", {})
+    if isinstance(execution, Mapping):
+        expected_judgments = str(
+            holdout_inputs.get("adjudicated_judgments_path", "")
+        )
+        if execution.get("judgments") != expected_judgments:
+            errors.append("execution judgments path differs from holdout binding")
+    else:
+        errors.append("execution plan must be a mapping")
 
     prompt_text = lock.get("verification_prompt_text")
     prompt_hash = str(lock.get("verification_prompt_sha256", ""))
@@ -243,8 +323,10 @@ def validate_method_lock(
         "git_tree_clean": clean,
         "git_commit_sha": commit,
         "locked_file_count": len(locked_files),
+        "retrieval_dependency_file_count": len(retrieval_dependencies),
         "governance_file_count": len(governance_files),
         "runtime_file_count": len(runtime_files),
+        "holdout_input_count": len(holdout_artifacts),
     }
 
 

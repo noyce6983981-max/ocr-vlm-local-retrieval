@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
-  "lock_revision": 2,
-  "lock_revision_reason": "Pre-activation CI-only formatting normalization; no method, prompt, model, inference, aggregation, threshold, or data change.",
+  "lock_revision": 3,
+  "lock_revision_reason": "Pre-evaluation governance correction: separate the ranking-policy hash from split-specific ranking artifacts, close the first-stage retrieval dependency manifest, bind completed blinded human-review artifacts, and add structural preflight. No method, prompt, model, query, aggregation, threshold, or selected calibration result changed; no holdout metric was computed.",
+  "prior_lock_sha256": "d0295db2460a9fdff26ffd24397b292771ba56ae411742a5000c7b1c37de5e48",
   "study_name": "V17-Compositional-80 Pilot",
   "status": "method_locked_holdout_sealed",
   "locked_date": "2026-08-07",
@@ -20,15 +21,51 @@
     "src/ocr_vlm_retrieval/gating/gate_calibration.py": "dd2c06ca5d032341d48c8d10bee32bac19b3bffab316d0041644cde0ba377010"
   },
   "governance_files": {
-    "scripts/evaluate_v17_locked_holdout.py": "7be69a8b94603a027a0491fc91dad296b1e2ad0cf2ca44332443b4343b927d93",
-    "scripts/run_v17_holdout_once.py": "3ea4bc076b25139ec0fb8499daf59a25d20e3c645cda878090421051ce106585",
-    "src/ocr_vlm_retrieval/evaluation/protocol_lock.py": "0727f584cd5dd9bdd79eb896339989971541921be7a699051ea3ecd68a866b07"
+    "scripts/adjudicate_v17_holdout.py": "deae1e42fce56dc05fd54ecac4a1678cf96b90d356af50681fae8273501c8822",
+    "scripts/authorize_v17_holdout_once.py": "943d02fa619c8fbd4a77f8d7f54e8e3da4e955b34181f8491ee778d18f6fcdf5",
+    "scripts/evaluate_v17_locked_holdout.py": "5538cba80c48d50fe1e2b22e1fcadd45777cbf6b91d89548b995d1c99628bbcb",
+    "scripts/prepare_v17_holdout_adjudication.py": "be9dcde7a1f97c3fd6313340427e6acfc0210e7bfbd0aafd2991f3a69bfa8d4d",
+    "scripts/prepare_v17_locked_holdout_baseline.py": "059f39d184be815e974c7290ada6c89f09cc3ed57b435ece962c89e094b0e2fb",
+    "scripts/run_v17_holdout_once.py": "7fc36037d1c73a2e9dd26ff50988f1af8a40782bcb1d4021e7ffd69d74a2de03",
+    "scripts/run_v17_locked_holdout_retrieval.py": "0f65b9df040694623405512f375917b55b49bae4cb1483b5c8ef2dfa4ec13e6c",
+    "scripts/score_v17_locked_holdout_verification.py": "ac87dab8520a62b62ea203cc9578f75451b9228742ab30c2d74a32561e08690d",
+    "scripts/v17_relevance_review_app.py": "2b66214e20cf84e1acd55bc584ecda59e4bdc90d3a3470a1905724ab197a84fe",
+    "src/ocr_vlm_retrieval/evaluation/human_evaluation.py": "ab09af928ab87b7031bfb46803ab8389f178f234e90c6967827c96f09206806c",
+    "src/ocr_vlm_retrieval/evaluation/protocol_lock.py": "d26d3d42f6bdab8d3b289c7e81d9bcad24d58f3a6e9346c68deb0203fc35a0eb"
+  },
+  "retrieval_dependency_files": {
+    "config/selected_retrieval_config_v16.json": "fcc12e82c6bb098c27537b729dc85d12b640e3914ddada3f0fb696518a3f8110",
+    "scripts/bm25_retrieval.py": "1f563b199946a8cc23b4c120727314e79032d378348034e63278c6ba3fd1eff9",
+    "scripts/color_retrieval.py": "16a4f7732c9baff1c075458d2903d1a7a583accb024569c9747dc3da2041d7ac",
+    "scripts/demo_backend.py": "f697c362699509a2896636d4b10434ba1f6942b9b215bb60d12bd2da0eee8fd1",
+    "scripts/evaluate_library_retrieval.py": "2d6e081cb1def3f51f637c28cba638db095fa08513b6b9f3e4c4d082eaa17345",
+    "scripts/live_search.py": "10a9757b77e1e64528c10a6c79ac11836852564e083218117651c6ee0d2adbcd",
+    "scripts/query_routing.py": "840bb62d3296627629741bcd600d66a35e2a2d8574898693c360918fd0c7d64b",
+    "scripts/retrieval_rejection.py": "5e9e20e9d87917c764976ce9e97085ecf547738eddfff50150240b7df81eb04f",
+    "scripts/run_v17_calibration_retrieval.py": "b86105370221d413d194d8d4c0eb031c7c8ce494225b76f5725ca6a01c2c09fd",
+    "scripts/score_bm25_query.py": "9dfd09c5a8ae9d75a4a9e0de3ebffd78deaf3455c6204efc40fd735574e6faa7",
+    "scripts/score_text_query.py": "62352d6c7b0051a5950bc630799d23150b5fd4665a872d76741fa5fe5dfbfe62",
+    "scripts/score_visual_attribute_queries.py": "b07d7bc98d128f06d037ee3214d7daa4065c167fcab07cd878d7428dcb05befb",
+    "scripts/score_visual_query.py": "2f9b73c3ad31308b61868a3854eb1fc6ec940339b03f7890299d931a64a6b429"
   },
   "query_set_path": "data/evaluation/v17/frozen_query_set/frozen_queries.jsonl",
   "query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979",
   "query_set_file_sha256": "06d119d79f9c189c0b7ab4482c89a014ec4d302e08d2a253f12f899e2208765e",
   "parser_policy_sha256": "b34262e133bd9e6f2b5ed632d6608706c7c4e185dfff3078816661b48d6b073c",
-  "candidate_ranking_sha256": "c16ba2d7de504532b224f08d76539e9622a97e539e2c6262c2f084f17d85a5ff",
+  "calibration_candidate_ranking_sha256": "c16ba2d7de504532b224f08d76539e9622a97e539e2c6262c2f084f17d85a5ff",
+  "candidate_ranking_policy": {
+    "schema_version": 1,
+    "run_id": "v17_quality_hybrid",
+    "search_policy_version": 17,
+    "requested_method": "quality_hybrid",
+    "rerank_top_k": 0,
+    "ranking_source": "rankings.quality_hybrid",
+    "attribute_policy_sha256": "b34262e133bd9e6f2b5ed632d6608706c7c4e185dfff3078816661b48d6b073c",
+    "selected_retrieval_config_sha256": "fcc12e82c6bb098c27537b729dc85d12b640e3914ddada3f0fb696518a3f8110",
+    "retrieval_dependency_manifest_sha256": "9b0786937819d06cc10fcb47fae87168cfbffdc04a93672a8ed43de1d7fdb6f0",
+    "library_revision_algorithm": "scripts/live_search.py:library_revision"
+  },
+  "candidate_ranking_policy_sha256": "9d0befeb5f256d524f9318d154acbc5ff395379b1baf01e9b04eabf1446c5f5e",
   "verification_prompt_sha256": "cee251b6ae499798f2f0a70863a89b61c3438b9384fe5055fd3e5ac12da69140",
   "verification_prompt_text": {
     "full_query_instruction": "Verify exact full-query satisfaction in this one candidate image. Every necessary object, visual attribute, spatial or directional relation, and requested text condition must hold in the same image. A partial or near-neighbor match is negative.",
@@ -47,9 +84,11 @@
   "inference": {
     "top_k": 3,
     "max_length": 1024,
+    "min_pixels": 4096,
     "max_pixels": 147456,
     "dtype": "float16",
     "attention": "sdpa",
+    "low_cpu_mem_usage": true,
     "ocr_root": "outputs/user_library/ocr/json",
     "ocr_minimum_confidence": 0.35,
     "ocr_fuzzy_threshold": 0.88,
@@ -83,12 +122,28 @@
   "holdout": {
     "query_count": 40,
     "split": "holdout",
-    "status": "sealed_not_run",
-    "retrieval_executed": false,
+    "status": "retrieval_and_blinded_human_review_complete_not_evaluated",
+    "retrieval_executed": true,
     "verification_scored": false,
-    "independent_human_judgments_complete": false,
+    "independent_human_judgments_complete": true,
     "evaluation_authorized": false,
     "one_shot_receipt_exists": false
+  },
+  "holdout_inputs": {
+    "retrieval_receipt_path": "outputs/evaluation/v17/holdout/retrieval/holdout_retrieval_receipt.json",
+    "retrieval_receipt_sha256": "25de0a576ce7ed4fd88b90de7e9165ed2ae8c3cbb9daf14d4e3c6176f18f1cb6",
+    "review_packets_path": "data/evaluation/v17/human_study/holdout/review_packets.jsonl",
+    "review_packets_sha256": "0965183bc774c5cfafca7f575b287d413650f8e3f0ecc6f6b205902cb9c45912",
+    "adjudicated_judgments_path": "data/evaluation/v17/human_study/holdout/adjudicated_judgments.jsonl",
+    "adjudicated_judgments_sha256": "16a3229068685979c4731025685a18eba3d0071f0cffcb5adacea68038218595",
+    "adjudication_report_path": "data/evaluation/v17/human_study/holdout/adjudication_report.json",
+    "adjudication_report_sha256": "cbfcadfb8be07d5ef3c79d540e887b0421737c9fc0558cf2e9f9b900d94e2caa",
+    "v17_candidate_ranking_path": "outputs/evaluation/v17/holdout/retrieval/runs/v17_quality_hybrid.jsonl",
+    "v17_candidate_ranking_sha256": "d017dde81e7092228ac5fb3a4d437ab2d8198cfce78defa23f86e4236e1946dc",
+    "v16_baseline_ranking_path": "outputs/evaluation/v17/holdout/retrieval/runs/v16_quality_hybrid.jsonl",
+    "v16_baseline_ranking_sha256": "ee676389923504b61f8f892b8e283286cb6b55c7dc882d4608049a6d5f84a790",
+    "library_revision": "3051b34cf6e4",
+    "holdout_metrics_computed_at_revision": false
   },
   "execution": {
     "evaluator_script": "scripts/evaluate_v17_locked_holdout.py",
@@ -103,5 +158,5 @@
     "default_mode": "preflight_only",
     "explicit_execute_flag": "--execute"
   },
-  "upgrade_rule": "After this lock passes activation CI, any change to a locked method file, governance file, prompt, model manifest, inference setting, aggregation, threshold, or data hash requires V18; V17 holdout reruns are forbidden."
+  "upgrade_rule": "Revision 3 is the final pre-evaluation governance correction. Any subsequent change to a locked method file, governance file, retrieval dependency, prompt, model manifest, inference setting, aggregation, threshold, query set, or bound holdout input requires V18; V17 holdout reruns are forbidden."
 }

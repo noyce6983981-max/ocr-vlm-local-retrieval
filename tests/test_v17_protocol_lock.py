@@ -48,13 +48,15 @@ def make_lock(tmp_path: Path) -> tuple[Path, Path, dict]:
     project.mkdir()
     runtime.mkdir()
     method = project / "method.py"
+    dependency = project / "dependency.py"
     governance = project / "runner.py"
     method.write_bytes(b"METHOD = 'v17'\n")
+    dependency.write_bytes(b"RANKING = 'fixed'\n")
     governance.write_bytes(b"LOCKED = True\n")
     git(project, "init")
     git(project, "config", "user.email", "ci@example.invalid")
     git(project, "config", "user.name", "CI")
-    git(project, "add", "method.py", "runner.py")
+    git(project, "add", "method.py", "dependency.py", "runner.py")
     git(project, "commit", "-m", "locked method")
     commit = git(project, "rev-parse", "HEAD")
 
@@ -83,10 +85,34 @@ def make_lock(tmp_path: Path) -> tuple[Path, Path, dict]:
     (model / ".git" / "ignored").write_text("ignore", encoding="utf-8")
     manifest_hash, manifest = directory_manifest_sha256(model)
     prompt = {"full_query_instruction": "verify all conditions"}
+    ranking_policy = {
+        "source": "fixed",
+        "retrieval_dependency_manifest_sha256": canonical_json_sha256(
+            {"dependency.py": file_sha256(dependency)}
+        ),
+    }
+    holdout_inputs: dict[str, str] = {}
+    for artifact in (
+        "retrieval_receipt",
+        "review_packets",
+        "adjudicated_judgments",
+        "adjudication_report",
+        "v17_candidate_ranking",
+        "v16_baseline_ranking",
+    ):
+        relative = f"holdout/{artifact}.json"
+        path = runtime / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"{artifact}\n", encoding="utf-8")
+        holdout_inputs[f"{artifact}_path"] = relative
+        holdout_inputs[f"{artifact}_sha256"] = file_sha256(path)
     lock = {
         "schema_version": 1,
         "git_commit_sha": commit,
         "locked_files": {"method.py": file_sha256(method)},
+        "retrieval_dependency_files": {
+            "dependency.py": file_sha256(dependency)
+        },
         "governance_files": {"runner.py": file_sha256(governance)},
         "runtime_files": {
             "queries.jsonl": file_sha256(frozen),
@@ -96,6 +122,12 @@ def make_lock(tmp_path: Path) -> tuple[Path, Path, dict]:
         "query_set_sha256": query_fingerprint(rows),
         "verification_prompt_text": prompt,
         "verification_prompt_sha256": canonical_json_sha256(prompt),
+        "candidate_ranking_policy": ranking_policy,
+        "candidate_ranking_policy_sha256": canonical_json_sha256(ranking_policy),
+        "holdout_inputs": holdout_inputs,
+        "execution": {
+            "judgments": holdout_inputs["adjudicated_judgments_path"]
+        },
         "model": {
             "path": "model",
             "weight_manifest_sha256": manifest_hash,
@@ -118,19 +150,26 @@ def test_validate_method_lock_accepts_exact_snapshot(tmp_path: Path) -> None:
     assert report["valid"], report
     assert report["git_tree_clean"]
     assert report["locked_file_count"] == 1
+    assert report["retrieval_dependency_file_count"] == 1
     assert report["governance_file_count"] == 1
     assert report["runtime_file_count"] == 2
+    assert report["holdout_input_count"] == 6
     assert read_jsonl(runtime / "queries.jsonl")[0]["query_id"] == "q1"
 
 
 def test_validate_method_lock_reports_tampering(tmp_path: Path) -> None:
     project, runtime, lock = make_lock(tmp_path)
     (project / "method.py").write_bytes(b"METHOD = 'changed'\n")
+    (project / "dependency.py").write_bytes(b"RANKING = 'changed'\n")
     (project / "runner.py").unlink()
     (runtime / "calibration.json").write_text('{"changed": true}\n', encoding="utf-8")
     (runtime / "queries.jsonl").write_text("{}\n", encoding="utf-8")
     (runtime / "model" / "weights.bin").write_bytes(b"changed")
+    (runtime / "holdout/adjudication_report.json").write_text(
+        "changed\n", encoding="utf-8"
+    )
     lock["verification_prompt_sha256"] = "0" * 64
+    lock["candidate_ranking_policy_sha256"] = "0" * 64
 
     report = validate_method_lock(
         lock,
@@ -142,10 +181,13 @@ def test_validate_method_lock_reports_tampering(tmp_path: Path) -> None:
     joined = " | ".join(report["errors"])
     assert "working tree is not clean" in joined
     assert "locked file hash mismatch" in joined
+    assert "retrieval dependency hash mismatch" in joined
     assert "governance file is missing" in joined
     assert "runtime file hash mismatch" in joined
+    assert "holdout input hash mismatch" in joined
     assert "frozen query set cannot be fingerprinted" in joined
     assert "verification prompt hash mismatch" in joined
+    assert "candidate ranking policy hash mismatch" in joined
     assert "model weight manifest hash mismatch" in joined
 
 

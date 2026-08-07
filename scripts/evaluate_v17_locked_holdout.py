@@ -59,15 +59,13 @@ def write_new_json(path: Path, payload: Mapping[str, Any]) -> None:
         os.fsync(handle.fileno())
 
 
-def evaluate_locked_holdout(
+def prepare_locked_holdout_inputs(
     *,
     method_lock: Mapping[str, Any],
     verification: Mapping[str, Any],
     judgments: Iterable[Mapping[str, Any]],
     baseline_rows: Iterable[Mapping[str, Any]],
-    bootstrap_repetitions: int,
-    seed: int,
-) -> dict[str, Any]:
+) -> tuple[Mapping[str, Any], int, list[dict[str, Any]]]:
     if method_lock.get("status") != "method_locked_holdout_sealed":
         raise ValueError("V17 method lock is not in the final locked state")
     if verification.get("status") != "complete":
@@ -93,10 +91,17 @@ def evaluate_locked_holdout(
         "parser_policy_sha256"
     ):
         raise ValueError("Holdout parser policy hash does not match the lock")
-    if verification.get("ranking_sha256") != method_lock.get(
-        "candidate_ranking_sha256"
+    if verification.get("ranking_policy_sha256") != method_lock.get(
+        "candidate_ranking_policy_sha256"
     ):
         raise ValueError("Holdout ranking policy hash does not match the lock")
+    holdout_inputs = method_lock.get("holdout_inputs", {})
+    if not isinstance(holdout_inputs, Mapping):
+        raise ValueError("Method lock holdout inputs are invalid")
+    if verification.get("ranking_sha256") != holdout_inputs.get(
+        "v17_candidate_ranking_sha256"
+    ):
+        raise ValueError("Holdout ranking artifact hash does not match the lock")
 
     judgment_by_id = {
         query_id: normalize_pool_judgment(row)
@@ -154,6 +159,90 @@ def evaluate_locked_holdout(
             }
         )
 
+    for row in rows:
+        query_id = str(row["query_id"])
+        baseline = baseline_by_id[query_id]
+        relevance = judgment_by_id[query_id]["candidate_relevance"]
+        if baseline.get("group_id") != row["group_id"]:
+            raise ValueError(
+                "V16 baseline group_id does not match holdout verification"
+            )
+        if baseline.get("scope") != "v17_holdout_v16_locked_baseline":
+            raise ValueError("V16 baseline scope is invalid")
+        if baseline.get("judgments_read") is not False:
+            raise ValueError("V16 baseline must certify judgments_read=false")
+        if baseline.get("method") != "quality_hybrid":
+            raise ValueError("V16 baseline method is invalid")
+        if baseline.get("ranking_sha256") != holdout_inputs.get(
+            "v16_baseline_ranking_sha256"
+        ):
+            raise ValueError("V16 baseline ranking hash does not match the lock")
+        if not isinstance(baseline.get("v16_accepted"), bool):
+            raise ValueError("V16 baseline accepted decision must be boolean")
+        v16_accepted = bool(baseline["v16_accepted"])
+        selected_item_id = baseline.get("selected_item_id")
+        selected_rank = baseline.get("selected_rank")
+        if v16_accepted:
+            if not isinstance(selected_item_id, str) or not selected_item_id:
+                raise ValueError("Accepted V16 baseline needs a selected item")
+            if selected_rank != 1:
+                raise ValueError("V16 baseline must select retrieval rank one")
+        elif selected_item_id is not None or selected_rank is not None:
+            raise ValueError("Rejected V16 baseline cannot select an item")
+        no_relevant = row["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
+        v16_selected_relevant = bool(
+            v16_accepted and relevance.get(str(selected_item_id), False)
+        )
+        row["v16_accepted"] = v16_accepted
+        row["v16_selected_item_id"] = selected_item_id
+        row["v16_selected_relevant"] = v16_selected_relevant
+        row["v16_pool_conditioned_false_accept"] = float(
+            no_relevant and v16_accepted
+        )
+        row["v16_pool_conditioned_correct"] = float(
+            (not no_relevant and v16_accepted and v16_selected_relevant)
+            or (no_relevant and not v16_accepted)
+        )
+    return aggregation, top_k, rows
+
+
+def validate_locked_holdout_inputs(
+    *,
+    method_lock: Mapping[str, Any],
+    verification: Mapping[str, Any],
+    judgments: Iterable[Mapping[str, Any]],
+    baseline_rows: Iterable[Mapping[str, Any]],
+) -> dict[str, Any]:
+    _, top_k, rows = prepare_locked_holdout_inputs(
+        method_lock=method_lock,
+        verification=verification,
+        judgments=judgments,
+        baseline_rows=baseline_rows,
+    )
+    return {
+        "valid": True,
+        "query_count": len(rows),
+        "top_k": top_k,
+        "metrics_computed": False,
+    }
+
+
+def evaluate_locked_holdout(
+    *,
+    method_lock: Mapping[str, Any],
+    verification: Mapping[str, Any],
+    judgments: Iterable[Mapping[str, Any]],
+    baseline_rows: Iterable[Mapping[str, Any]],
+    bootstrap_repetitions: int,
+    seed: int,
+) -> dict[str, Any]:
+    aggregation, top_k, rows = prepare_locked_holdout_inputs(
+        method_lock=method_lock,
+        verification=verification,
+        judgments=judgments,
+        baseline_rows=baseline_rows,
+    )
+
     metrics, decisions = evaluate_topk_operating_point(
         rows,
         top_k=top_k,
@@ -162,28 +251,25 @@ def evaluate_locked_holdout(
         contrastive_relations=bool(aggregation["contrastive_relations"]),
         relation_margin_threshold=float(aggregation["relation_margin_threshold"]),
     )
+    source_by_id = {str(row["query_id"]): row for row in rows}
     for decision in decisions:
-        baseline = baseline_by_id[str(decision["query_id"])]
-        if baseline.get("group_id") != decision["group_id"]:
-            raise ValueError(
-                "V16 baseline group_id does not match holdout verification"
-            )
-        if not isinstance(baseline.get("v16_accepted"), bool):
-            raise ValueError("V16 baseline accepted decision must be boolean")
-        if not isinstance(baseline.get("v16_pool_conditioned_correct"), bool):
-            raise ValueError("V16 baseline correctness must be boolean")
+        query_id = str(decision["query_id"])
+        source = source_by_id[query_id]
         no_relevant = (
             decision["pool_relevance"] == NO_RELEVANT_CANDIDATE_IN_POOL
         )
         decision["v16_pool_conditioned_false_accept"] = float(
-            no_relevant and baseline["v16_accepted"]
+            source["v16_pool_conditioned_false_accept"]
         )
         decision["v17_pool_conditioned_false_accept"] = float(
             no_relevant and decision["accepted"]
         )
         decision["v16_pool_conditioned_correct"] = float(
-            baseline["v16_pool_conditioned_correct"]
+            source["v16_pool_conditioned_correct"]
         )
+        decision["v16_accepted"] = source["v16_accepted"]
+        decision["v16_selected_item_id"] = source["v16_selected_item_id"]
+        decision["v16_selected_relevant"] = source["v16_selected_relevant"]
         decision["v17_pool_conditioned_correct"] = float(
             decision["pool_conditioned_correct"]
         )

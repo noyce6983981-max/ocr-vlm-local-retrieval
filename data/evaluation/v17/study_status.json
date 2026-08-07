@@ -2,8 +2,8 @@
   "schema_version": 1,
   "study_name": "V17-Compositional-80 Pilot",
   "version": "V17",
-  "updated_date": "2026-08-07",
-  "stage": "method_locked_holdout_sealed_execution_not_authorized",
+  "updated_date": "2026-08-08",
+  "stage": "holdout_human_review_complete_verification_not_run",
   "protocol_chain": [
     {
       "path": "data/evaluation/v17/protocol_frozen_v1.json",
@@ -39,6 +39,11 @@
       "path": "data/evaluation/v17/amendments/006_pre_activation_ci_format_normalization.json",
       "sha256": "2c36ce0b520b20f45327b15030a742c3cbd989661fa04aa9388728eb2b07213e",
       "role": "pre_activation_ci_only_lock_revision"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/007_pre_evaluation_governance_correction.json",
+      "sha256": "dc46f498d3c5500cc418d5da8eec377e47f1698b62252407d41576ce4a5c88cd",
+      "role": "pre_evaluation_governance_and_dependency_closure"
     }
   ],
   "effective_scope": {
@@ -106,7 +111,7 @@
       "config_sha256": "d6187abb81497a757d6bc84c1be44bce98fcdd79a59254e21b4e333d0bff67d9",
       "final_method_locked": true,
       "method_lock_path": "config/v17_method_lock.json",
-      "method_lock_sha256": "d0295db2460a9fdff26ffd24397b292771ba56ae411742a5000c7b1c37de5e48"
+      "method_lock_sha256": "4e5eadbaa67b2be6519dbbefe840293a4c543cf61421f9f238dd2eb5fc4949b2"
     },
     "descriptive_pool_conditioned_metrics": {
       "v16_quality_hybrid_recall_at_3": 0.34782608695652173,
@@ -138,22 +143,25 @@
   "holdout": {
     "query_count": 40,
     "sealed": true,
-    "retrieval_executed": false,
+    "retrieval_executed": true,
     "scored": false,
-    "human_relevance_judgments_complete": false,
+    "human_relevance_judgments_complete": true,
+    "primary_independent_reviewer_count": 2,
+    "independent_adjudicator_count": 1,
+    "adjudicated_query_count": 14,
+    "model_assisted_labels_used": false,
     "final_method_locked": true,
     "evaluation_authorized": false,
     "one_shot_receipt_exists": false
   },
   "required_before_holdout": [
-    "Execute and independently review the calibration high-recall corpus-answerability pool.",
-    "Collect two complete, independent, blinded human holdout reviews without model-assisted labels.",
-    "Adjudicate conflicts with a reviewer independent of the two primary reviewers.",
+    "Run the locked label-blind Qwen3-VL Top-3 candidate verification.",
+    "Freeze the label-blind V16 acceptance and selected-item baseline decisions.",
     "Issue an authorization binding the exact verification, adjudicated judgment, baseline, and method-lock hashes."
   ],
   "public_claim_boundary": {
     "latest_independent_result": "V16",
-    "v17_status": "method locked; final holdout sealed and not authorized",
+    "v17_status": "method lock revision 3; holdout retrieval and independent human adjudication complete; verification and final evaluation pending",
     "v17_metrics": "pool-conditioned, model-assisted calibration diagnostics; not final benchmark results"
   }
 }

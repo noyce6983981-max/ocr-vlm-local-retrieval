@@ -29,7 +29,11 @@ def fixtures() -> tuple[dict, dict, list[dict], list[dict]]:
     lock = {
         "status": "method_locked_holdout_sealed",
         "parser_policy_sha256": "policy",
-        "candidate_ranking_sha256": "ranking",
+        "candidate_ranking_policy_sha256": "ranking-policy",
+        "holdout_inputs": {
+            "v17_candidate_ranking_sha256": "ranking",
+            "v16_baseline_ranking_sha256": "baseline-ranking",
+        },
         "inference": {"top_k": 3},
         "aggregation": {
             "method": "full_query",
@@ -46,6 +50,7 @@ def fixtures() -> tuple[dict, dict, list[dict], list[dict]]:
         "judgments_read": False,
         "top_k": 3,
         "policy_sha256": "policy",
+        "ranking_policy_sha256": "ranking-policy",
         "ranking_sha256": "ranking",
         "results": [
             {
@@ -98,14 +103,24 @@ def fixtures() -> tuple[dict, dict, list[dict], list[dict]]:
         {
             "query_id": "q1",
             "group_id": "g1",
+            "scope": "v17_holdout_v16_locked_baseline",
+            "judgments_read": False,
+            "method": "quality_hybrid",
+            "ranking_sha256": "baseline-ranking",
             "v16_accepted": False,
-            "v16_pool_conditioned_correct": False,
+            "selected_item_id": None,
+            "selected_rank": None,
         },
         {
             "query_id": "q2",
             "group_id": "g2",
+            "scope": "v17_holdout_v16_locked_baseline",
+            "judgments_read": False,
+            "method": "quality_hybrid",
+            "ranking_sha256": "baseline-ranking",
             "v16_accepted": True,
-            "v16_pool_conditioned_correct": False,
+            "selected_item_id": "q2_a",
+            "selected_rank": 1,
         },
     ]
     return lock, verification, judgments, baseline

@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "amendment_id": "007_pre_evaluation_governance_correction",
+  "effective_date": "2026-08-08",
+  "timing": "after label-blind holdout retrieval and independent human review, before candidate verification, authorization, or any holdout metric computation",
+  "reason": "Revision 2 conflated a calibration ranking artifact hash with the cross-split ranking policy hash and did not fully bind first-stage retrieval dependencies. It also allowed a one-shot receipt to be claimed before deep structural validation of all evaluator inputs.",
+  "superseded_lock_snapshot": {
+    "path": "config/v17_method_lock.json",
+    "lock_revision": 2,
+    "sha256": "d0295db2460a9fdff26ffd24397b292771ba56ae411742a5000c7b1c37de5e48"
+  },
+  "effective_lock_snapshot": {
+    "path": "config/v17_method_lock.json",
+    "lock_revision": 3,
+    "sha256": "4e5eadbaa67b2be6519dbbefe840293a4c543cf61421f9f238dd2eb5fc4949b2"
+  },
+  "changes": {
+    "ranking_identity": "Separates a canonical ranking-policy hash from calibration and holdout ranking-file hashes.",
+    "retrieval_dependency_closure": "Binds the retrieval configuration and all scripts used to materialize the frozen rankings against the original method commit.",
+    "holdout_input_bindings": "Binds the label-blind retrieval receipt, review packets, final independent-human adjudication, and V16/V17 frozen ranking artifacts.",
+    "label_governance": "Adds blind third-review adjudication materialization with exact reviewer-artifact hashes and explicitly forbids model-assisted holdout labels.",
+    "one_shot_safety": "Adds a structural, metrics-free validation pass before the immutable one-shot receipt can be claimed.",
+    "baseline_semantics": "Stores only label-blind V16 acceptance and selected-item decisions; final correctness is computed by the locked evaluator."
+  },
+  "unchanged_selected_method": {
+    "model": "Qwen/Qwen3-VL-Reranker-2B",
+    "top_k": 3,
+    "aggregation": "full_query",
+    "threshold": 0.51,
+    "selection_policy": "highest_retrieval_rank_among_passed",
+    "contrastive_relations": false,
+    "query_set_sha256": "5950bd68bf7680aa186132d187ce65741d3b6f4245577a000c00314be8828979",
+    "verification_prompt_sha256": "cee251b6ae499798f2f0a70863a89b61c3438b9384fe5055fd3e5ac12da69140"
+  },
+  "holdout_safeguards": {
+    "holdout_metrics_computed_before_revision": false,
+    "threshold_or_method_selected_from_holdout": false,
+    "model_assisted_holdout_labels_used": false,
+    "one_shot_receipt_exists": false,
+    "final_evaluation_authorized": false,
+    "future_governance_or_method_change_requires": "V18"
+  }
+}

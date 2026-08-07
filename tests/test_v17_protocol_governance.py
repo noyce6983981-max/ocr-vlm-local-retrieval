@@ -60,7 +60,9 @@ def test_study_status_hashes_protocol_chain_and_keeps_holdout_sealed() -> None:
     assert scope["calibration_count"] + scope["holdout_count"] == 80
     assert scope["route"] == "compositional_visual"
     assert status["holdout"]["sealed"] is True
-    assert status["holdout"]["retrieval_executed"] is False
+    assert status["holdout"]["retrieval_executed"] is True
+    assert status["holdout"]["human_relevance_judgments_complete"] is True
+    assert status["holdout"]["model_assisted_labels_used"] is False
     assert status["holdout"]["final_method_locked"] is True
     assert status["holdout"]["evaluation_authorized"] is False
     assert status["holdout"]["one_shot_receipt_exists"] is False
@@ -129,22 +131,31 @@ def test_final_method_lock_does_not_claim_a_holdout_result() -> None:
     original_lock_amendment = read_json(
         V17_ROOT / "amendments/005_method_locked_holdout_execution_guarded.json"
     )
-    amendment = read_json(
+    ci_amendment = read_json(
         V17_ROOT / "amendments/006_pre_activation_ci_format_normalization.json"
+    )
+    amendment = read_json(
+        V17_ROOT / "amendments/007_pre_evaluation_governance_correction.json"
     )
     effective = amendment["effective_lock_snapshot"]
     lock_path = PROJECT_ROOT / effective["path"]
     lock = read_json(lock_path)
 
     assert sha256(lock_path) == effective["sha256"]
-    assert effective["lock_revision"] == 2
+    assert effective["lock_revision"] == 3
     assert original_lock_amendment["method_lock"]["sha256"] == (
-        amendment["superseded_lock_snapshot"]["sha256"]
+        ci_amendment["superseded_lock_snapshot"]["sha256"]
     )
+    assert ci_amendment["effective_lock_snapshot"]["sha256"] == amendment[
+        "superseded_lock_snapshot"
+    ]["sha256"]
     assert lock["status"] == "method_locked_holdout_sealed"
-    assert lock["holdout"]["status"] == "sealed_not_run"
+    assert lock["holdout"]["status"] == (
+        "retrieval_and_blinded_human_review_complete_not_evaluated"
+    )
     for relative, expected in {
         **lock["locked_files"],
+        **lock["retrieval_dependency_files"],
         **lock["governance_files"],
     }.items():
         assert sha256(PROJECT_ROOT / relative) == expected
@@ -161,4 +172,7 @@ def test_final_method_lock_does_not_claim_a_holdout_result() -> None:
     )
     assert original_lock_amendment["one_shot_guard"][
         "current_receipt_exists"
+    ] is False
+    assert amendment["holdout_safeguards"][
+        "holdout_metrics_computed_before_revision"
     ] is False

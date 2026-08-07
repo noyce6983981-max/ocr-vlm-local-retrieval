@@ -7,6 +7,7 @@ from scripts.v17_relevance_review_app import (
     moved_query_position,
     packet_index,
     packet_pool_sha256,
+    review_is_complete,
     updated_relevance_draft,
 )
 
@@ -64,6 +65,14 @@ def test_query_position_navigation_is_bounded() -> None:
     assert moved_query_position(40, 1, 40) == 40
     with pytest.raises(ValueError, match="total must be positive"):
         moved_query_position(1, 1, 0)
+
+
+def test_final_review_does_not_count_uncertain_as_complete() -> None:
+    uncertain = {"pool_relevance": "uncertain"}
+    relevant = {"pool_relevance": "relevant_candidate_in_pool"}
+    assert review_is_complete(uncertain, require_final_decision=False)
+    assert not review_is_complete(uncertain, require_final_decision=True)
+    assert review_is_complete(relevant, require_final_decision=True)
 
 
 def test_legacy_packet_gets_stable_pool_hash() -> None:

@@ -25,12 +25,28 @@ from ocr_vlm_retrieval.evaluation.judgments import (
     normalize_pool_judgment,
 )
 
-PACKETS_PATH = (
-    PROJECT_ROOT / "data/evaluation/v17/human_study/calibration/review_packets.jsonl"
+REVIEW_SPLIT = os.environ.get("V17_REVIEW_SPLIT", "calibration").strip()
+DEFAULT_PACKETS_PATH = (
+    PROJECT_ROOT
+    / f"data/evaluation/v17/human_study/{REVIEW_SPLIT}/review_packets.jsonl"
 )
-JUDGMENTS_PATH = (
-    PROJECT_ROOT / "data/evaluation/v17/human_study/calibration/judgments.jsonl"
+DEFAULT_JUDGMENTS_PATH = (
+    PROJECT_ROOT / f"data/evaluation/v17/human_study/{REVIEW_SPLIT}/judgments.jsonl"
 )
+PACKETS_PATH = Path(
+    os.environ.get("V17_REVIEW_PACKETS", str(DEFAULT_PACKETS_PATH))
+).resolve()
+JUDGMENTS_PATH = Path(
+    os.environ.get("V17_REVIEW_JUDGMENTS", str(DEFAULT_JUDGMENTS_PATH))
+).resolve()
+FIXED_REVIEWER_ID = os.environ.get("V17_REVIEWER_ID", "").strip()
+FIXED_REVIEWER_ROLE = os.environ.get("V17_REVIEWER_ROLE", "").strip()
+REQUIRE_FINAL_DECISION = os.environ.get(
+    "V17_REVIEW_REQUIRE_FINAL", "false"
+).strip().lower() in {"1", "true", "yes"}
+REVIEW_RUNTIME_ROOT = Path(
+    os.environ.get("V17_RUNTIME_ROOT", str(PROJECT_ROOT))
+).resolve()
 CANDIDATES_PER_PAGE = 20
 SECONDARY_REVIEW_FRACTION = 0.30
 
@@ -131,7 +147,9 @@ def candidate_image_path(candidate: dict[str, Any]) -> Path | None:
     if not raw_path:
         return None
     path = Path(raw_path)
-    resolved = (path if path.is_absolute() else PROJECT_ROOT / path).resolve()
+    resolved = (
+        path if path.is_absolute() else REVIEW_RUNTIME_ROOT / path
+    ).resolve()
     return resolved if resolved.is_file() else None
 
 
@@ -146,6 +164,17 @@ def current_judgment(
         ),
         {},
     )
+
+
+def review_is_complete(
+    row: dict[str, Any], *, require_final_decision: bool
+) -> bool:
+    if not require_final_decision:
+        return True
+    return str(row.get("pool_relevance", "")) in {
+        RELEVANT_CANDIDATE_IN_POOL,
+        NO_RELEVANT_CANDIDATE_IN_POOL,
+    }
 
 
 def remember_relevance(draft_key: str, item_id: str, widget_key: str) -> None:
@@ -199,9 +228,10 @@ def move_query_position(cursor_key: str, delta: int, total: int) -> None:
 
 
 def main() -> None:
-    st.set_page_config(page_title="V17 池内相关性盲审", layout="wide")
+    split_label = "最终留出集" if REVIEW_SPLIT == "holdout" else "校准集"
+    st.set_page_config(page_title=f"V17 {split_label}盲审", layout="wide")
     install_translation_guard()
-    st.title("V17 校准集池内相关性盲审")
+    st.title(f"V17 {split_label}池内相关性盲审")
     st.caption(
         "判断候选页是否同时满足查询的全部必要条件。页面不会显示检索方法、"
         "分数、原始排名、文件名、数据集、来源路径、系统接受决定或预期答案。"
@@ -213,7 +243,11 @@ def main() -> None:
 
     packets = read_jsonl(PACKETS_PATH)
     if not packets:
-        st.error("尚未生成校准候选池 review_packets.jsonl。")
+        st.error(f"尚未生成{split_label}候选池 review_packets.jsonl。")
+        return
+    packet_splits = {str(row.get("split", "")) for row in packets}
+    if packet_splits != {REVIEW_SPLIT}:
+        st.error(f"审核包 split 不匹配：期望 {REVIEW_SPLIT}。")
         return
     fingerprints = {str(row.get("study_fingerprint", "")) for row in packets}
     if len(fingerprints) != 1 or not next(iter(fingerprints)):
@@ -233,17 +267,30 @@ def main() -> None:
     ]
     reviewer_id = st.sidebar.text_input(
         "审核者 ID",
+        value=FIXED_REVIEWER_ID,
+        disabled=bool(FIXED_REVIEWER_ID),
         help="两名审核者必须使用不同 ID，且不要共享审核结果。",
     ).strip()
-    role = st.sidebar.radio(
-        "审核任务",
-        ("第一审核者（全部 40 条）", "第二审核者（固定复核 12 条）"),
-    )
-    assigned = packets if role.startswith("第一") else secondary_packets(packets)
+    if REVIEW_SPLIT == "holdout":
+        role = "独立审核者（全部 40 条）"
+        st.sidebar.info(
+            f"当前独立任务包含 {len(packets)} 条；必须逐条完成全部候选。"
+        )
+        assigned = packets
+    else:
+        role = st.sidebar.radio(
+            "审核任务",
+            ("第一审核者（全部 40 条）", "第二审核者（固定复核 12 条）"),
+        )
+        assigned = packets if role.startswith("第一") else secondary_packets(packets)
     completed_ids = {
         str(row["query_id"])
         for row in judgments
-        if reviewer_id and row.get("reviewer_id") == reviewer_id
+        if reviewer_id
+        and row.get("reviewer_id") == reviewer_id
+        and review_is_complete(
+            row, require_final_decision=REQUIRE_FINAL_DECISION
+        )
     }
     pending = [row for row in assigned if row["query_id"] not in completed_ids]
     st.sidebar.metric("分配查询", len(assigned))
@@ -373,20 +420,34 @@ def main() -> None:
         "提交前必须逐页查看。"
     )
     pool_relevance_options = (
-        "uncertain",
-        RELEVANT_CANDIDATE_IN_POOL,
-        NO_RELEVANT_CANDIDATE_IN_POOL,
-        "excluded",
+        (RELEVANT_CANDIDATE_IN_POOL, NO_RELEVANT_CANDIDATE_IN_POOL)
+        if REQUIRE_FINAL_DECISION
+        else (
+            "uncertain",
+            RELEVANT_CANDIDATE_IN_POOL,
+            NO_RELEVANT_CANDIDATE_IN_POOL,
+            "excluded",
+        )
     )
     current_pool_relevance = (
         str(normalize_pool_judgment(existing)["pool_relevance"])
         if existing
         else "uncertain"
     )
+    current_pool_index = (
+        pool_relevance_options.index(current_pool_relevance)
+        if current_pool_relevance in pool_relevance_options
+        else None
+    )
+    if REQUIRE_FINAL_DECISION:
+        st.warning(
+            "裁决阶段必须给出池内相关或池内无相关的最终判断，不能继续保留 "
+            "uncertain/excluded。"
+        )
     pool_relevance = st.radio(
         "20 候选池内是否存在完整相关候选",
         pool_relevance_options,
-        index=pool_relevance_options.index(current_pool_relevance),
+        index=current_pool_index,
         horizontal=True,
         help=(
             "relevant_candidate_in_pool：池中至少一个完整相关候选；"
@@ -406,6 +467,9 @@ def main() -> None:
             for candidate in candidates
         }
         relevant_count = sum(relevance.values())
+        if pool_relevance is None:
+            st.error("请选择一个最终判断后再保存。")
+            return
         if (
             pool_relevance == RELEVANT_CANDIDATE_IN_POOL
             and relevant_count == 0
@@ -422,7 +486,15 @@ def main() -> None:
             {
                 "query_id": selected_id,
                 "reviewer_id": reviewer_id,
-                "reviewer_role": "primary" if role.startswith("第一") else "secondary",
+                "reviewer_role": (
+                    FIXED_REVIEWER_ROLE
+                    if FIXED_REVIEWER_ROLE
+                    else "primary_independent_full"
+                    if REVIEW_SPLIT == "holdout"
+                    else "primary"
+                    if role.startswith("第一")
+                    else "secondary"
+                ),
                 "task_id": POOLED_RELEVANCE_TASK,
                 "pool_relevance": pool_relevance,
                 "pool_sha256": packet_pool_sha256(packet),
