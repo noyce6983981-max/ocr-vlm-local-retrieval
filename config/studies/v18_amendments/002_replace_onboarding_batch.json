@@ -1,0 +1,44 @@
+{
+    "amendment_id": "V18-A002",
+    "recorded_date": "2026-08-08",
+    "base_effective_protocol_sha256": "f929bbf1d51025394d2bccb28aee967b48bb7046a201327b966d9376bdfc38b5",
+    "effective_protocol_sha256": "3f3ea13e57bf31b28d9281fb445b74d7d1f724c75342c01508ad8e0951714d70",
+    "timing": "before_query_set_freeze_and_before_any_retrieval",
+    "reason": "The first ten source-level authoring tasks were used while the reviewer was learning the paired-query rubric. They are excluded from the effective benchmark and replaced before query freezing.",
+    "discarded_authoring_ids": [
+        "v18_source_001",
+        "v18_source_002",
+        "v18_source_003",
+        "v18_source_004",
+        "v18_source_005",
+        "v18_source_006",
+        "v18_source_007",
+        "v18_source_008",
+        "v18_source_009",
+        "v18_source_010"
+    ],
+    "replacement_authoring_ids": [
+        "v18_source_081",
+        "v18_source_082",
+        "v18_source_083",
+        "v18_source_084",
+        "v18_source_085",
+        "v18_source_086",
+        "v18_source_087",
+        "v18_source_088",
+        "v18_source_089",
+        "v18_source_090"
+    ],
+    "invariants": {
+        "total_queries": 160,
+        "source_group_count": 80,
+        "calibration_queries": 80,
+        "holdout_queries": 80,
+        "stratum_counts_unchanged": true,
+        "language": "zh",
+        "discarded_records_retained_for_audit": true,
+        "replacement_sources_disjoint_from_v17_and_active_v18_sources": true,
+        "retrieval_executed": false,
+        "v17_artifacts_modified": false
+    }
+}

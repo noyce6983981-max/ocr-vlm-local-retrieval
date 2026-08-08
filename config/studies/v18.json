@@ -77,6 +77,7 @@
         "v17_artifacts_read_only": true
     },
     "amendments": [
-        "config/studies/v18_amendments/001_chinese_only_query_language.json"
+        "config/studies/v18_amendments/001_chinese_only_query_language.json",
+        "config/studies/v18_amendments/002_replace_onboarding_batch.json"
     ]
 }

@@ -29,6 +29,7 @@ def test_v18_protocol_has_balanced_frozen_design() -> None:
     assert protocol.query_design.languages == {"zh": 160}
     assert protocol.amendments == (
         "config/studies/v18_amendments/001_chinese_only_query_language.json",
+        "config/studies/v18_amendments/002_replace_onboarding_batch.json",
     )
     assert len(protocol_fingerprint(protocol)) == 64
 

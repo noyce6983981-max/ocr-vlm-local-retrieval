@@ -347,6 +347,130 @@ def validate_authoring_queue(
         )
 
 
+def replace_authoring_sources(
+    queue: Sequence[Mapping[str, Any]],
+    manifest: Sequence[Mapping[str, Any]],
+    ocr_by_item: Mapping[str, Mapping[str, Any]],
+    *,
+    authoring_ids: Iterable[str],
+    excluded_identity_keys: Iterable[str] = (),
+    dominant_colors_by_item: Mapping[str, Sequence[str]] | None = None,
+    seed: str = "v18-source-replacement",
+    first_replacement_index: int = 81,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Replace a pre-freeze authoring batch while preserving design cells."""
+
+    target_ids = {str(value) for value in authoring_ids if value}
+    if not target_ids:
+        raise ValueError("at least one authoring ID must be replaced")
+    queue_by_id = {str(row["authoring_id"]): dict(row) for row in queue}
+    if len(queue_by_id) != len(queue) or not target_ids <= set(queue_by_id):
+        raise ValueError("replacement IDs must be unique members of the queue")
+    if first_replacement_index < 1:
+        raise ValueError("first_replacement_index must be positive")
+
+    manifest_by_item = {str(row["item_id"]): row for row in manifest}
+    if len(manifest_by_item) != len(manifest):
+        raise ValueError("manifest item IDs must be unique")
+    blocked = {str(value) for value in excluded_identity_keys if value}
+    for row in queue:
+        item_id = str(row["source_item_id"])
+        source = manifest_by_item.get(item_id)
+        if source is None:
+            raise ValueError(f"queue source is missing from manifest: {item_id}")
+        blocked.update(source_identity_keys(source))
+
+    colors = dominant_colors_by_item or {}
+    targets_by_stratum: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for authoring_id in sorted(target_ids):
+        target = queue_by_id[authoring_id]
+        targets_by_stratum[str(target["stratum"])].append(target)
+
+    replacements: list[dict[str, Any]] = []
+    audit: list[dict[str, Any]] = []
+    replacement_index = first_replacement_index
+    for stratum in STRATA:
+        targets = targets_by_stratum.get(stratum, [])
+        if not targets:
+            continue
+        eligible = [
+            row
+            for row in manifest
+            if _eligible(row, ocr_by_item.get(str(row["item_id"]), {}), stratum)
+            and not (source_identity_keys(row) & blocked)
+        ]
+        candidates = _specificity_order(
+            eligible,
+            ocr_by_item,
+            seed=f"{seed}:{stratum}",
+            stratum=stratum,
+        )
+        selected: list[Mapping[str, Any]] = []
+        for candidate in candidates:
+            identities = source_identity_keys(candidate)
+            if identities & blocked:
+                continue
+            selected.append(candidate)
+            blocked.update(identities)
+            if len(selected) == len(targets):
+                break
+        if len(selected) != len(targets):
+            raise ValueError(
+                f"Need {len(targets)} replacements for {stratum}; "
+                f"selected {len(selected)}"
+            )
+        for target, source in zip(targets, selected, strict=True):
+            item_id = str(source["item_id"])
+            ocr = ocr_by_item.get(item_id, {})
+            replacement_id = f"v18_source_{replacement_index:03d}"
+            replacement = {
+                "authoring_id": replacement_id,
+                "source_item_id": item_id,
+                "group_id": source_group_id(source),
+                "split": target["split"],
+                "stratum": stratum,
+                "language_target": target["language_target"],
+                "image_path": str(source.get("source_path", "")),
+                "ocr_excerpt": str(ocr.get("ocr_excerpt", ""))[:600],
+                "dominant_colors": list(colors.get(item_id, ()))[:3],
+                "source_dataset": str(source.get("public_source_name", "")),
+                "authoring_status": "pending_human_authoring",
+                "replaces_authoring_id": target["authoring_id"],
+            }
+            replacements.append(replacement)
+            audit.append(
+                {
+                    "discarded_authoring_id": target["authoring_id"],
+                    "discarded_source_item_id": target["source_item_id"],
+                    "discarded_group_id": target["group_id"],
+                    "replacement_authoring_id": replacement_id,
+                    "replacement_source_item_id": item_id,
+                    "replacement_group_id": replacement["group_id"],
+                    "split": target["split"],
+                    "stratum": stratum,
+                    "language_target": target["language_target"],
+                }
+            )
+            replacement_index += 1
+
+    result = [
+        dict(row) for row in queue if str(row["authoring_id"]) not in target_ids
+    ] + replacements
+    result.sort(key=lambda row: str(row["authoring_id"]))
+    active_languages = tuple(
+        value
+        for value in LANGUAGES
+        if any(row["language_target"] == value for row in result)
+    )
+    validate_authoring_queue(
+        result,
+        sources_per_stratum=len(result) // len(STRATA),
+        excluded_identity_keys=excluded_identity_keys,
+        languages=active_languages,
+    )
+    return result, audit
+
+
 def validate_authored_pair(
     positive_query: str,
     hard_negative_query: str,

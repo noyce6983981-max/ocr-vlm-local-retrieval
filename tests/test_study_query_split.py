@@ -16,6 +16,7 @@ from ocr_vlm_retrieval.studies.query_split import (
     build_authoring_queue,
     freeze_authored_queries,
     query_set_fingerprint,
+    replace_authoring_sources,
     source_identity_keys,
     validate_authored_pair,
 )
@@ -87,6 +88,36 @@ def test_authoring_queue_can_apply_chinese_only_protocol_amendment() -> None:
         for stratum in STRATA
         for split in ("calibration", "holdout")
     }
+
+
+def test_pre_freeze_batch_replacement_preserves_design_and_uses_new_ids() -> None:
+    manifest = _manifest() + [
+        _source(index, "natural_no_text") for index in range(80, 100)
+    ]
+    queue = build_authoring_queue(manifest, _ocr(), languages=("zh",))
+    discard_ids = {f"v18_source_{index:03d}" for index in range(1, 11)}
+    discarded_items = {
+        row["source_item_id"] for row in queue if row["authoring_id"] in discard_ids
+    }
+    replaced, audit = replace_authoring_sources(
+        queue,
+        manifest,
+        _ocr(),
+        authoring_ids=discard_ids,
+        first_replacement_index=81,
+    )
+    assert len(replaced) == 80
+    assert len(audit) == 10
+    assert not discarded_items & {row["source_item_id"] for row in replaced}
+    assert {
+        row["authoring_id"]
+        for row in replaced
+        if row["authoring_id"] >= "v18_source_081"
+    } == {f"v18_source_{index:03d}" for index in range(81, 91)}
+    assert Counter(row["stratum"] for row in replaced) == Counter(
+        {stratum: 20 for stratum in STRATA}
+    )
+    assert {row["language_target"] for row in replaced} == {"zh"}
 
 
 def _query_pair(row: dict[str, object], index: int) -> tuple[str, str, str]:
