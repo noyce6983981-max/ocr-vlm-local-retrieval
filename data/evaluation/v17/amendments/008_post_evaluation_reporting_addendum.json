@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "amendment_id": "008_post_evaluation_reporting_addendum",
+  "effective_date": "2026-08-08",
+  "timing": "Created after the immutable one-shot V17 holdout receipt and the v17.0.0 release.",
+  "scope": "Reporting and reproducibility only; no model execution, threshold change, method change, judgment change, or holdout rerun.",
+  "protocol_text_discrepancy": {
+    "canonical_machine_protocol": "protocol_frozen_v1.json defines H2 on answerable Recall@3.",
+    "derived_prose_error": "retrieval_v17_research_protocol_2026-08-07.md transcribed H2 as Recall@10 even though the frozen 20-candidate pool was not designed for unbiased Recall@10.",
+    "resolution": "The immutable machine protocol remains unchanged and authoritative. This post-evaluation addendum records the discrepancy instead of silently rewriting either historical artifact.",
+    "evaluation_impact": "None. Method selection and final holdout evaluation used the pool-supported Recall@3 endpoint."
+  },
+  "hypothesis_disposition": {
+    "H1": {
+      "status": "not_tested_as_preregistered",
+      "reason": "The final selected method used Top-3 full-query cross-encoder scores and did not use conservative attribute aggregation as its decision score.",
+      "exploratory_observation": "Pool-conditioned false acceptance fell from 62.5% to 37.5%, but the 95% grouped-bootstrap interval for the paired difference crossed zero and the change cannot be attributed to the preregistered attribute mechanism."
+    },
+    "H2": {
+      "status": "supported_under_canonical_recall_at_3_endpoint",
+      "v16_recall_at_3": 0.40625,
+      "v17_recall_at_3": 0.8125,
+      "paired_difference": 0.40625,
+      "grouped_bootstrap_95_ci": [0.21212121212121213, 0.6060606060606061],
+      "reason": "The observed difference and its grouped-bootstrap interval are above the preregistered -3 percentage-point non-inferiority margin."
+    },
+    "H3": {
+      "status": "not_tested_on_independent_human_holdout",
+      "reason": "Weakest-attribute diagnostics were not part of the final selected decision rule, and the parser reference was Codex-assisted calibration material rather than independent human gold."
+    }
+  },
+  "public_reproducibility_artifacts": {
+    "paired_records": {
+      "path": "data/evaluation/v17/public_holdout_paired_records.jsonl",
+      "sha256": "587e19214e48f5a53605029364c3bb561a7e47834a826d97b21d13f9d0c49b6e"
+    },
+    "audit_summary": {
+      "path": "data/evaluation/v17/public_holdout_audit.json",
+      "sha256": "c393c6adfe6cbf2748e552cee52e1b8ee3949f111be0b4fd6f5b35ff5b05cae0"
+    },
+    "verification_command": "python scripts/verify_v17_public_holdout.py"
+  },
+  "sealed_v17_guards": {
+    "method_changed": false,
+    "model_rerun": false,
+    "holdout_rerun": false,
+    "one_shot_rerun_policy": "forbidden",
+    "future_method_change_requires": "V18"
+  }
+}

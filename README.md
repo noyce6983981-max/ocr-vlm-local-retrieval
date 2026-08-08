@@ -14,6 +14,8 @@ V17-Compositional-80 在冻结 K=3、`full_query` 阈值 0.51 后，只运行一
 
 端到端配对提升为 +32.5 个百分点，按来源组进行 10,000 次 Bootstrap 的 95% CI 为 +14.6～+50.0 个百分点。误接受率下降 25 个百分点，但负类只有 8 条，95% CI 为 -75～+25 个百分点，不能宣称统计显著。V17 质量混排 Recall@3 为 81.25%，最终选中相关候选率为 43.75%。完整协议、限制和指纹见 `records/experiments/retrieval_v17_independent_holdout_2026-08-08.md`。
 
+`v17.0.1` 报告附录在不重跑模型或留出集的前提下发布了脱敏逐查询配对记录：V16/V17 Recall@3 为 40.625%/81.25%，其中 26 条 Top-3 可达正例最终选中 14 条（53.85%）；公开记录可以独立复算 Bootstrap。参见 `records/experiments/V17_HYPOTHESIS_DISPOSITION.md`、`records/experiments/retrieval_v17_report_addendum_2026-08-08.md`，或运行 `python scripts/verify_v17_public_holdout.py`。
+
 此前 V16 使用与历史目标零重叠、路线均衡的 50 条校准查询选择配置，并在锁定配置后首次运行另一组 50 条来源核验独立留出查询：
 
 V16 留出结果没有用于回改 V16：

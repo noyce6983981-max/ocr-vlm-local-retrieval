@@ -44,6 +44,11 @@
       "path": "data/evaluation/v17/amendments/007_pre_evaluation_governance_correction.json",
       "sha256": "f5dee723893855bdf931d25661287f16b9d19743f0a2778cdf33703901a76a66",
       "role": "pre_evaluation_governance_and_dependency_closure"
+    },
+    {
+      "path": "data/evaluation/v17/amendments/008_post_evaluation_reporting_addendum.json",
+      "sha256": "61d8d06569820209a74844c578e373ce8d9c4edbea20e71c1dbc6fc1ed067cda",
+      "role": "post_evaluation_hypothesis_disposition_and_public_audit"
     }
   ],
   "effective_scope": {
@@ -170,6 +175,20 @@
       "false_accept_group_bootstrap_95_ci": [-0.75, 0.25],
       "retrieval_recall_at_3": 0.8125,
       "selected_relevant_query_rate": 0.4375
+    },
+    "reporting_addendum": {
+      "status": "report_only_analysis_complete",
+      "method_changed": false,
+      "model_rerun": false,
+      "holdout_rerun": false,
+      "v16_retrieval_recall_at_3": 0.40625,
+      "v17_retrieval_recall_at_3": 0.8125,
+      "v17_top3_reachable_conversion_rate": 0.5384615384615384,
+      "v17_accepted_selected_relevant_precision": 0.6666666666666666,
+      "paired_records_path": "data/evaluation/v17/public_holdout_paired_records.jsonl",
+      "paired_records_sha256": "587e19214e48f5a53605029364c3bb561a7e47834a826d97b21d13f9d0c49b6e",
+      "audit_path": "data/evaluation/v17/public_holdout_audit.json",
+      "audit_sha256": "c393c6adfe6cbf2748e552cee52e1b8ee3949f111be0b4fd6f5b35ff5b05cae0"
     }
   },
   "required_before_holdout": [],

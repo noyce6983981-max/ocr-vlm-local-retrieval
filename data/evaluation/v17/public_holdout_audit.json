@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "status": "report_only_analysis_of_sealed_v17_holdout",
+  "study_name": "V17-Compositional-80 Pilot",
+  "method_changed": false,
+  "model_rerun": false,
+  "holdout_rerun": false,
+  "analysis": {
+    "query_count": 40,
+    "group_count": 28,
+    "funnel": {
+      "relevant_candidate_in_pool": 32,
+      "v17_relevant_in_top3": 26,
+      "v17_selected_relevant": 14,
+      "v17_top3_recall_miss": 6,
+      "v17_reachable_but_not_selected": 12,
+      "reachable_all_candidates_below_threshold": 10,
+      "reachable_wrong_candidate_accepted": 2,
+      "no_relevant_candidate_in_pool": 8,
+      "v17_correct_rejection": 5,
+      "v17_false_accept": 3
+    },
+    "metrics": {
+      "v16_retrieval_recall_at_3": 0.40625,
+      "v17_retrieval_recall_at_3": 0.8125,
+      "v17_top3_reachable_conversion_rate": 0.5384615384615384,
+      "v17_accepted_selected_relevant_precision": 0.6666666666666666,
+      "v17_positive_end_to_end_success_rate": 0.4375,
+      "v17_no_relevant_in_pool_rejection_rate": 0.625,
+      "v16_pool_conditioned_end_to_end_accuracy": 0.15,
+      "v17_pool_conditioned_end_to_end_accuracy": 0.475,
+      "v16_pool_conditioned_false_accept_rate": 0.625,
+      "v17_pool_conditioned_false_accept_rate": 0.375,
+      "v17_acceptance_coverage": 0.525
+    },
+    "paired_group_bootstrap": {
+      "retrieval_recall_at_3_v17_minus_v16": {
+        "row_count": 32,
+        "group_count": 24,
+        "baseline_mean": 0.40625,
+        "contender_mean": 0.8125,
+        "paired_difference": 0.40625,
+        "confidence_level": 0.95,
+        "confidence_interval": [
+          0.21212121212121213,
+          0.6060606060606061
+        ],
+        "repetitions": 10000,
+        "seed": 17,
+        "sampling_unit": "group_id"
+      },
+      "end_to_end_correct_v17_minus_v16": {
+        "row_count": 40,
+        "group_count": 28,
+        "baseline_mean": 0.15,
+        "contender_mean": 0.475,
+        "paired_difference": 0.32499999999999996,
+        "confidence_level": 0.95,
+        "confidence_interval": [
+          0.14625435540069762,
+          0.5
+        ],
+        "repetitions": 10000,
+        "seed": 17,
+        "sampling_unit": "group_id"
+      },
+      "false_accept_v17_minus_v16": {
+        "row_count": 8,
+        "group_count": 8,
+        "baseline_mean": 0.625,
+        "contender_mean": 0.375,
+        "paired_difference": -0.25,
+        "confidence_level": 0.95,
+        "confidence_interval": [
+          -0.75,
+          0.25
+        ],
+        "repetitions": 10000,
+        "seed": 17,
+        "sampling_unit": "group_id"
+      }
+    },
+    "claim_boundary": "Pooled-relevance holdout only. Accepted-result precision and rejection rates are conditional on the frozen 20-candidate pools, not the corpus."
+  },
+  "runtime": {
+    "completed_query_count": 40,
+    "model_load_seconds": 6.139,
+    "verification_elapsed_seconds": 63.56,
+    "per_query_elapsed_seconds": {
+      "mean": 1.4271250000000002,
+      "p50": 1.316,
+      "p95": 2.014249999999999,
+      "minimum": 0.772,
+      "maximum": 2.356
+    },
+    "peak_reserved_gib": 4.02,
+    "scope": "Descriptive label-blind Top-3 verifier timing from the sealed artifact; not production end-to-end search latency."
+  },
+  "source_artifact_sha256": {
+    "final_private_report": "a0ebf2e839903fbde2660d2b76572fccc17c641aaf7c3dc941929f5860578fc8",
+    "label_blind_verification": "a6fb059a6414581a8e887877ef8ad86ecef91dc519346a693c54805c4f609f90",
+    "v16_frozen_ranking": "ee676389923504b61f8f892b8e283286cb6b55c7dc882d4608049a6d5f84a790",
+    "final_human_adjudication": "16a3229068685979c4731025685a18eba3d0071f0cffcb5adacea68038218595"
+  },
+  "public_artifact": {
+    "path": "data/evaluation/v17/public_holdout_paired_records.jsonl",
+    "sha256": "587e19214e48f5a53605029364c3bb561a7e47834a826d97b21d13f9d0c49b6e",
+    "contains_query_text": false,
+    "contains_candidate_ids": false,
+    "contains_source_metadata": false,
+    "contains_reviewer_identity": false
+  },
+  "limitations": [
+    "All metrics are conditional on the frozen 20-candidate pools.",
+    "The eight no-relevant-in-pool queries do not establish corpus-level answerability.",
+    "Runtime is verifier-only descriptive timing, not production search latency.",
+    "Fine-grained parser, relation, and binding error types need separate human diagnosis."
+  ]
+}
