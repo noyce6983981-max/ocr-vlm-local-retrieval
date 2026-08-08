@@ -1,0 +1,79 @@
+{
+    "schema_version": 1,
+    "study_id": "v18-condition-aware-listwise-160",
+    "study_version": "18.0",
+    "lifecycle": "protocol_frozen_query_authoring_pending",
+    "predecessor": {"release": "v17.0.1"},
+    "research_question": "For compositional visual retrieval, can condition-aware listwise best-or-none selection improve the conversion of reachable relevant candidates while reducing false accepts on single-condition hard negatives, compared with the locked V17 rank-first verifier?",
+    "query_design": {
+        "total_queries": 160,
+        "source_group_count": 80,
+        "queries_per_source_group": 2,
+        "splits": {"calibration": 80, "holdout": 80},
+        "roles": {"positive": 80, "single_condition_hard_negative": 80},
+        "strata": {
+            "attribute_object_binding": 40,
+            "spatial_relation": 40,
+            "ocr_visual_condition": 40,
+            "multi_condition_scene": 40
+        },
+        "languages": {"zh": 80, "en": 80}
+    },
+    "hypotheses": [
+        {
+            "id": "H1",
+            "endpoint": "reachable_positive_conversion",
+            "comparison": "L3_minus_L0",
+            "minimum_absolute_improvement": 0.15
+        },
+        {
+            "id": "H2",
+            "endpoint": "single_condition_hard_negative_false_accept_rate",
+            "comparison": "L3_minus_L0",
+            "maximum_absolute_change": -0.10
+        },
+        {
+            "id": "H3",
+            "endpoint": "positive_end_to_end_success_rate",
+            "comparison": "L3_minus_L0",
+            "minimum_absolute_improvement": 0.10,
+            "recall_at_3_noninferiority_margin": -0.03
+        }
+    ],
+    "methods": [
+        {"id": "L0", "name": "locked_v17_rank_first", "role": "frozen_baseline"},
+        {"id": "L1", "name": "max_verifier_score", "role": "calibration_candidate"},
+        {
+            "id": "L2",
+            "name": "retrieval_verifier_fusion",
+            "role": "calibration_candidate"
+        },
+        {
+            "id": "L3",
+            "name": "condition_aware_listwise_best_or_none",
+            "role": "calibration_candidate"
+        }
+    ],
+    "review_design": {
+        "query_wording_requires_human_approval": true,
+        "independent_relevance_reviewers": 2,
+        "conflict_adjudicators": 1,
+        "full_candidate_coverage_required": true,
+        "blind_fields": [
+            "retrieval_method",
+            "score",
+            "rank",
+            "source_filename",
+            "dataset",
+            "system_decision",
+            "expected_answer"
+        ]
+    },
+    "governance": {
+        "calibration_only_method_selection": true,
+        "holdout_runs": 1,
+        "holdout_sealed_until_method_lock": true,
+        "post_lock_method_change_requires_new_study": true,
+        "v17_artifacts_read_only": true
+    }
+}
