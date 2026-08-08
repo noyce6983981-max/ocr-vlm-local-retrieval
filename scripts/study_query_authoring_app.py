@@ -115,6 +115,20 @@ def save_submission(submission: dict[str, Any]) -> None:
     write_jsonl_atomic(SUBMISSIONS_PATH, [indexed[key] for key in sorted(indexed)])
 
 
+def submission_status_ids(
+    submissions: dict[str, dict[str, Any]],
+) -> tuple[set[str], set[str]]:
+    approved = {
+        key for key, row in submissions.items() if row.get("review_action") == "approve"
+    }
+    codex_drafts = {
+        key
+        for key, row in submissions.items()
+        if row.get("review_action") == "codex_draft"
+    }
+    return approved, codex_drafts
+
+
 def source_image_path(row: dict[str, Any]) -> Path | None:
     raw = str(row.get("image_path", "")).strip()
     if not raw:
@@ -149,12 +163,11 @@ def main() -> None:
         value=FIXED_AUTHOR_ID,
         disabled=bool(FIXED_AUTHOR_ID),
     ).strip()
-    completed_ids = {
-        key for key, row in submissions.items() if row.get("review_action") == "approve"
-    }
+    completed_ids, draft_ids = submission_status_ids(submissions)
     pending = [row for row in queue if row["authoring_id"] not in completed_ids]
     st.sidebar.metric("来源图总数", len(queue))
     st.sidebar.metric("已完成", len(completed_ids))
+    st.sidebar.metric("Codex 草稿", len(draft_ids))
     st.sidebar.metric("待完成", len(pending))
     show_completed = st.sidebar.checkbox("显示已完成来源图", value=False)
     visible = queue if show_completed else pending
@@ -170,6 +183,7 @@ def main() -> None:
             f"{row['authoring_id']} · {STRATUM_LABELS[str(row['stratum'])]} · "
             f"{row['language_target']}"
         )
+        + (" · Codex 草稿" if str(row["authoring_id"]) in draft_ids else "")
         for row in visible
     }
     selected_id = st.selectbox(
@@ -179,6 +193,12 @@ def main() -> None:
     )
     row = next(item for item in visible if item["authoring_id"] == selected_id)
     existing = submissions.get(selected_id, {})
+
+    if existing.get("review_action") == "codex_draft":
+        st.warning(
+            "这是 Codex 生成的待审核草稿，不是人工标签。请逐字核对图片，按需修改，"
+            "并在勾选确认后保存。"
+        )
 
     st.markdown("#### 当前绑定对象")
     st.info(

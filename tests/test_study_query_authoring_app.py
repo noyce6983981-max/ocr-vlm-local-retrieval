@@ -31,3 +31,16 @@ def test_translation_guard_and_split_blinding_are_present() -> None:
     ).read_text(encoding="utf-8")
     assert 'setAttribute("translate", "no")' in source
     assert "row['split']" not in source
+
+
+def test_codex_drafts_are_counted_separately_from_approved() -> None:
+    module = _load_module()
+    approved, drafts = module.submission_status_ids(
+        {
+            "source_001": {"review_action": "approve"},
+            "source_002": {"review_action": "codex_draft"},
+            "source_003": {"review_action": "reject"},
+        }
+    )
+    assert approved == {"source_001"}
+    assert drafts == {"source_002"}
