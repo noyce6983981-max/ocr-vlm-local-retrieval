@@ -195,11 +195,21 @@ def build_authoring_queue(
     dominant_colors_by_item: Mapping[str, Sequence[str]] | None = None,
     seed: str = "v18-condition-aware-listwise-160",
     sources_per_stratum: int = 20,
+    languages: Sequence[str] = LANGUAGES,
 ) -> list[dict[str, Any]]:
     """Select balanced, predecessor-disjoint sources without running retrieval."""
 
-    if sources_per_stratum < 4 or sources_per_stratum % 4:
-        raise ValueError("sources_per_stratum must be positive and divisible by four")
+    active_languages = tuple(dict.fromkeys(str(value) for value in languages))
+    cell_count = len(SPLITS) * len(active_languages)
+    if (
+        not active_languages
+        or any(value not in LANGUAGES for value in active_languages)
+        or sources_per_stratum < cell_count
+        or sources_per_stratum % cell_count
+    ):
+        raise ValueError(
+            "sources_per_stratum must divide evenly across active split-language cells"
+        )
     rows = [dict(row) for row in manifest]
     excluded = {str(value) for value in excluded_identity_keys if value}
     selected_keys: set[str] = set()
@@ -237,11 +247,11 @@ def build_authoring_queue(
         chosen_by_stratum[stratum] = selected
 
     queue: list[dict[str, Any]] = []
-    per_cell = sources_per_stratum // 4
+    per_cell = sources_per_stratum // cell_count
     slots = [
         (split, language)
         for split in SPLITS
-        for language in LANGUAGES
+        for language in active_languages
         for _ in range(per_cell)
     ]
     for stratum in STRATA:
@@ -274,7 +284,7 @@ def build_authoring_queue(
         key=lambda row: (
             STRATA.index(str(row["stratum"])),
             SPLITS.index(str(row["split"])),
-            LANGUAGES.index(str(row["language_target"])),
+            active_languages.index(str(row["language_target"])),
             _stable_key(seed, str(row["source_item_id"])),
         )
     )
@@ -284,6 +294,7 @@ def build_authoring_queue(
         queue,
         sources_per_stratum=sources_per_stratum,
         excluded_identity_keys=excluded,
+        languages=active_languages,
     )
     return queue
 
@@ -293,6 +304,7 @@ def validate_authoring_queue(
     *,
     sources_per_stratum: int,
     excluded_identity_keys: Iterable[str] = (),
+    languages: Sequence[str] = LANGUAGES,
 ) -> None:
     expected = sources_per_stratum * len(STRATA)
     if len(rows) != expected:
@@ -311,7 +323,8 @@ def validate_authoring_queue(
     stratum_counts = Counter(str(row.get("stratum", "")) for row in rows)
     if stratum_counts != Counter({name: sources_per_stratum for name in STRATA}):
         raise ValueError("authoring queue is not balanced by stratum")
-    per_cell = sources_per_stratum // 4
+    active_languages = tuple(dict.fromkeys(str(value) for value in languages))
+    per_cell = sources_per_stratum // (len(SPLITS) * len(active_languages))
     cell_counts = Counter(
         (
             str(row.get("stratum", "")),
@@ -325,7 +338,7 @@ def validate_authoring_queue(
             (stratum, split, language): per_cell
             for stratum in STRATA
             for split in SPLITS
-            for language in LANGUAGES
+            for language in active_languages
         }
     )
     if cell_counts != expected_cells:

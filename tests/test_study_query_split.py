@@ -78,6 +78,17 @@ def test_predecessor_identity_is_excluded() -> None:
     assert "item_020" not in {row["source_item_id"] for row in queue}
 
 
+def test_authoring_queue_can_apply_chinese_only_protocol_amendment() -> None:
+    queue = build_authoring_queue(_manifest(), _ocr(), languages=("zh",))
+    assert len(queue) == 80
+    assert {row["language_target"] for row in queue} == {"zh"}
+    assert Counter((row["stratum"], row["split"]) for row in queue) == {
+        (stratum, split): 10
+        for stratum in STRATA
+        for split in ("calibration", "holdout")
+    }
+
+
 def _query_pair(row: dict[str, object], index: int) -> tuple[str, str, str]:
     language = str(row["language_target"])
     stratum = str(row["stratum"])

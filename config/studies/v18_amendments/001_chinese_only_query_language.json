@@ -1,0 +1,25 @@
+{
+    "amendment_id": "V18-A001",
+    "recorded_date": "2026-08-08",
+    "base_protocol": "config/studies/v18_protocol_frozen_v1.json",
+    "base_protocol_sha256": "52f7b8167d4ba8b39345cdbb099537c022b7be1c5fa632268c5995e376618568",
+    "effective_protocol_sha256": "f929bbf1d51025394d2bccb28aee967b48bb7046a201327b966d9376bdfc38b5",
+    "timing": "before_query_set_freeze_and_before_any_retrieval",
+    "reason": "The deployed local retrieval workflow and its human query-authoring process are Chinese-first. The bilingual authoring constraint introduced avoidable reviewer errors and is not required by the primary V18 hypothesis.",
+    "changes": {
+        "query_design.languages.before": {"zh": 80, "en": 80},
+        "query_design.languages.after": {"zh": 160},
+        "authoring_queue.language_target": "zh_for_all_80_source_groups"
+    },
+    "invariants": {
+        "total_queries": 160,
+        "source_group_count": 80,
+        "calibration_queries": 80,
+        "holdout_queries": 80,
+        "stratum_counts_unchanged": true,
+        "source_items_unchanged": true,
+        "completed_authoring_records_preserved": true,
+        "retrieval_executed": false,
+        "v17_artifacts_modified": false
+    }
+}

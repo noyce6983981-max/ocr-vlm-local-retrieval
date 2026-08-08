@@ -125,6 +125,7 @@ class StudyProtocol:
     methods: tuple[dict[str, Any], ...]
     review_design: dict[str, Any]
     governance: dict[str, Any]
+    amendments: tuple[str, ...]
 
     @classmethod
     def from_mapping(cls, value: object) -> StudyProtocol:
@@ -150,6 +151,7 @@ class StudyProtocol:
             methods=methods,
             review_design=dict(_mapping(source.get("review_design"), "review_design")),
             governance=dict(_mapping(source.get("governance"), "governance")),
+            amendments=_text_sequence(source.get("amendments"), "amendments"),
         )
         protocol.validate()
         return protocol
@@ -179,7 +181,7 @@ class StudyProtocol:
             raise ProtocolError("governance.holdout_runs must equal one")
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result: dict[str, Any] = {
             "schema_version": self.schema_version,
             "study_id": self.study_id,
             "study_version": self.study_version,
@@ -192,12 +194,26 @@ class StudyProtocol:
             "review_design": dict(self.review_design),
             "governance": dict(self.governance),
         }
+        if self.amendments:
+            result["amendments"] = list(self.amendments)
+        return result
 
 
 def _object_sequence(value: object, field: str) -> tuple[dict[str, Any], ...]:
     if not isinstance(value, list) or not value:
         raise ProtocolError(f"{field} must be a non-empty array")
     return tuple(dict(_mapping(row, f"{field} item")) for row in value)
+
+
+def _text_sequence(value: object, field: str) -> tuple[str, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list):
+        raise ProtocolError(f"{field} must be an array")
+    result = tuple(_text(item, f"{field} item") for item in value)
+    if len(result) != len(set(result)):
+        raise ProtocolError(f"{field} values must be unique")
+    return result
 
 
 def load_study_protocol(path: Path) -> StudyProtocol:

@@ -2,7 +2,7 @@
     "schema_version": 1,
     "study_id": "v18-condition-aware-listwise-160",
     "study_version": "18.0",
-    "lifecycle": "protocol_amended_query_authoring_pending",
+    "lifecycle": "protocol_frozen_query_authoring_pending",
     "predecessor": {"release": "v17.0.1"},
     "research_question": "For compositional visual retrieval, can condition-aware listwise best-or-none selection improve the conversion of reachable relevant candidates while reducing false accepts on single-condition hard negatives, compared with the locked V17 rank-first verifier?",
     "query_design": {
@@ -17,7 +17,7 @@
             "ocr_visual_condition": 40,
             "multi_condition_scene": 40
         },
-        "languages": {"zh": 160}
+        "languages": {"zh": 80, "en": 80}
     },
     "hypotheses": [
         {
@@ -75,8 +75,5 @@
         "holdout_sealed_until_method_lock": true,
         "post_lock_method_change_requires_new_study": true,
         "v17_artifacts_read_only": true
-    },
-    "amendments": [
-        "config/studies/v18_amendments/001_chinese_only_query_language.json"
-    ]
+    }
 }

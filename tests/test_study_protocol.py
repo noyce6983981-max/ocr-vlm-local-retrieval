@@ -26,7 +26,22 @@ def test_v18_protocol_has_balanced_frozen_design() -> None:
     assert protocol.query_design.total_queries == 160
     assert protocol.query_design.source_group_count == 80
     assert protocol.query_design.splits == {"calibration": 80, "holdout": 80}
+    assert protocol.query_design.languages == {"zh": 160}
+    assert protocol.amendments == (
+        "config/studies/v18_amendments/001_chinese_only_query_language.json",
+    )
     assert len(protocol_fingerprint(protocol)) == 64
+
+
+def test_original_bilingual_protocol_is_preserved_with_original_identity() -> None:
+    protocol = load_study_protocol(
+        PROJECT_ROOT / "config/studies/v18_protocol_frozen_v1.json"
+    )
+    assert protocol.query_design.languages == {"zh": 80, "en": 80}
+    assert protocol.amendments == ()
+    assert protocol_fingerprint(protocol) == (
+        "52f7b8167d4ba8b39345cdbb099537c022b7be1c5fa632268c5995e376618568"
+    )
 
 
 def test_protocol_rejects_inconsistent_counts() -> None:

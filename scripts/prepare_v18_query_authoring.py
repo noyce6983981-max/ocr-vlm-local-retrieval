@@ -123,6 +123,24 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def preserve_authoring_ids(
+    queue: list[dict[str, Any]], previous: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Keep source-bound IDs stable across a pre-freeze protocol amendment."""
+
+    if not previous:
+        return queue
+    previous_by_item = {
+        str(row["source_item_id"]): str(row["authoring_id"]) for row in previous
+    }
+    current_items = {str(row["source_item_id"]) for row in queue}
+    if current_items != set(previous_by_item):
+        raise ValueError("cannot preserve authoring IDs because the source set changed")
+    for row in queue:
+        row["authoring_id"] = previous_by_item[str(row["source_item_id"])]
+    return sorted(queue, key=lambda row: str(row["authoring_id"]))
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -183,6 +201,10 @@ def main() -> None:
     source_count = protocol.query_design.source_group_count // len(
         protocol.query_design.strata
     )
+    existing_queue_path = output_dir / "authoring_queue.jsonl"
+    previous_queue = (
+        read_jsonl(existing_queue_path) if existing_queue_path.is_file() else []
+    )
     queue = build_authoring_queue(
         manifest,
         ocr_by_item,
@@ -190,7 +212,9 @@ def main() -> None:
         dominant_colors_by_item=colors,
         seed=protocol.study_id,
         sources_per_stratum=source_count,
+        languages=tuple(protocol.query_design.languages),
     )
+    queue = preserve_authoring_ids(queue, previous_queue)
     for row in queue:
         summary = ocr_by_item.get(str(row["source_item_id"]), {})
         row["ocr_excerpt"] = ocr_excerpt(runtime_root, summary)
