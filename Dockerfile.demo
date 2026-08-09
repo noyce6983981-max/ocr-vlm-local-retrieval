@@ -1,0 +1,35 @@
+FROM python:3.11-slim-bookworm
+
+LABEL org.opencontainers.image.title="OCR-VLM Local Retrieval CPU Demo" \
+      org.opencontainers.image.description="Deterministic 40-page CPU retrieval and rejection demonstration" \
+      org.opencontainers.image.source="https://github.com/noyce6983981-max/ocr-vlm-local-retrieval" \
+      org.opencontainers.image.licenses="MIT"
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONHASHSEED=0 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/opt/ocr-vlm
+
+WORKDIR /opt/ocr-vlm
+
+COPY requirements-demo.txt ./requirements-demo.txt
+RUN python -m pip install --requirement requirements-demo.txt
+
+RUN groupadd --gid 10001 demo \
+    && useradd --uid 10001 --gid 10001 --create-home \
+        --shell /usr/sbin/nologin demo \
+    && mkdir -p /artifacts/minimal_repro /licenses \
+    && chown -R 10001:10001 /artifacts
+
+COPY LICENSE /licenses/ocr-vlm-local-retrieval-MIT.txt
+COPY repro/ ./repro/
+COPY scripts/__init__.py scripts/bm25_retrieval.py scripts/minimal_repro.py \
+     scripts/run_container_demo.py ./scripts/
+COPY src/ ./src/
+
+USER 10001:10001
+
+ENTRYPOINT ["python", "scripts/run_container_demo.py"]
+CMD ["--output-dir", "/artifacts/minimal_repro"]

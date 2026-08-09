@@ -1,0 +1,14 @@
+# Keep the container build context deliberately limited to public demo code.
+**
+!Dockerfile.demo
+!requirements-demo.txt
+!LICENSE
+!repro/
+!repro/**
+!scripts/
+!scripts/__init__.py
+!scripts/bm25_retrieval.py
+!scripts/minimal_repro.py
+!scripts/run_container_demo.py
+!src/
+!src/**

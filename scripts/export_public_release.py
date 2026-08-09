@@ -12,9 +12,11 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ROOT_FILES = {
+    ".dockerignore",
     ".gitattributes",
     ".gitignore",
     "CONTRIBUTING.md",
+    "Dockerfile.demo",
     "README.md",
     "SECURITY.md",
     "THIRD_PARTY_DATA.md",
@@ -23,6 +25,7 @@ ROOT_FILES = {
     "pyproject.toml",
     "pytest.ini",
     "requirements-ci.txt",
+    "requirements-demo.txt",
     "requirements-ingest.txt",
     "requirements-retrieval.txt",
     "requirements-ui.txt",

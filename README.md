@@ -270,6 +270,17 @@ python scripts/minimal_repro.py evaluate --backend cpu
 
 脚本会生成 40 页自行设计、CC0-1.0 授权的合成页面和 16 条查询，CPU 预期结果见 `repro/expected_results.json`。可选 GPU 视觉模式及其限制见 `repro/README.md`。CPU 模式使用生成器已知文本，不把它表述成 OCR 或 VLM 效果复现。
 
+### GHCR CPU 演示镜像
+
+V18.0.1 起提供不含模型权重和内部资料库的轻量容器：
+
+```bash
+docker pull ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.0.1
+docker run --rm --network none ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.0.1
+```
+
+容器会在无网络、非 root 用户环境中生成 40 页资料库，构建 BM25 索引，运行正例及强负例查询，并严格对比冻结结果。结果不一致时进程返回非零状态。该镜像验证公开 CPU 工程链路，不复现 PaddleOCR 或 Qwen3-VL 推理质量，也不包含 V18 私有真人留出评测数据。
+
 V17 已完成一次性独立留出评测，但仍作为显式启用的研究路线，不会静默覆盖产品默认 V16；下一阶段重点是扩大真人评测集、补足池内无相关候选样本，并独立执行语料库级高召回答案性审核。
 
 ## 说明
