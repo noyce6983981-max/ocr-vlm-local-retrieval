@@ -25,6 +25,21 @@ known source text. It verifies corpus generation, indexing, ranking, exact
 necessary-condition rejection, and evaluation; it does not claim to reproduce
 PaddleOCR or VLM quality without those model environments.
 
+## GHCR CPU container
+
+Starting with V18.0.1, the same frozen CPU path is distributed as a non-root,
+network-independent demonstration image:
+
+```bash
+docker pull ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.0.1
+docker run --rm --network none ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.0.1
+```
+
+The default entry point generates the corpus, evaluates it, and compares the
+aggregate output with this directory's `expected_results.json`. A mismatch
+returns a non-zero exit status. Generated artifacts remain inside the
+short-lived container unless `/artifacts` is mounted explicitly.
+
 ## Optional GPU visual path
 
 After installing the documented Qwen3-VL environment and model weights:

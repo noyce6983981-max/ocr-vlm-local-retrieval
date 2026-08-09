@@ -113,10 +113,13 @@ def audit(root: Path) -> list[str]:
                     errors.append(f"PII-like {label}: {relative}")
 
     required = (
+        ".dockerignore",
         ".github/workflows/tests.yml",
+        ".github/workflows/publish-container.yml",
         ".gitattributes",
         ".gitignore",
         "CONTRIBUTING.md",
+        "Dockerfile.demo",
         "README.md",
         "SECURITY.md",
         "THIRD_PARTY_DATA.md",
@@ -126,6 +129,8 @@ def audit(root: Path) -> list[str]:
         "repro/README.md",
         "repro/expected_results.json",
         "requirements-ci.txt",
+        "requirements-demo.txt",
+        "scripts/run_container_demo.py",
     )
     for relative in required:
         if not (root / relative).is_file():

@@ -1,0 +1,115 @@
+name: container-demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-container.yml"
+      - ".dockerignore"
+      - "Dockerfile.demo"
+      - "requirements-demo.txt"
+      - "repro/**"
+      - "scripts/bm25_retrieval.py"
+      - "scripts/minimal_repro.py"
+      - "scripts/run_container_demo.py"
+      - "src/**"
+  pull_request:
+    paths:
+      - ".github/workflows/publish-container.yml"
+      - ".dockerignore"
+      - "Dockerfile.demo"
+      - "requirements-demo.txt"
+      - "repro/**"
+      - "scripts/bm25_retrieval.py"
+      - "scripts/minimal_repro.py"
+      - "scripts/run_container_demo.py"
+      - "src/**"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: container-demo-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'release' }}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: noyce6983981-max/ocr-vlm-local-retrieval-demo
+
+jobs:
+  smoke-test:
+    name: Build and run CPU demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Build local image
+        run: >-
+          docker build
+          --file Dockerfile.demo
+          --tag ocr-vlm-local-retrieval-demo:smoke
+          .
+      - name: Verify non-root runtime
+        run: >-
+          docker run --rm --network none
+          --entrypoint python
+          ocr-vlm-local-retrieval-demo:smoke
+          -c "import os; assert os.geteuid() != 0"
+      - name: Run frozen CPU reproduction
+        run: >-
+          docker run --rm --network none
+          ocr-vlm-local-retrieval-demo:smoke
+
+  publish:
+    name: Publish GHCR image
+    if: github.event_name == 'release'
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: latest=false
+          tags: |
+            type=raw,value=${{ github.event.release.tag_name }}
+            type=semver,pattern=v{{major}},value=${{ github.event.release.tag_name }},enable=${{ github.event.release.prerelease == false }}
+            type=raw,value=latest,enable=${{ github.event.release.prerelease == false }}
+          labels: |
+            org.opencontainers.image.title=OCR-VLM Local Retrieval CPU Demo
+            org.opencontainers.image.description=Deterministic 40-page CPU retrieval and rejection demonstration
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+      - name: Build and push image
+        id: push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: .
+          file: Dockerfile.demo
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Generate artifact attestation
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

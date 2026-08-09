@@ -1,0 +1,4 @@
+# Minimal, CPU-only dependency set for the public container demonstration.
+# The BM25 implementation itself is dependency-free; Pillow renders the
+# deterministic synthetic pages.
+Pillow==12.3.0
