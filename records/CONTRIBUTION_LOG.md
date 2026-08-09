@@ -395,3 +395,27 @@
 - 三路检索：`scripts/live_search.py`
 - 消融评测：`scripts/evaluate_bm25_rrf.py`
 - 实验记录：`records/experiments/bm25_rrf_hybrid_001.md`
+
+## 阶段16：V18 复合必要条件研究与一次性真人留出
+
+### 本人的主导判断
+
+- 将真实误匹配归纳为“单个高相似属性掩盖缺失必要条件”，而不是继续无边界堆模型和功能。
+- 把对象、颜色、场景、关系、属性绑定和 OCR 条件纳入统一方法网格，同时预先规定正例覆盖约束，拒绝用全拒答换取低误接受率。
+- 在 80 条校准查询上冻结方法后才打开另一组 80 条留出查询；one-shot claim 先于留出检索原子写入，禁止根据留出结果改阈值。
+- 不把未胜出的 L3 属性级方法包装成成功：最终只发布获得校准选择且通过留出约束的 L1 全查询验证方法。
+
+### 已形成的技术成果
+
+- 建立 40 个来源配对组的留出集，每组一条正例和一条只改变一个必要条件的近邻强负例。
+- 完成多路 Top-20 候选池、盲审页面、30% 双重审核、Cohen κ、一致性冲突检测与第三方裁决闭环。
+- 冻结 L1 Top-3、阈值 0.63；一次性留出端到端准确率由 L0 的 43.75% 提升到 55.0%，组配对准确率由 15.0% 提升到 25.0%。
+- 强负例误接受率由 77.5% 降到 65.0%；三个主要差值的分组 Bootstrap 95% CI 均不跨 0。
+- 建立公开脱敏汇总和 SHA-256 审计链，不公开查询文字、图片、候选 ID、路径或审核者身份。
+
+### 贡献证据
+
+- 方法网格与选择器：`config/studies/v18_methods.json`、`src/ocr_vlm_retrieval/gating/listwise_selection.py`
+- 盲审、冲突检测和裁决：`scripts/v18_paired_relevance_review_app.py`、`scripts/finalize_v18_calibration_review.py`
+- 一次性留出执行：`scripts/claim_v18_holdout_once.py`、`scripts/run_v18_holdout_retrieval.py`、`scripts/evaluate_v18_locked_holdout.py`
+- 最终报告：`records/experiments/retrieval_v18_independent_holdout_2026-08-09.md`

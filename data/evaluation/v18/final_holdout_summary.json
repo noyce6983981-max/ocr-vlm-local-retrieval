@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "status": "v18_one_shot_holdout_evaluated",
+  "study_id": "v18-condition-aware-listwise-160",
+  "task_id": "pooled_relevance_best_or_none",
+  "query_count": 80,
+  "group_count": 40,
+  "query_roles": {
+    "positive": 40,
+    "single_condition_hard_negative": 40
+  },
+  "review_protocol": {
+    "primary_full_review_query_count": 80,
+    "secondary_double_review_query_count": 24,
+    "double_review_fraction": 0.3,
+    "independent_adjudicator_count": 1,
+    "adjudicated_query_count": 3,
+    "pool_relevance_raw_agreement": 1.0,
+    "pool_relevance_cohen_kappa": 1.0,
+    "candidate_relevance_raw_agreement": 0.9916666666666667,
+    "candidate_relevance_cohen_kappa": 0.8528510116492957,
+    "model_assisted_labels_used": false
+  },
+  "locked_method": {
+    "method_id": "L1",
+    "selector": "max_verifier_score",
+    "candidate_verifier": "Qwen3-VL-Reranker-2B",
+    "top_k": 3,
+    "full_query_threshold": 0.63,
+    "method_tuned_on_holdout": false
+  },
+  "baseline": {
+    "method_id": "L0",
+    "end_to_end_accuracy": 0.4375,
+    "grouped_pair_accuracy": 0.15,
+    "hard_negative_no_answer_false_accept_rate": 0.775,
+    "positive_top3_conversion": 0.625,
+    "false_accept_rate": 0.55,
+    "false_reject_rate": 0.0125
+  },
+  "selected": {
+    "method_id": "L1",
+    "end_to_end_accuracy": 0.55,
+    "grouped_pair_accuracy": 0.25,
+    "hard_negative_no_answer_false_accept_rate": 0.65,
+    "positive_top3_conversion": 0.725,
+    "false_accept_rate": 0.425,
+    "false_reject_rate": 0.025
+  },
+  "paired_group_deltas": {
+    "end_to_end_accuracy": {
+      "value": 0.1125,
+      "bootstrap_95_ci": [0.0375, 0.2]
+    },
+    "grouped_pair_accuracy": {
+      "value": 0.1,
+      "bootstrap_95_ci": [0.03703704, 0.16666667]
+    },
+    "hard_negative_no_answer_false_accept_rate": {
+      "value": -0.125,
+      "bootstrap_95_ci": [-0.225, -0.025]
+    },
+    "positive_top3_conversion": {
+      "value": 0.1,
+      "bootstrap_95_ci": [0.0, 0.225]
+    }
+  },
+  "bootstrap": {
+    "repetitions": 10000,
+    "seed": 17,
+    "sampling_unit": "group_id"
+  },
+  "research_disposition": {
+    "selected_method_supported": true,
+    "attribute_level_l3_supported": false,
+    "interpretation": "The holdout supports conservative Top-3 full-query candidate verification. It does not support the condition-aware attribute-level L3 method, which was not selected during calibration."
+  },
+  "artifact_sha256": {
+    "method_lock": "3a8f15ae33be8645852acc6a868c33c4e8d36e6cf6f906f036301cc48c6e8784",
+    "one_shot_claim": "5f6c8313272790fe7ac5fa9c417d877b8edf07d386a904a6e271caaa4c94b9fd",
+    "holdout_queries": "f39d899f003fb52b2f7dc46d074ab49abdb4c7a9cdc5cb63a867ce36c20b68b0",
+    "retrieval_receipt": "ea6c8b234c3b750233835879a82dc91694e4aceb2fbf8dfc792a62bc4f690fe2",
+    "candidate_verification": "2d6364a3f3f3d37770a3a3054f2be9bee7c67419a1ad87aea1a78a86b3d521b9",
+    "review_report": "422d0531a8e859f80d959f9ce0161f785b9e371b227af85ffdbb3c90f5fe996e",
+    "final_judgments": "76ef8db59eb9c9286ce5302b51f1adebaf794d3cbe07e2efd657486c4eefb660",
+    "full_private_report": "7b392190e0db6f43e095c16d69fb398c77b15286cdbfaaa785caab87b41c1738"
+  },
+  "claim_boundary": "One-shot, pool-conditioned V18 holdout only. No-relevant-candidate-in-pool is not corpus-level no-answer, and the result does not validate the unselected L3 attribute-level method.",
+  "holdout_evaluation_runs": 1,
+  "rerun_policy": "forbidden"
+}

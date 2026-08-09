@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "study_id": "v18-condition-aware-listwise-160",
+  "status": "calibration_candidates_unlocked",
+  "scope": "calibration_only",
+  "shared_candidate_policy": {
+    "base_ranking": "v17_quality_hybrid",
+    "human_review_pool": "multi_route_top20",
+    "maximum_selection_depth": 10,
+    "candidate_verifier": "Qwen3-VL-Reranker-2B",
+    "requirement_scores": "resolved_model_or_ocr_evidence"
+  },
+  "methods": {
+    "L0": {
+      "name": "locked_v17_rank_first",
+      "selector": "rank_first",
+      "role": "frozen_baseline",
+      "parameters": {
+        "top_k": 3,
+        "full_query_threshold": 0.51
+      }
+    },
+    "L1": {
+      "name": "max_verifier_score",
+      "selector": "max_verifier",
+      "role": "calibration_candidate",
+      "grid": {
+        "top_k": [3, 5, 10],
+        "full_query_threshold": [0.45, 0.51, 0.57, 0.63]
+      }
+    },
+    "L2": {
+      "name": "retrieval_verifier_fusion",
+      "selector": "retrieval_verifier_fusion",
+      "role": "calibration_candidate",
+      "grid": {
+        "top_k": [3, 5, 10],
+        "retrieval_weight": [0.2, 0.35, 0.5],
+        "verifier_weight": [0.8, 0.65, 0.5],
+        "full_query_floor": [0.4, 0.46, 0.52],
+        "score_threshold": [0.45, 0.5, 0.55, 0.6]
+      },
+      "paired_grid_fields": [["retrieval_weight", "verifier_weight"]]
+    },
+    "L3": {
+      "name": "condition_aware_listwise_best_or_none",
+      "selector": "condition_aware_listwise_best_or_none",
+      "role": "calibration_candidate",
+      "fixed": {
+        "weights": {
+          "retrieval": 0.15,
+          "full_query": 0.25,
+          "geometric_mean": 0.3,
+          "weakest": 0.3
+        },
+        "relation_margin_threshold": 0.0
+      },
+      "grid": {
+        "top_k": [3, 5, 10],
+        "full_query_floor": [0.4, 0.46, 0.52],
+        "score_threshold": [0.45, 0.5, 0.55, 0.6],
+        "selection_margin_threshold": [0.0, 0.03, 0.06, 0.1]
+      }
+    }
+  },
+  "selection_objective": {
+    "primary": "maximize_grouped_calibration_end_to_end_accuracy",
+    "constraints": [
+      "single_condition_hard_negative_false_accept_rate_not_above_L0",
+      "positive_recall_at_3_difference_vs_L0_at_least_-0.03"
+    ],
+    "tie_breakers": [
+      "lower_single_condition_hard_negative_false_accept_rate",
+      "higher_reachable_positive_conversion",
+      "lower_top_k",
+      "higher_selection_margin_threshold"
+    ]
+  },
+  "holdout_access": {
+    "permitted_during_calibration": false,
+    "authorized_runs_after_method_lock": 1
+  }
+}
