@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "22873496024ba32544f738b825aa66046d97aa6e",
+  "source_revision": "915e4688a64ee5ca7a5dd99e86e76c2305bfe0fd",
   "file_count": 484,
   "files": [
     {
@@ -337,7 +337,7 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "7a2e93ab3b77aa4c158b2085a1bc9b9f8fc9e4bc0e0226f382b54b4695c188e0"
+      "sha256": "99d271ebd57a2a8b9b5eee025b3b789dac61636227b230ef4cf3c6511516f27e"
     },
     {
       "path": "pytest.ini",

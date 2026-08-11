@@ -28,6 +28,10 @@ strict = true
 warn_unreachable = true
 pretty = true
 
+[[tool.mypy.overrides]]
+module = ["torch", "transformers"]
+ignore_missing_imports = true
+
 [tool.coverage.run]
 branch = true
 source = ["src/ocr_vlm_retrieval"]
