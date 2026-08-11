@@ -1,0 +1,8 @@
+# V19 optional local structured-intent backend.
+# Keep this separate from the CPU demo and base retrieval environments.
+transformers>=4.51.0,<6
+accelerate>=1.6.0,<2
+modelscope==1.38.1
+
+# Optional 4-bit loading is intentionally not installed by default. Install a
+# platform-compatible bitsandbytes build only for the isolated V19 model pilot.

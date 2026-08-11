@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-local-llm-structured-intent-routing",
+  "version": "V19",
+  "status": "formal_holdout_authorized_guard3_locked",
+  "created_date": "2026-08-11",
+  "research_question": "Can deterministic high-confidence routing plus local-LLM structured evidence analysis improve ambiguous natural-query routing and downstream retrieval without degrading rejection reliability under bounded latency and call rate?",
+  "scope": {
+    "route_labels": [
+      "text_evidence",
+      "visual_discovery",
+      "visual_metadata",
+      "entity_exact",
+      "topic_discovery",
+      "mixed"
+    ],
+    "llm_controls_final_weights": false,
+    "llm_controls_rejection_thresholds": false,
+    "llm_self_reported_confidence_used_for_gating": false,
+    "v18_holdout_reused_as_v19_result": false
+  },
+  "architecture": {
+    "policy": "rule_high_confidence_direct_llm_for_ambiguity",
+    "llm_output": "structured_evidence_fields",
+    "route_mapping": "deterministic",
+    "invalid_output_policy": "fallback_to_rule",
+    "timeout_policy": "fallback_to_rule",
+    "default_feature_flag": false,
+    "cpu_demo_default": "rule_only"
+  },
+  "model_pilot": {
+    "candidates": ["Qwen3-0.6B", "Qwen3-1.7B"],
+    "mode": "non_thinking",
+    "quantization_target": "4bit_if_supported_by_selected_backend",
+    "selection_metrics": [
+      "schema_valid_rate",
+      "pilot_macro_f1",
+      "warm_p50_latency_ms",
+      "warm_p95_latency_ms",
+      "peak_vram_gib",
+      "coexistence_with_visual_reranker"
+    ]
+  },
+  "data_plan": {
+    "pilot": {
+      "query_count": 72,
+      "queries_per_route": 12,
+      "role": "feasibility_only",
+      "eligible_for_final_claim": false
+    },
+    "formal": {
+      "query_count": 240,
+      "calibration_count": 120,
+      "holdout_count": 120,
+      "queries_per_route_per_split": 20,
+      "split_unit": "paraphrase_family",
+      "double_review_fraction": 0.3,
+      "holdout_runs_after_lock": 1
+    },
+    "legacy_data_policy": "V12-V18 data may inform taxonomy and regression tests but not the V19 independent holdout claim."
+  },
+  "baselines": {
+    "B0": "rule_only",
+    "B1": "llm_only",
+    "B2": "hybrid",
+    "B2.1": "hybrid_explicit_compound_gate",
+    "B3": "human_route_oracle",
+    "optional": "random_forest_diagnostic"
+  },
+  "release_gates": {
+    "macro_f1_delta_vs_rule_min": 0.05,
+    "ambiguous_subset_f1_delta_vs_rule_min": 0.10,
+    "downstream_top1_delta_vs_rule_min": 0.0,
+    "downstream_top1_stretch_delta": 0.03,
+    "hard_negative_far_must_not_increase": true,
+    "llm_call_rate_max": 0.40,
+    "invalid_json_rate_max": 0.01,
+    "fallback_success_rate_min": 1.0,
+    "warm_p95_added_latency_ms_max": 1500,
+    "warm_p95_added_latency_ms_stretch": 1000
+  },
+  "pilot_observation": {
+    "claim_status": "human_reviewed_pilot_not_final",
+    "selected_model": "Qwen/Qwen3-1.7B",
+    "selected_inference": {
+      "mode": "non_thinking_greedy",
+      "prompt_lookup_num_tokens": 5,
+      "quantization": "native_bf16",
+      "prompt_version": "v4_visual_relation_boundary",
+      "arbitration_version": "guard2_preserve_visual_and_reject_long_entity",
+      "rule_gate_version": "guard3_short_exact_and_pure_visual_recovery"
+    },
+    "rejected_primary_candidate": "Qwen/Qwen3-0.6B",
+    "selected_method": "B2.1_hybrid_explicit_compound_gate",
+    "query_count": 72,
+    "b0_accuracy": 0.3888888889,
+    "b0_macro_f1": 0.3857317012,
+    "b2_accuracy": 0.625,
+    "b2_macro_f1": 0.6063005953,
+    "b2_llm_call_rate": 0.3888888889,
+    "b2_invalid_json_rate": 0.0,
+    "b2_warm_p95_latency_ms": 1181.131525,
+    "routing_gain_gate_passed": true,
+    "call_rate_gate_passed": true,
+    "schema_gate_passed": true,
+    "latency_gate_passed": true,
+    "formal_data_collection_authorized": true,
+    "downstream_validation_pending": false,
+    "human_review": {
+      "query_count": 72,
+      "accepted_proposal_count": 72,
+      "corrected_count": 0,
+      "reviewed_query_sha256": "734e69630e334059c0e8ca25b6520465c786691793e15b7241f26c7415dc80ad"
+    },
+    "diagnostic_baselines": {
+      "b1_llm_only_accuracy": 0.6111111111,
+      "b1_llm_only_macro_f1": 0.6224256453,
+      "b3_human_oracle_accuracy": 1.0,
+      "rf_accuracy": 0.1805555556,
+      "rf_macro_f1": 0.0744215134
+    },
+    "downstream_regression": {
+      "source": "v18_calibration_regression_only",
+      "query_count": 80,
+      "changed_query_count": 7,
+      "positive_source_hit_at_1_delta": 0.0,
+      "positive_source_hit_at_3_delta": 0.0,
+      "positive_source_hit_at_10_delta": 0.0,
+      "hard_negative_source_far_at_1_delta": 0.0,
+      "hard_negative_source_far_at_3_delta": 0.0,
+      "hard_negative_source_far_at_10_delta": 0.0,
+      "eligible_for_v19_final_claim": false
+    },
+    "rejected_candidate": {
+      "method": "B2.1_prompt_v3_without_safety_arbitration",
+      "routing_accuracy": 0.7083333333,
+      "routing_macro_f1": 0.7013748969,
+      "rejection_reason": "positive_source_hit_at_1_decreased_by_0.125_on_v18_calibration_regression"
+    }
+  },
+  "formal_calibration": {
+    "status": "primary_reviewed_calibration_complete",
+    "query_count": 120,
+    "family_count": 30,
+    "primary_review": {
+      "all_formal_family_count": 60,
+      "all_formal_query_count": 240,
+      "explicit_saved_family_count": 5,
+      "default_accepted_family_count": 55,
+      "corrected_family_count": 0,
+      "double_review_fraction_required": 0.3,
+      "double_review_complete": true,
+      "double_reviewed_family_count": 18,
+      "double_reviewed_query_count": 72,
+      "raw_agreement": 1.0,
+      "cohen_kappa": 1.0,
+      "disagreement_count": 0,
+      "reviewer_ids_distinct": true
+    },
+    "b0_rule_only": {
+      "accuracy": 0.35,
+      "macro_f1": 0.3438288919
+    },
+    "b1_llm_only": {
+      "accuracy": 0.7333333333,
+      "macro_f1": 0.7258738853,
+      "llm_call_rate": 1.0,
+      "p95_route_latency_ms": 1697.774375
+    },
+    "selected_b21_hybrid": {
+      "accuracy": 0.65,
+      "macro_f1": 0.6492427594,
+      "accuracy_delta_vs_b0": 0.30,
+      "macro_f1_delta_vs_b0": 0.3054138676,
+      "ambiguous_subset_macro_f1_delta_vs_b0": 0.6416666667,
+      "llm_call_rate": 0.3083333333,
+      "invalid_json_rate": 0.0,
+      "fallback_rate": 0.0,
+      "p95_route_latency_ms": 1436.192775,
+      "peak_vram_gib": 3.643594265,
+      "fixed_invoked_query_count": 24,
+      "regressed_invoked_query_count": 0
+    },
+    "release_gates": {
+      "routing_gain_passed": true,
+      "ambiguous_subset_gain_passed": true,
+      "llm_call_rate_passed": true,
+      "schema_passed": true,
+      "latency_passed": true,
+      "v18_downstream_non_degradation_passed": true
+    },
+    "v18_downstream_regression": {
+      "query_count": 80,
+      "changed_query_count": 7,
+      "positive_source_hit_at_1_delta": 0.0,
+      "positive_source_hit_at_3_delta": 0.0,
+      "positive_source_hit_at_10_delta": 0.0,
+      "hard_negative_source_far_at_1_delta": 0.0,
+      "hard_negative_source_far_at_3_delta": 0.0,
+      "hard_negative_source_far_at_10_delta": 0.0,
+      "eligible_for_v19_final_claim": false
+    },
+    "holdout_executed": false,
+    "holdout_execution_authorized": true
+  }
+}

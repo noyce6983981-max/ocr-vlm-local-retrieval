@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-local-llm-structured-intent-routing",
+  "status": "v19_double_review_complete_no_adjudication_needed",
+  "eligible_for_final_claim": true,
+  "holdout_execution_authorized": true,
+  "double_reviewed_family_count": 18,
+  "double_reviewed_query_count": 72,
+  "double_review_fraction": 0.3,
+  "agreement_count": 18,
+  "raw_agreement": 1.0,
+  "cohen_kappa": 1.0,
+  "disagreement_count": 0,
+  "reviewer_ids_distinct": true,
+  "primary_route_counts": {
+    "text_evidence": 3,
+    "visual_discovery": 3,
+    "visual_metadata": 3,
+    "entity_exact": 3,
+    "topic_discovery": 3,
+    "mixed": 3
+  },
+  "secondary_route_counts": {
+    "text_evidence": 3,
+    "visual_discovery": 3,
+    "visual_metadata": 3,
+    "entity_exact": 3,
+    "topic_discovery": 3,
+    "mixed": 3
+  },
+  "manifest_sha256": "d1b95dddf98d7a2448b8df2eddf930f2e79275f0cd15ea96d10d5ee0d426b458",
+  "primary_review_sha256": "68c638cecdada14d2b3cff388fbf732a518eceb8d296c8d897d34cf6e4d58128",
+  "second_review_sha256": "32cac22d1081f500ed3fac712c0a6079e17ba1b4554d6f10edaca6c58ea21fec",
+  "calibration_final_sha256": "b64f69ed25cac22a1f49df1dfa77c2d85dffc3cfa12ee322d7b67148839667e7",
+  "holdout_final_sha256": "a942866971abb785e6236fece3a2c2743c020354cea7c4de50c7a3f23402ba80",
+  "method_lock_selection_sha256": "de9d9abed3c688faabf221101c0f99cc1b18837dc67ec326097656020172a1aa"
+}

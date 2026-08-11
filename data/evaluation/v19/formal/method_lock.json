@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-local-llm-structured-intent-routing",
+  "status": "locked_after_formal_calibration_before_holdout",
+  "created_date": "2026-08-11",
+  "holdout_executed": false,
+  "selected_method": "B2.1_hybrid_explicit_compound_gate",
+  "selected_model": "Qwen/Qwen3-1.7B",
+  "selected_inference": {
+    "mode": "non_thinking_greedy",
+    "prompt_lookup_num_tokens": 5,
+    "quantization": "native_bf16",
+    "prompt_version": "v4_visual_relation_boundary",
+    "arbitration_version": "guard2_preserve_visual_and_reject_long_entity",
+    "rule_gate_version": "guard3_short_exact_and_pure_visual_recovery"
+  },
+  "locked_files": {
+    "config/studies/v19_intent_routing.json": "57b23a258179cb85e2a3a4d1fb764021d753ba5d8c7cc792da52ec56ca05388b",
+    "data/evaluation/v19/model_pilot/model_manifest.json": "84e2617fdcd0b593b7b55ff6869aaf7755769be4b4c6c4d1cd73faf15e3f706f",
+    "data/evaluation/v19/pilot/queries_reviewed.csv": "734e69630e334059c0e8ca25b6520465c786691793e15b7241f26c7415dc80ad",
+    "data/evaluation/v19/pilot/review_freeze_receipt.json": "647f9cbac677706aa6c96f9cedc612146bfa97b33f503c627bcbad2686cec1a0",
+    "data/evaluation/v19/formal/primary_review_freeze_receipt.json": "020c3011ea548cb1828b7347a7e29a79bed5680a46f6afc33f3010fad3d62f5e",
+    "data/evaluation/v19/formal/calibration_queries_reviewed.csv": "6966064d33dd33032b8106d73e2f829d14029bec212432d124f9cb5b6cd8278c",
+    "data/evaluation/v19/formal/holdout_queries_reviewed_sealed.csv": "61949da2886554263d68873d66a3bfa1092f187842c4d775ff476b1acb42da13",
+    "data/evaluation/v19/formal/second_review_manifest.json": "d1b95dddf98d7a2448b8df2eddf930f2e79275f0cd15ea96d10d5ee0d426b458",
+    "data/evaluation/v19/formal/double_review_receipt.json": "406dd20a13ffdcb033331f7474aa6c7073576f54ab8e464f869432275ea4efe4",
+    "data/evaluation/v19/formal/calibration_queries_final.csv": "b64f69ed25cac22a1f49df1dfa77c2d85dffc3cfa12ee322d7b67148839667e7",
+    "data/evaluation/v19/formal/holdout_queries_final_sealed.csv": "a942866971abb785e6236fece3a2c2743c020354cea7c4de50c7a3f23402ba80",
+    "scripts/run_intent_routing_study.py": "e6ffb2020c7d8dfcf8d738f3a66bda1c715177353290aa8472cbb0a5cdba3400",
+    "scripts/authorize_v19_holdout_once.py": "94c80d412059e7125f03b16e2c087fdb8b327ada949135809357bbd64dee81e4",
+    "scripts/claim_v19_holdout_once.py": "aec4a2deef8a5497c0adedb85d56d3635008d8fe150c7b628e90ea708619e924",
+    "src/ocr_vlm_retrieval/routing/arbitration.py": "ad2530385fc6165b570bcab694462c12b75b9f1ec89aed9fc2f9ce8138dfa406",
+    "src/ocr_vlm_retrieval/routing/hybrid_router.py": "0a8c60f87aeceeedd48b38ebf6d736b64ab638b010008b4f76a16e9ec1d7df40",
+    "src/ocr_vlm_retrieval/routing/llm_router.py": "acfd846d9dcf047164d085a067cf542b7537af4b7ffb22a2d8cbc4a4200bbfbc",
+    "src/ocr_vlm_retrieval/routing/mapping.py": "2470164c7656b786908621d3e7dfad1b22f6c73ee920ac63ef8e1895ef982aee",
+    "src/ocr_vlm_retrieval/routing/prompt.py": "b1bd43c1b6ef24b01887b0b76b2454cdbe98397381b2fff412762f7981e99ede",
+    "src/ocr_vlm_retrieval/routing/rule_router.py": "ca8ded23c75692d5a80885b379eb96da6c6ed46e0d14f9f27b8ef346a8cc229b",
+    "src/ocr_vlm_retrieval/routing/schema.py": "02c177984ae15f546c5c61231f16f6df096c915eaefe0b17bada30cca218bb1a",
+    "src/ocr_vlm_retrieval/routing/transformers_backend.py": "75a6d0b58d173711f713f6e81c38344a5a0040575d86d4127160638b7368ecb6"
+  }
+}

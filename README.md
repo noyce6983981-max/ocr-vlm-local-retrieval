@@ -17,6 +17,14 @@ V18 在冻结方法后只运行一次 80 条查询、40 个来源配对组的真
 
 研究结论必须保守表述：留出集支持的是 Top-3 内保守全查询验证 L1，不是属性级 L3。L3 在校准中没有胜出，因此不能宣称属性级必要条件覆盖方法已经验证成功。完整协议、限制和指纹见 `records/experiments/retrieval_v18_independent_holdout_2026-08-09.md`，机器可读摘要见 `data/evaluation/v18/final_holdout_summary.json`。
 
+## V18.1 本地 LLM 结构化意图路由预览
+
+V18.1新增“确定性高置信直通 + 歧义查询调用本地Qwen3-1.7B + JSON Schema校验 + 确定性映射 + 异常回退”的可选混合路由。LLM只输出检索所需的证据类型，不控制检索权重、拒答阈值或最终答案；产品和CPU演示默认保持关闭。
+
+内部研究协议沿用已经冻结的V19编号以保持哈希与一次性留出审计连续，但本次GitHub版本仅发布为**v18.1.0工程预览**，不提前占用正式V19。120条一次性路由留出查询上，B2.1的Accuracy为62.50%、Macro-F1为62.86%，相对旧规则分别提升25.00和25.50个百分点；LLM调用率33.33%，路由P95为1399.5 ms。30%家族由两名不同审核者独立复核，原始一致率100%、Cohen's κ=1.000。
+
+该成绩只证明**查询路由改善**。V18冻结下游回归中的正例Hit@1/3/10与强负例FAR@1/3/10均未退化，但尚未证明新的端到端检索Top-1增益；达到该目标后再升级正式V19。完整边界与Bootstrap区间见`records/experiments/retrieval_v19_one_shot_holdout_2026-08-11.md`。
+
 V17 现为上一稳定研究版本。其一次性 40 条留出结果与公开复算仍保留在 `records/experiments/retrieval_v17_independent_holdout_2026-08-08.md`、`records/experiments/V17_HYPOTHESIS_DISPOSITION.md` 和标签 `v17.0.1`，历史结果不回写。
 
 此前 V16 使用与历史目标零重叠、路线均衡的 50 条校准查询选择配置，并在锁定配置后首次运行另一组 50 条来源核验独立留出查询：
@@ -78,6 +86,8 @@ V17 现在把评测拆成两个独立任务：20 项池只标注 `pooled_relevan
 - [x] 视觉描述查询自动路由，并在原始相似度不足时拒绝返回伪匹配
 - [x] 独立盲测工作台：自然查询无结果采集、冻结指纹、多路候选池与人工qrels
 - [x] 导入阶段状态、来源证据、查询缓存和标准化自动测试
+- [x] V18.1可选本地LLM结构化意图路由、30%独立复核与一次性路由留出评测
+- [x] 默认关闭的常驻回环服务、失败规则回退与独立V18.1缓存
 
 当前24张`dataset_v1`结果：
 
@@ -272,11 +282,11 @@ python scripts/minimal_repro.py evaluate --backend cpu
 
 ### GHCR CPU 演示镜像
 
-V18.0.1 起提供不含模型权重和内部资料库的轻量容器：
+V18.0.1 起提供不含模型权重和内部资料库的轻量容器；V18.1仍保持CPU规则模式，不把可选意图模型塞进镜像：
 
 ```bash
-docker pull ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.0.1
-docker run --rm --network none ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.0.1
+docker pull ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.1.0
+docker run --rm --network none ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.1.0
 ```
 
 容器会在无网络、非 root 用户环境中生成 40 页资料库，构建 BM25 索引，运行正例及强负例查询，并严格对比冻结结果。结果不一致时进程返回非零状态。该镜像验证公开 CPU 工程链路，不复现 PaddleOCR 或 Qwen3-VL 推理质量，也不包含 V18 私有真人留出评测数据。

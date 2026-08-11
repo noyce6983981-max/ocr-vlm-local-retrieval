@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-local-llm-structured-intent-routing",
+  "status": "codex_draft_pending_human_review",
+  "method_lock_sha256": "393f871b18530cf8cac4fb85fe50127b4399a08d4f1383aaaa9c4d2956827570",
+  "family_count": 60,
+  "query_count": 240,
+  "calibration_query_count": 120,
+  "holdout_query_count": 120,
+  "queries_per_family": 4,
+  "families_sha256": "8dcf0953d80b782a2b83040fb2c9dfd09d504a7a33e0a1e6f20e2343edf20b8b",
+  "calibration_sha256": "b194bae4471d703d2c1fc0feecd3d8f758caa93d8c25ed1f313fc4ec65b833d4",
+  "holdout_sha256": "728894adc99329641a7b08203e14032c825f082efdeab788fe94841a79d4024b",
+  "eligible_for_final_claim": false
+}

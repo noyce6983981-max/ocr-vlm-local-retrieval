@@ -1,0 +1,18 @@
+{
+  "authorization_sha256": "39775811f0363f17cbcffe46290b09b06247b5b01cedb54d60dbe2d66d72f32b",
+  "authorized_modes": [
+    "rule_only",
+    "llm_only",
+    "hybrid",
+    "human_oracle"
+  ],
+  "claimed_at_utc": "2026-08-11T12:07:57.527837+00:00",
+  "holdout_execution_complete": false,
+  "holdout_query_count": 120,
+  "holdout_query_sha256": "a942866971abb785e6236fece3a2c2743c020354cea7c4de50c7a3f23402ba80",
+  "holdout_results_opened": true,
+  "method_lock_sha256": "291c4894066c265d158e83521a7455f145defd969e01a7c1f265f7648ea7c9e1",
+  "rerun_policy": "forbidden_after_this_claim",
+  "schema_version": 1,
+  "status": "v19_one_shot_holdout_claimed"
+}

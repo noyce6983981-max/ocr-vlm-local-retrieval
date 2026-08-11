@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-local-llm-structured-intent-routing",
+  "split": "human_reviewed_pilot_not_final",
+  "eligible_for_final_claim": false,
+  "query_count": 72,
+  "unique_query_count": 72,
+  "route_counts": {
+    "text_evidence": 12,
+    "visual_discovery": 12,
+    "visual_metadata": 12,
+    "entity_exact": 12,
+    "topic_discovery": 12,
+    "mixed": 12
+  },
+  "accepted_proposal_count": 72,
+  "corrected_count": 0,
+  "source_query_sha256": "abc80a65fe742d3bb1685af998813acb36b32123aa0025ed5268d4068811fc5d",
+  "source_review_sha256": "cc2b056425b269164ce853176646a8e45d3410f3888c5ea3c107fe46773bbc75",
+  "reviewed_query_sha256": "734e69630e334059c0e8ca25b6520465c786691793e15b7241f26c7415dc80ad"
+}

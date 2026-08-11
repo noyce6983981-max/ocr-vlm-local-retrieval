@@ -11,6 +11,7 @@ from app import (
     correction_url,
     render_blind_query_collection,
     render_blind_study_review,
+    v19_intent_runtime_settings,
 )
 
 
@@ -96,3 +97,28 @@ def test_internal_site_renders_retrieval_truth_workflow() -> None:
     assert "检索答案纠错" in subtitles
     captions = [str(element.value) for element in app.caption]
     assert any("0 / 100" in value for value in captions)
+
+
+def test_v19_ui_runtime_is_disabled_by_default(monkeypatch) -> None:
+    monkeypatch.delenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", raising=False)
+    monkeypatch.delenv("OCR_VLM_V19_INTENT_ROUTING_URL", raising=False)
+    monkeypatch.delenv("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS", raising=False)
+    assert v19_intent_runtime_settings() == (
+        False,
+        "http://127.0.0.1:8765",
+        2.0,
+    )
+
+
+def test_v19_ui_runtime_requires_explicit_environment_flag(monkeypatch) -> None:
+    monkeypatch.setenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", "true")
+    monkeypatch.setenv(
+        "OCR_VLM_V19_INTENT_ROUTING_URL",
+        "http://127.0.0.1:8877",
+    )
+    monkeypatch.setenv("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS", "1.75")
+    assert v19_intent_runtime_settings() == (
+        True,
+        "http://127.0.0.1:8877",
+        1.75,
+    )

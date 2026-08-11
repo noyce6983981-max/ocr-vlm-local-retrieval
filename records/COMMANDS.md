@@ -162,6 +162,32 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\fetch_qwen3_vl
 
 首次运行会顺序调用`.venv`中的BGE-M3和`.venv-vl`中的Qwen3-VL；相同问题再次执行时读取`outputs/live_cache/`。
 
+## V18.1 可选常驻意图路由
+
+V18.1默认不改变现有检索。需要试用时，先在独立模型环境启动只监听本机的常驻服务：
+
+```powershell
+.\.venv-vl\Scripts\python.exe scripts\v19_intent_server.py
+```
+
+另开终端，对单次检索显式打开开关：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\v18_1_live_search.py "我记得有张照片里厨师正把锅抛起，旁边有火苗" --enable-v19-intent-routing
+```
+
+服务地址默认是`http://127.0.0.1:8765`。服务离线、超时或响应不合法时，检索仍会使用冻结的Guard3确定性规则完成路由；CPU演示容器和普通检索保持关闭状态。`--retrieval-route`显式研究覆盖的优先级高于服务开关。
+
+若要让Streamlit软件使用同一可选路由服务，在启动主站的终端中显式设置环境变量：
+
+```powershell
+$env:OCR_VLM_ENABLE_V19_INTENT_ROUTING = "1"
+$env:OCR_VLM_V19_INTENT_ROUTING_URL = "http://127.0.0.1:8765"
+.\.venv\Scripts\python.exe -m streamlit run app.py
+```
+
+不设置该变量或设置为`0`时，软件保持原有确定性路由。启用后的结果使用独立`_v19`缓存后缀，不会与默认检索缓存混用。
+
 ## 独立盲测
 
 日常采集请在8501主站选择“独立盲测”；冻结和人工相关性审核请在8502选择“独立盲测审核”。冻结后也可以用命令行断点生成候选：

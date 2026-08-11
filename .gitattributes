@@ -16,3 +16,7 @@
 *.gif binary
 *.pdf binary
 *.npz binary
+
+# V19 evaluation artifacts are byte-addressed by frozen receipts and locks.
+# Preserve their exact bytes instead of normalizing line endings.
+data/evaluation/v19/** -text

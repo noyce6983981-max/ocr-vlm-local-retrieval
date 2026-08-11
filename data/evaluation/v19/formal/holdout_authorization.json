@@ -1,0 +1,28 @@
+{
+  "authorization_scope": "One immutable 120-query V19 holdout evaluation of the locked B0/B1/B2.1/B3 method grid; no method or threshold changes allowed.",
+  "authorized_at_utc": "2026-08-11T12:07:46.516654+00:00",
+  "authorized_modes": [
+    "rule_only",
+    "llm_only",
+    "hybrid",
+    "human_oracle"
+  ],
+  "double_review_receipt_sha256": "406dd20a13ffdcb033331f7474aa6c7073576f54ab8e464f869432275ea4efe4",
+  "holdout_executed": false,
+  "holdout_query_count": 120,
+  "holdout_query_sha256": "a942866971abb785e6236fece3a2c2743c020354cea7c4de50c7a3f23402ba80",
+  "method_lock_sha256": "291c4894066c265d158e83521a7455f145defd969e01a7c1f265f7648ea7c9e1",
+  "schema_version": 1,
+  "selected_inference": {
+    "arbitration_version": "guard2_preserve_visual_and_reject_long_entity",
+    "mode": "non_thinking_greedy",
+    "prompt_lookup_num_tokens": 5,
+    "prompt_version": "v4_visual_relation_boundary",
+    "quantization": "native_bf16",
+    "rule_gate_version": "guard3_short_exact_and_pure_visual_recovery"
+  },
+  "selected_method": "B2.1_hybrid_explicit_compound_gate",
+  "selected_model": "Qwen/Qwen3-1.7B",
+  "status": "approved_for_one_shot_v19_holdout",
+  "study_id": "v19-local-llm-structured-intent-routing"
+}

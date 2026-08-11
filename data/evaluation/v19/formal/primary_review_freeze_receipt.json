@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-local-llm-structured-intent-routing",
+  "review_stage": "primary_complete_double_review_pending",
+  "eligible_for_final_claim": false,
+  "holdout_execution_authorized": false,
+  "family_count": 60,
+  "query_count": 240,
+  "calibration_query_count": 120,
+  "holdout_query_count": 120,
+  "explicit_saved_family_count": 5,
+  "default_accepted_family_count": 55,
+  "accepted_proposal_family_count": 60,
+  "corrected_family_count": 0,
+  "route_counts_by_split": {
+    "calibration": {
+      "text_evidence": 20,
+      "visual_discovery": 20,
+      "visual_metadata": 20,
+      "entity_exact": 20,
+      "topic_discovery": 20,
+      "mixed": 20
+    },
+    "holdout": {
+      "text_evidence": 20,
+      "visual_discovery": 20,
+      "visual_metadata": 20,
+      "entity_exact": 20,
+      "topic_discovery": 20,
+      "mixed": 20
+    }
+  },
+  "source_family_sha256": "8dcf0953d80b782a2b83040fb2c9dfd09d504a7a33e0a1e6f20e2343edf20b8b",
+  "source_explicit_review_sha256": "77fd8153d6c9702c1c464ae8eaa7c38eb335c78cb273a5528bc0b669affd74e9",
+  "frozen_family_review_sha256": "68c638cecdada14d2b3cff388fbf732a518eceb8d296c8d897d34cf6e4d58128",
+  "calibration_reviewed_sha256": "6966064d33dd33032b8106d73e2f829d14029bec212432d124f9cb5b6cd8278c",
+  "holdout_reviewed_sha256": "61949da2886554263d68873d66a3bfa1092f187842c4d775ff476b1acb42da13"
+}

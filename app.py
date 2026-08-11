@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import html
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -21,10 +22,6 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from scripts.demo_backend import (
-    align_score_matrix,
-    build_method_scores,
-)
 from scripts.apply_quality_reviews import publish_quality_reviews
 from scripts.assistant_category_proposals import (
     read_assistant_proposals,
@@ -32,22 +29,62 @@ from scripts.assistant_category_proposals import (
 )
 from scripts.blind_query_study import (
     assert_library_unchanged as assert_blind_library_unchanged,
+)
+from scripts.blind_query_study import (
     delete_submission as delete_blind_submission,
+)
+from scripts.blind_query_study import (
     freeze_study as freeze_blind_study,
+)
+from scripts.blind_query_study import (
     initialize_study as initialize_blind_study,
+)
+from scripts.blind_query_study import (
     load_protocol as load_blind_protocol,
+)
+from scripts.blind_query_study import (
     materialize_formal_rows as materialize_blind_formal_rows,
+)
+from scripts.blind_query_study import (
     progress_summary as blind_progress_summary,
+)
+from scripts.blind_query_study import (
     read_candidates as read_blind_candidates,
+)
+from scripts.blind_query_study import (
     read_reviews as read_blind_reviews,
+)
+from scripts.blind_query_study import (
     read_submissions as read_blind_submissions,
+)
+from scripts.blind_query_study import (
     save_relevance_review as save_blind_relevance_review,
+)
+from scripts.blind_query_study import (
     submit_query as submit_blind_query,
+)
+from scripts.blind_query_study import (
     verify_frozen_snapshot as verify_blind_snapshot,
+)
+from scripts.blind_query_study import (
     write_formal_query_set as write_blind_formal_query_set,
+)
+from scripts.blind_query_study import (
     write_live_evaluation_protocol as write_blind_evaluation_protocol,
 )
 from scripts.build_formal_query_set import build_formal_rows
+from scripts.demo_backend import (
+    align_score_matrix,
+    build_method_scores,
+)
+from scripts.library_manager import (
+    create_library,
+    library_by_id,
+    load_registry,
+    manifest_count,
+    resolve_library_dir,
+    set_active_library,
+)
 from scripts.live_search import (
     SEARCH_POLICY_VERSION,
     cached_query_matches,
@@ -58,13 +95,10 @@ from scripts.live_search import (
     retrieval_config_revision,
     write_json_atomic,
 )
-from scripts.library_manager import (
-    create_library,
-    library_by_id,
-    load_registry,
-    manifest_count,
-    resolve_library_dir,
-    set_active_library,
+from scripts.quality_review import (
+    read_quality_reviews,
+    save_quality_review,
+    validate_quality_review,
 )
 from scripts.query_review import (
     read_reviews,
@@ -72,11 +106,6 @@ from scripts.query_review import (
     validate_review,
 )
 from scripts.retrieval_explain import build_retrieval_explanation
-from scripts.quality_review import (
-    read_quality_reviews,
-    save_quality_review,
-    validate_quality_review,
-)
 from scripts.taxonomy import (
     CATEGORY_DESCRIPTIONS,
     CATEGORY_LABELS,
@@ -84,7 +113,10 @@ from scripts.taxonomy import (
     normalize_category,
     parse_quality_tags,
 )
-
+from scripts.v18_1_live_search import (
+    optional_v19_route,
+    resolve_v18_1_search_intent,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 MANIFEST_PATH = PROJECT_ROOT / "data/manifest/dataset_v1_manifest.jsonl"
@@ -133,6 +165,26 @@ BLIND_EVALUATION_OUTPUT_PATH = (
 BLIND_MODEL_HARD_QUEUE_PATH = (
     BLIND_STUDY_DIR / "model_review_final_unresolved.json"
 )
+
+
+def v19_intent_runtime_settings() -> tuple[bool, str, float]:
+    """Read the explicit, default-off V19 service settings for the UI."""
+
+    enabled = os.getenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", "").strip().lower()
+    is_enabled = enabled in {"1", "true", "yes", "on"}
+    service_url = os.getenv(
+        "OCR_VLM_V19_INTENT_ROUTING_URL",
+        "http://127.0.0.1:8765",
+    ).strip()
+    if not service_url:
+        raise ValueError("OCR_VLM_V19_INTENT_ROUTING_URL cannot be empty")
+    raw_timeout = os.getenv("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS", "2.0")
+    timeout_seconds = float(raw_timeout)
+    if timeout_seconds <= 0:
+        raise ValueError("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS must be positive")
+    return is_enabled, service_url, timeout_seconds
+
+
 QUALITY_GATE_PATH = (
     PROJECT_ROOT
     / "data/evaluation/public_dataset_1500_quality_gate.csv"
@@ -506,11 +558,23 @@ def execute_live_search(
     rerank_top_k: int = 0,
 ) -> dict[str, Any]:
     normalized_query = " ".join(query.split())
+    v19_enabled, v19_service_url, v19_timeout_seconds = (
+        v19_intent_runtime_settings()
+    )
+    v19_decision = optional_v19_route(
+        enabled=v19_enabled,
+        service_url=v19_service_url,
+        query=normalized_query,
+        timeout_seconds=v19_timeout_seconds,
+    )
+    route_override = v19_decision.route if v19_decision is not None else None
     revision = library_revision(library_dir)
     cache_key = query_key(normalized_query, revision)
     suffix = f"_{method_key}"
     if rerank_top_k:
         suffix += f"_rerank{rerank_top_k}"
+    if v19_enabled:
+        suffix += "_v19"
     output_path = (
         LIVE_CACHE_DIR
         / library_id
@@ -520,7 +584,11 @@ def execute_live_search(
     if output_path.is_file():
         try:
             expected_route, _, expected_visual_query, _ = (
-                resolve_search_intent(method_key, normalized_query)
+                resolve_v18_1_search_intent(
+                    method_key,
+                    normalized_query,
+                    route_override,
+                )
             )
             cached_payload = json.loads(
                 output_path.read_text(encoding="utf-8")
@@ -553,20 +621,38 @@ def execute_live_search(
         except Exception:
             # The CLI path below remains the authoritative safe fallback.
             text_runtime_status = "fallback"
+    command = [
+        sys.executable,
+        str(
+            PROJECT_ROOT
+            / (
+                "scripts/v18_1_live_search.py"
+                if v19_enabled
+                else "scripts/live_search.py"
+            )
+        ),
+        normalized_query,
+        "--library-dir",
+        str(library_dir),
+        "--output",
+        str(output_path),
+        "--rerank-top-k",
+        str(rerank_top_k),
+        "--method",
+        method_key,
+    ]
+    if v19_enabled:
+        command.extend(
+            [
+                "--enable-v19-intent-routing",
+                "--v19-intent-routing-url",
+                v19_service_url,
+                "--v19-intent-timeout-seconds",
+                str(v19_timeout_seconds),
+            ]
+        )
     completed = subprocess.run(
-        [
-            sys.executable,
-            str(PROJECT_ROOT / "scripts/live_search.py"),
-            normalized_query,
-            "--library-dir",
-            str(library_dir),
-            "--output",
-            str(output_path),
-            "--rerank-top-k",
-            str(rerank_top_k),
-            "--method",
-            method_key,
-        ],
+        command,
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
@@ -584,6 +670,7 @@ def execute_live_search(
         time.perf_counter() - started, 3
     )
     result["_ui_text_runtime_status"] = text_runtime_status
+    result["_ui_v19_intent_routing_enabled"] = v19_enabled
     return result
 
 

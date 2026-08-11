@@ -1,0 +1,323 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-local-llm-structured-intent-routing",
+  "review_stage": "independent_blind_second_review",
+  "method_lock_sha256": "de9d9abed3c688faabf221101c0f99cc1b18837dc67ec326097656020172a1aa",
+  "family_count": 18,
+  "query_count": 72,
+  "double_review_fraction": 0.3,
+  "split_counts": {
+    "calibration": 9,
+    "holdout": 9
+  },
+  "selection_strata_verified": true,
+  "primary_labels_exposed": false,
+  "families": [
+    {
+      "family_id": "v19f_cal_text_evidence_05_exact_delivery_phrase",
+      "family_snapshot_sha256": "2d0d9077f9b35b8538443967257b9fb413afed372b3d1ee7958e6530595b0fde",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_text_evidence_05_exact_delivery_phrase_p1",
+        "v19f_cal_text_evidence_05_exact_delivery_phrase_p2",
+        "v19f_cal_text_evidence_05_exact_delivery_phrase_p3",
+        "v19f_cal_text_evidence_05_exact_delivery_phrase_p4"
+      ],
+      "queries": [
+        "哪份文件原文写了“分批交付”？",
+        "帮我定位明确出现“分批交付”四个字的页面。",
+        "材料里哪里提到了“分批交付”？",
+        "我想找包含原句“分批交付”的那一页。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_text_evidence_03_contact_phone",
+      "family_snapshot_sha256": "8da0219d065d60db75a461f4ccb0745a5b1d7f2f8c74267c0a4e87a022e469a3",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_text_evidence_03_contact_phone_p1",
+        "v19f_cal_text_evidence_03_contact_phone_p2",
+        "v19f_cal_text_evidence_03_contact_phone_p3",
+        "v19f_cal_text_evidence_03_contact_phone_p4"
+      ],
+      "queries": [
+        "申请材料中留下的联系人电话是什么？",
+        "帮我查一下表里登记的联系电话。",
+        "文件给出的项目联系人手机号是多少？",
+        "我需要材料中明确填写的联络号码。"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_text_evidence_04_reported_growth_rate",
+      "family_snapshot_sha256": "879d5884f2ffc94c571285c7c079fb3ae34706f0434219199d7be2b96005e7ca",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_text_evidence_04_reported_growth_rate_p1",
+        "v19f_hol_text_evidence_04_reported_growth_rate_p2",
+        "v19f_hol_text_evidence_04_reported_growth_rate_p3",
+        "v19f_hol_text_evidence_04_reported_growth_rate_p4"
+      ],
+      "queries": [
+        "报告最后公布的同比增长率是多少？",
+        "请读取结论部分给出的同比增幅。",
+        "材料明确写出的年度增长百分比是多少？",
+        "帮我核对正文中的同比增长数据。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_visual_discovery_03_blue_kayak_lake",
+      "family_snapshot_sha256": "64476f39272e1e5b0d45ff631ff3ea72f03e402a98be2de7746645b8efefc2f4",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_visual_discovery_03_blue_kayak_lake_p1",
+        "v19f_cal_visual_discovery_03_blue_kayak_lake_p2",
+        "v19f_cal_visual_discovery_03_blue_kayak_lake_p3",
+        "v19f_cal_visual_discovery_03_blue_kayak_lake_p4"
+      ],
+      "queries": [
+        "有没有蓝色皮划艇漂在碧绿湖面上的画面？",
+        "找一张清澈湖水里有蓝色小艇的照片。",
+        "帮我翻出那幅蓝色独木舟停在绿色湖中的图。",
+        "我需要蓝艇与翠绿色湖水同框的自然照片。"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_visual_discovery_03_cyclist_mountain_turn",
+      "family_snapshot_sha256": "5337a5a70278337ec5d15a3ac1ffa904576484029a439b635890cce52f39c83d",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_visual_discovery_03_cyclist_mountain_turn_p1",
+        "v19f_hol_visual_discovery_03_cyclist_mountain_turn_p2",
+        "v19f_hol_visual_discovery_03_cyclist_mountain_turn_p3",
+        "v19f_hol_visual_discovery_03_cyclist_mountain_turn_p4"
+      ],
+      "queries": [
+        "找穿黄色骑行服的人在山路转弯的画面。",
+        "有没有黄衣自行车手压弯经过盘山路的照片？",
+        "我记得一张图中骑手穿黄衫驶过山间弯道。",
+        "帮我寻找山路急弯与黄色骑行者同框的图片。"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_visual_discovery_05_cat_rain_window",
+      "family_snapshot_sha256": "c2f56f0dfc5081c681c2e768d95eaa740152b3ab49289c78d9f831240a8ccd68",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_visual_discovery_05_cat_rain_window_p1",
+        "v19f_hol_visual_discovery_05_cat_rain_window_p2",
+        "v19f_hol_visual_discovery_05_cat_rain_window_p3",
+        "v19f_hol_visual_discovery_05_cat_rain_window_p4"
+      ],
+      "queries": [
+        "找一只猫坐在雨天窗台上的照片。",
+        "哪幅画面里猫望着布满雨滴的窗户？",
+        "我想看窗外下雨、猫趴在窗边的图片。",
+        "帮我找到猫和带雨珠玻璃同框的室内场景。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_visual_metadata_05_four_images_row",
+      "family_snapshot_sha256": "939cc6b65dbabef547b2473d090480f54d129b207a59e6e3e380650f328fbd9b",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_visual_metadata_05_four_images_row_p1",
+        "v19f_cal_visual_metadata_05_four_images_row_p2",
+        "v19f_cal_visual_metadata_05_four_images_row_p3",
+        "v19f_cal_visual_metadata_05_four_images_row_p4"
+      ],
+      "queries": [
+        "找四张图片横向排成一整行的幻灯片。",
+        "哪页演示文稿把四幅小图并排放置？",
+        "帮我定位页面中部横排四张等宽图片的课件。",
+        "我记得有张幻灯片只有一行四个图块。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_visual_metadata_03_dashboard_filter_map",
+      "family_snapshot_sha256": "dea077a83a04109a009cdd0caeff0514c3627d000d33aa6d0938ad7677925dd9",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_visual_metadata_03_dashboard_filter_map_p1",
+        "v19f_cal_visual_metadata_03_dashboard_filter_map_p2",
+        "v19f_cal_visual_metadata_03_dashboard_filter_map_p3",
+        "v19f_cal_visual_metadata_03_dashboard_filter_map_p4"
+      ],
+      "queries": [
+        "找左侧是筛选面板、右侧占大半区域为地图的仪表盘。",
+        "哪张界面把过滤条件放在左栏，把地图放在右边？",
+        "帮我定位左窄右宽、右侧展示地图的后台页面。",
+        "我记得一个数据面板左边有筛选器，右边是一张大地图。"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_visual_metadata_04_timeline_top_third",
+      "family_snapshot_sha256": "09c0c562dffdfe51283a77e0f9326d77d62f07a46166e491d15ce1f734e00eab",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_visual_metadata_04_timeline_top_third_p1",
+        "v19f_hol_visual_metadata_04_timeline_top_third_p2",
+        "v19f_hol_visual_metadata_04_timeline_top_third_p3",
+        "v19f_hol_visual_metadata_04_timeline_top_third_p4"
+      ],
+      "queries": [
+        "找横向时间轴位于页面上方三分之一处的幻灯片。",
+        "哪张课件把时间线放在顶部，下方留给说明文字？",
+        "帮我定位上部横排节点、下部为正文的时间轴页。",
+        "我记得一页的时间轴靠上摆放，下面还有大块内容。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_entity_exact_01_person_liang_siyuan",
+      "family_snapshot_sha256": "fd893341d5ae940dcdddf8aaf7123441590a09cd941329b601987929011ddf42",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_entity_exact_01_person_liang_siyuan_p1",
+        "v19f_cal_entity_exact_01_person_liang_siyuan_p2",
+        "v19f_cal_entity_exact_01_person_liang_siyuan_p3",
+        "v19f_cal_entity_exact_01_person_liang_siyuan_p4"
+      ],
+      "queries": [
+        "查一下梁思远。",
+        "材料里有没有梁思远？",
+        "帮我定位梁思远的记录。",
+        "梁思远出现在哪些页面？"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_entity_exact_01_person_ye_jianing",
+      "family_snapshot_sha256": "2f1277abfd7fa273ca90a2d32b0e280ad936582f951c5ebe735b257029189cb4",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_entity_exact_01_person_ye_jianing_p1",
+        "v19f_hol_entity_exact_01_person_ye_jianing_p2",
+        "v19f_hol_entity_exact_01_person_ye_jianing_p3",
+        "v19f_hol_entity_exact_01_person_ye_jianing_p4"
+      ],
+      "queries": [
+        "找一下叶嘉宁。",
+        "叶嘉宁被哪些文件提到？",
+        "请检索叶嘉宁的记录。",
+        "名单里能查到叶嘉宁吗？"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_entity_exact_02_person_su_jingxing",
+      "family_snapshot_sha256": "7b806d3c5f86d40e7bafb8e20a1255ec9a79782fd8f5a3566a772a2660a8ef6a",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_entity_exact_02_person_su_jingxing_p1",
+        "v19f_hol_entity_exact_02_person_su_jingxing_p2",
+        "v19f_hol_entity_exact_02_person_su_jingxing_p3",
+        "v19f_hol_entity_exact_02_person_su_jingxing_p4"
+      ],
+      "queries": [
+        "查苏景行。",
+        "帮我找出出现苏景行的页面。",
+        "材料里有没有苏景行？",
+        "定位苏景行对应的资料。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_topic_discovery_03_smart_water",
+      "family_snapshot_sha256": "23b596aadf7db9772421aea307183b445e5e207c6fa99d362f2d5149004f5cb1",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_topic_discovery_03_smart_water_p1",
+        "v19f_cal_topic_discovery_03_smart_water_p2",
+        "v19f_cal_topic_discovery_03_smart_water_p3",
+        "v19f_cal_topic_discovery_03_smart_water_p4"
+      ],
+      "queries": [
+        "看看智慧水务方向都有什么资料。",
+        "帮我浏览城市供水数字化相关内容。",
+        "资料库覆盖了哪些智能水务研究？",
+        "我想了解水务监测与调度方面的材料。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_topic_discovery_01_marine_carbon_sink",
+      "family_snapshot_sha256": "76415c13c799a00397fe3aaff95145e274eb9067345fd4114d5f87f6c3ac2b91",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_topic_discovery_01_marine_carbon_sink_p1",
+        "v19f_cal_topic_discovery_01_marine_carbon_sink_p2",
+        "v19f_cal_topic_discovery_01_marine_carbon_sink_p3",
+        "v19f_cal_topic_discovery_01_marine_carbon_sink_p4"
+      ],
+      "queries": [
+        "整理一下海洋碳汇方向的资料。",
+        "我想了解资料库里关于蓝碳研究的内容。",
+        "有哪些材料讨论海洋生态系统固碳？",
+        "帮我浏览海洋碳汇相关研究。"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_topic_discovery_03_privacy_computing",
+      "family_snapshot_sha256": "d03d9a2e280dfe52678a396df36f303aa22da9fd4d516b56a59eaa168217d0e1",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_topic_discovery_03_privacy_computing_p1",
+        "v19f_hol_topic_discovery_03_privacy_computing_p2",
+        "v19f_hol_topic_discovery_03_privacy_computing_p3",
+        "v19f_hol_topic_discovery_03_privacy_computing_p4"
+      ],
+      "queries": [
+        "找一下隐私计算方向的研究资料。",
+        "库里有哪些联邦学习与安全计算内容？",
+        "帮我汇总数据可用不可见相关文档。",
+        "我想浏览隐私保护计算方面的材料。"
+      ]
+    },
+    {
+      "family_id": "v19f_cal_mixed_04_chengdu_star_boundary",
+      "family_snapshot_sha256": "07f5ec3e1e7335b51ab22bbc9e2d47da7a9ce64a2ec9fec0fcfac032b01628d4",
+      "split": "calibration",
+      "query_ids": [
+        "v19f_cal_mixed_04_chengdu_star_boundary_p1",
+        "v19f_cal_mixed_04_chengdu_star_boundary_p2",
+        "v19f_cal_mixed_04_chengdu_star_boundary_p3",
+        "v19f_cal_mixed_04_chengdu_star_boundary_p4"
+      ],
+      "queries": [
+        "找用星号标出成都并写有“规划边界”的地图。",
+        "哪张地图同时把成都标成星号、旁边标注规划边界？",
+        "帮我定位成都位置带星形符号且文字提到规划边界的页面。",
+        "我需要地图上成都有星号，并能读到“规划边界”字样。"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_mixed_03_accepted_green_stamp",
+      "family_snapshot_sha256": "295cff969ed0a7b417f97be4265c75c6eb56610911533a8a0747329130ed9892",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_mixed_03_accepted_green_stamp_p1",
+        "v19f_hol_mixed_03_accepted_green_stamp_p2",
+        "v19f_hol_mixed_03_accepted_green_stamp_p3",
+        "v19f_hol_mixed_03_accepted_green_stamp_p4"
+      ],
+      "queries": [
+        "找正文写着“已验收”且右下角盖有绿色印章的表单。",
+        "哪份表格同时出现已验收文字和右下方绿章？",
+        "帮我定位状态为“已验收”、底部右侧有绿色印章的页面。",
+        "我记得一张验收表写着已验收，右下角还有绿色章。"
+      ]
+    },
+    {
+      "family_id": "v19f_hol_mixed_05_jersey_eight_trophy",
+      "family_snapshot_sha256": "0738fd88831fb645fa036a5bfbb65f31f6aebbaed1b7910ab6dd53ea772f8f86",
+      "split": "holdout",
+      "query_ids": [
+        "v19f_hol_mixed_05_jersey_eight_trophy_p1",
+        "v19f_hol_mixed_05_jersey_eight_trophy_p2",
+        "v19f_hol_mixed_05_jersey_eight_trophy_p3",
+        "v19f_hol_mixed_05_jersey_eight_trophy_p4"
+      ],
+      "queries": [
+        "找穿八号白色球衣并举着奖杯的运动员照片。",
+        "哪张比赛图中白衣球员号码为8，手里还举着奖杯？",
+        "帮我定位球衣是白色、号码写8且人物举杯的画面。",
+        "我记得一名白色八号球员正在把奖杯举过头顶。"
+      ]
+    }
+  ]
+}

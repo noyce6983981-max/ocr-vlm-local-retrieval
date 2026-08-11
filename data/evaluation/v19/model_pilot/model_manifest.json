@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "created_date": "2026-08-11",
+  "source_registry": "ModelScope",
+  "requested_revision": "master",
+  "immutable_revision_from_registry_recorded": false,
+  "hash_policy": "Local model files are pinned by SHA-256 because the download result did not expose an immutable source commit.",
+  "candidates": [
+    {
+      "model_id": "Qwen/Qwen3-0.6B",
+      "local_directory": "models/v19-intent-qwen3-0.6b",
+      "files": [
+        {
+          "path": "config.json",
+          "size_bytes": 726,
+          "sha256": "660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd"
+        },
+        {
+          "path": "model.safetensors",
+          "size_bytes": 1503300328,
+          "sha256": "f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b"
+        },
+        {
+          "path": "tokenizer.json",
+          "size_bytes": 11422654,
+          "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+        }
+      ]
+    },
+    {
+      "model_id": "Qwen/Qwen3-1.7B",
+      "local_directory": "models/v19-intent-qwen3-1.7b",
+      "files": [
+        {
+          "path": "config.json",
+          "size_bytes": 726,
+          "sha256": "1ddb5b89ebc90dcb417a45c213d818577e65976454d29385c8f6140771d95197"
+        },
+        {
+          "path": "model-00001-of-00002.safetensors",
+          "size_bytes": 3441185608,
+          "sha256": "169ad53ec313c3a34b06c0809216e4fc072cce444a5d4ff2b59690d064130ed5"
+        },
+        {
+          "path": "model-00002-of-00002.safetensors",
+          "size_bytes": 622329984,
+          "sha256": "912becff8d60672aa8628ef08c05898d9adf17c2ad4ae3caf99b065622fdeff9"
+        },
+        {
+          "path": "model.safetensors.index.json",
+          "size_bytes": 25605,
+          "sha256": "0d660e94b165eb912669a5249dff44b83188c4777a07ddb9611fb78d91b0578d"
+        },
+        {
+          "path": "tokenizer.json",
+          "size_bytes": 11422654,
+          "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+        }
+      ]
+    }
+  ],
+  "evaluation_contract": {
+    "pilot_query_sha256": "abc80a65fe742d3bb1685af998813acb36b32123aa0025ed5268d4068811fc5d",
+    "prompt_sha256": "068df6b924b58fba1feb62be2a4ffe39b54f0d4a1c3d1a8c53373dc92434bbef",
+    "mapping_sha256": "2470164c7656b786908621d3e7dfad1b22f6c73ee920ac63ef8e1895ef982aee"
+  }
+}
