@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-colqwen2-literal-evidence-e2e",
+  "status": "locked_after_development_before_holdout",
+  "locked_at_utc": "2026-08-12T16:00:36.383023+00:00",
+  "selection_commit_sha": "5dd4252cd4c44a2f39e40b00cd0dcba9eb99983e",
+  "holdout_scored": false,
+  "reviewed_query_count": 200,
+  "reviewed_query_sha256": "e0e32fb5b7c2f9effe5d464f5c688f7cc8c8ed8b4ef98a05e3e722885e148d41",
+  "development_query_count": 100,
+  "holdout_query_count": 100,
+  "selected_method": "colqwen2_top3_deterministic_literal_evidence_override",
+  "selected_parameters": {
+    "top_k": 3,
+    "ocr_min_confidence": 0.35,
+    "ocr_fuzzy_threshold": 0.88,
+    "date_match_policy": "exact_variant_only",
+    "eligibility_input": "query_text_only",
+    "eligibility_policy": "exact Chinese name/entity; high-precision date, phone suffix, or translation alias; or an explicit 浏览 request with a named literal",
+    "forbidden_runtime_inputs": [
+      "content_stratum",
+      "gold_answerable"
+    ]
+  },
+  "selected_development_metrics": {
+    "query_count": 100,
+    "positive_count": 50,
+    "negative_count": 50,
+    "positive_selected_relevant": 0.5,
+    "negative_correct_reject_rate": 0.72,
+    "end_to_end_accuracy": 0.61,
+    "false_accept_rate": 0.28,
+    "false_reject_rate": 0.46,
+    "empty_candidate_count": 0,
+    "positive_recall_at_3": 0.76
+  },
+  "selected_development_delta": {
+    "positive_selected_relevant": 0.18,
+    "negative_correct_reject_rate": 0.06,
+    "end_to_end_accuracy": 0.12,
+    "positive_recall_at_3": 0.08,
+    "false_accept_rate": -0.06,
+    "false_reject_rate": -0.18
+  },
+  "retrieval": {
+    "model": "vidore/colqwen2-v1.0-hf",
+    "model_config_sha256": "2fd851f549b55214a59f4d5772e42cd542f89148226cf44dfb5d986c9fb122e6",
+    "method": "multi_vector_maxsim_late_interaction",
+    "indexed_page_count": 1482,
+    "storage_dtype": "float16",
+    "embedding_dimension": 128,
+    "candidate_top_k": 3
+  },
+  "governance_disclosure": "Method selection was committed before holdout scoring. During the pre-freeze protocol audit, holdout text became administratively visible; no candidate rule, threshold, or model may be changed after this lock, and final reporting must not call the split fully blind.",
+  "locked_files": {
+    "config/studies/v19_colqwen2_literal_evidence_development.json": "aeb4a319e23a43c72fb718c4325141269522d17359233f8344127bba3b7c187d",
+    "config/v17_method_lock.json": "256d3dfe5027dc3ea8a0a795c4d6829c4b95acef558f2ff86446dac4c89b150f",
+    "scripts/evaluate_v19_colqwen2_development.py": "6cdb7672a710eef7eae8a7ec8e69268f2180e516747df70e793498e9652957e0",
+    "scripts/evaluate_v19_ocr_literal_override.py": "776317adceb8a5425493351913c44126a5bf102ce3d7a68ced862fc10fdb0b21",
+    "scripts/score_v19_v18_l1_development.py": "4a643e372ec2fe4211b7c055a176d67b825047213288944f1bcbb561f2f94a6c",
+    "scripts/run_v19_retrieval_holdout_once.py": "c42bb7e7cc94e1c732d3c0704ff57e985fe9880b86f62073541943f22b0ef756",
+    "scripts/v18_1_live_search.py": "b4895a141ec6313f3c47bae8de08f0c6e146113cb563cf95a240c3933d8907fe",
+    "scripts/live_search.py": "10a9757b77e1e64528c10a6c79ac11836852564e083218117651c6ee0d2adbcd",
+    "src/ocr_vlm_retrieval/gating/literal_evidence.py": "deb5dd8094e05f5ed53ad9a3e9679b6c250cf7f2651583585382640092b5f21c",
+    "src/ocr_vlm_retrieval/gating/ocr_literals.py": "7cbd4eada07e1a3602a579ccfe86a9a6e0dd3772023d25a53cbad56c30989689",
+    "src/ocr_vlm_retrieval/runtime/late_interaction.py": "896a8bb559ad1018c4d7a80c17a2e7c6f472fe89fad30bf27f42ec39a77610ba",
+    "records/private/v19/selective_intervention/reviewed_queries.jsonl": "e0e32fb5b7c2f9effe5d464f5c688f7cc8c8ed8b4ef98a05e3e722885e148d41",
+    "records/private/v19/selective_intervention/review_compile_receipt.json": "c6e19649495919d754c525f4722448647ff72b3113ca87a631b00c7f6269d6d6",
+    "outputs/evaluation/v19/selective_intervention/development_colqwen2_literal_evidence_override.json": "07fcbc7215453b87f451bbb2819a1f1dbb6147cf16385eb2a2e412c1056ad6ee",
+    "outputs/evaluation/v19/selective_intervention/development_colqwen2_warm_latency.json": "cef5ee8d5ef21756dbe4bc0c9cdd5c02e73769392ed8a1a0e9267e9ff6bb048e",
+    "outputs/user_library/colqwen2_v1_index/index_receipt.json": "9265daa82a60cf1fc7f459d124ca8be48d5d4b3919e63f428de9c8692e851515",
+    "outputs/user_library/manifest.jsonl": "f491d9992259eb16982503ff4b7641b5aaacb879a3ce8ffd1787a26b3729d9e6",
+    "models/colqwen2-v1.0-hf/config.json": "2fd851f549b55214a59f4d5772e42cd542f89148226cf44dfb5d986c9fb122e6"
+  }
+}
