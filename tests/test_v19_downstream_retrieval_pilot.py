@@ -4,7 +4,9 @@ from scripts.run_v19_downstream_retrieval_pilot import (
     retrieval_snapshot,
     source_rank,
     summarize_behavior,
+    summarize_e2e,
     summarize_source_neighbor,
+    with_route_latency,
 )
 
 
@@ -33,6 +35,20 @@ def test_source_neighbor_summary_separates_positive_hit_and_negative_far() -> No
     assert summary["hard_negative_source_far_at_10"] == 1.0
 
 
+def test_source_neighbor_summary_accepts_all_reviewed_e2e_roles() -> None:
+    rows = [
+        {"query_role": "answerable_positive", "rank": 1},
+        {"query_role": "paraphrase_positive", "rank": 2},
+        {"query_role": "single_condition_hard_negative", "rank": None},
+        {"query_role": "unanswerable_neighbor", "rank": 1},
+    ]
+    summary = summarize_source_neighbor(rows, "rank")
+    assert summary["positive_count"] == 2
+    assert summary["hard_negative_count"] == 2
+    assert summary["positive_source_hit_at_1"] == 0.5
+    assert summary["hard_negative_source_far_at_1"] == 0.5
+
+
 def test_retrieval_snapshot_keeps_acceptance_policy_and_wall_clock() -> None:
     payload = {
         "rankings": {"quality_hybrid": [{"item_id": "top"}]},
@@ -59,6 +75,58 @@ def test_retrieval_snapshot_keeps_acceptance_policy_and_wall_clock() -> None:
     assert snapshot["accepted"] is False
     assert snapshot["route_latency_ms"] == 75.0
     assert snapshot["wall_total_seconds"] == 1.3
+
+
+def test_e2e_summary_uses_acceptance_and_any_false_accept() -> None:
+    records = [
+        {
+            "gold_answerable": True,
+            "query_role": "answerable_positive",
+            "source_item_id": "target",
+            "result": {
+                "accepted": True,
+                "top1_item_id": "target",
+                "top3_item_ids": ["target"],
+                "wall_total_seconds": 1.0,
+            },
+        },
+        {
+            "gold_answerable": False,
+            "query_role": "single_condition_hard_negative",
+            "source_item_id": "target",
+            "result": {
+                "accepted": True,
+                "top1_item_id": "other",
+                "top3_item_ids": ["other"],
+                "wall_total_seconds": 2.0,
+            },
+        },
+        {
+            "gold_answerable": False,
+            "query_role": "unanswerable_neighbor",
+            "source_item_id": "target",
+            "result": {
+                "accepted": False,
+                "top1_item_id": None,
+                "top3_item_ids": [],
+                "wall_total_seconds": 3.0,
+            },
+        },
+    ]
+    summary = summarize_e2e(records, "result")
+    assert summary["e2e_top1"] == 1.0
+    assert summary["recall_at_3"] == 1.0
+    assert summary["negative_far"] == 0.5
+    assert summary["hard_negative_far"] == 1.0
+    assert summary["neighbor_negative_far"] == 0.0
+    assert summary["warm_wall_p95_seconds"] == 3.0
+
+
+def test_candidate_wall_time_adds_measured_route_latency() -> None:
+    snapshot = with_route_latency(
+        {"core_total_seconds": 1.25, "wall_total_seconds": 1.25}, 250.0
+    )
+    assert snapshot["wall_total_seconds"] == 1.5
 
 
 def test_behavior_summary_detects_ranking_acceptance_and_policy_changes() -> None:

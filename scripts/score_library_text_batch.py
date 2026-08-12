@@ -115,11 +115,26 @@ def read_queries(
     rows = [row for row in rows if row.get("split") in splits]
     if not rows:
         raise ValueError(f"No queries found for splits: {sorted(splits)}")
-    if any(row.get("review_status") != required_review_status for row in rows):
+    normalized = [
+        {
+            **row,
+            "query": str(row.get("query") or row.get("query_text") or ""),
+            "review_status": str(
+                row.get("review_status") or row.get("status") or ""
+            ),
+        }
+        for row in rows
+    ]
+    if any(not row["query"].strip() for row in normalized):
+        raise ValueError("Every selected row must contain query or query_text.")
+    if any(
+        row.get("review_status") != required_review_status
+        for row in normalized
+    ):
         raise ValueError(
             f"All scored queries must have review_status={required_review_status!r}."
         )
-    return rows
+    return normalized
 
 
 def aggregate_chunks(

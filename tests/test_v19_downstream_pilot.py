@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 
 from ocr_vlm_retrieval.routing import HybridRouter, LLMRouter, RuleRouter
-from scripts.route_v19_downstream_pilot import route_rows
+from scripts.route_v19_downstream_pilot import development_rows, route_rows
 
 
 class StubBackend:
@@ -43,5 +43,62 @@ def test_downstream_assignment_keeps_full_route_provenance() -> None:
     assert assignments[0]["calibrated_rule_route"] == "mixed"
     assert assignments[0]["hybrid_route"] == "visual_discovery"
     assert assignments[0]["route_changed"] is True
+    assert assignments[0]["guarded_route"] == "mixed"
+    assert assignments[0]["guarded_route_changed"] is False
     assert assignments[0]["llm_invoked"] is True
     assert assignments[0]["evidence"]["needs_visual_semantics"] is True
+
+
+def test_reviewed_e2e_rows_use_query_text_and_target_item() -> None:
+    rule = RuleRouter(lambda query: "mixed")
+    hybrid = HybridRouter(rule, LLMRouter(StubBackend()))
+    assignments, _ = route_rows(
+        [
+            {
+                "query_id": "q2",
+                "query_text": "  找右上角带校徽的封面  ",
+                "query_role": "answerable_positive",
+                "target_item_id": "item-2",
+                "neighbor_item_id": "item-3",
+                "gold_answerable": True,
+                "content_stratum": "text_visual_compositional",
+            }
+        ],
+        hybrid,
+        rule,
+    )
+    assert assignments[0]["query"] == "找右上角带校徽的封面"
+    assert assignments[0]["source_item_id"] == "item-2"
+    assert assignments[0]["neighbor_item_id"] == "item-3"
+    assert assignments[0]["gold_answerable"] is True
+    assert assignments[0]["route_latency_ms"] >= 0.0
+
+
+def test_development_selector_never_returns_holdout() -> None:
+    selected = development_rows(
+        [
+            {"query_id": "dev", "split": "development"},
+            {"query_id": "held", "split": "holdout"},
+        ]
+    )
+    assert [row["query_id"] for row in selected] == ["dev"]
+
+
+def test_guarded_assignment_blocks_factual_to_discovery_transition() -> None:
+    rule = RuleRouter(lambda query: "mixed")
+    hybrid = HybridRouter(rule, LLMRouter(StubBackend()))
+    assignments, _ = route_rows(
+        [
+            {
+                "query_id": "q3",
+                "query_text": "查找文件里明确写有金额的红色印章页面",
+                "target_item_id": "item-3",
+            }
+        ],
+        hybrid,
+        rule,
+    )
+    row = assignments[0]
+    assert row["hybrid_route"] == "visual_discovery"
+    assert row["guarded_route"] == "mixed"
+    assert row["intervention_guard_reason"] == "preserve_factual_acceptance"
