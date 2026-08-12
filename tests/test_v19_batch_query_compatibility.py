@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import ast
 from pathlib import Path
 
 from scripts.score_library_text_batch import read_queries as read_text_queries
@@ -46,3 +47,23 @@ def test_visual_batch_reader_contains_the_same_reviewed_schema_bridge() -> None:
     ).read_text(encoding="utf-8")
     assert 'row.get("query") or row.get("query_text")' in source
     assert 'row.get("review_status") or row.get("status")' in source
+
+
+def test_text_batch_reader_does_not_import_gpu_runtime_at_module_load() -> None:
+    source = (
+        Path(__file__).resolve().parents[1]
+        / "scripts/score_library_text_batch.py"
+    ).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    top_level_imports = {
+        alias.name
+        for node in tree.body
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    } | {
+        str(node.module)
+        for node in tree.body
+        if isinstance(node, ast.ImportFrom)
+    }
+    assert "torch" not in top_level_imports
+    assert "FlagEmbedding" not in top_level_imports
