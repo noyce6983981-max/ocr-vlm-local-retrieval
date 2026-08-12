@@ -4,6 +4,7 @@ import argparse
 import json
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +48,94 @@ def source_rank(payload: dict[str, Any], source_item_id: str) -> int | None:
         return ranking_ids(payload).index(source_item_id) + 1
     except ValueError:
         return None
+
+
+def retrieval_snapshot(payload: dict[str, Any]) -> dict[str, Any]:
+    """Extract user-visible and policy-sensitive fields for paired A/B."""
+
+    rankings = ranking_ids(payload)
+    acceptance = payload.get("acceptance", {})
+    decision = (
+        acceptance.get("quality_hybrid")
+        if isinstance(acceptance, dict)
+        else None
+    )
+    timings = payload.get("timings", {})
+    routing = payload.get("v18_1_intent_routing", {})
+    return {
+        "top1_item_id": rankings[0] if rankings else None,
+        "top3_item_ids": rankings[:3],
+        "accepted": (
+            decision.get("accepted") if isinstance(decision, dict) else None
+        ),
+        "acceptance_reason": (
+            decision.get("reason") if isinstance(decision, dict) else None
+        ),
+        "acceptance_signal_name": (
+            decision.get("signal_name")
+            if isinstance(decision, dict)
+            else None
+        ),
+        "acceptance_signal": (
+            decision.get("signal") if isinstance(decision, dict) else None
+        ),
+        "acceptance_threshold": (
+            decision.get("threshold") if isinstance(decision, dict) else None
+        ),
+        "executed_branches": payload.get("executed_branches"),
+        "exploratory_query": payload.get("exploratory_query"),
+        "retrieval_route": payload.get("retrieval_route"),
+        "core_total_seconds": (
+            timings.get("total_seconds") if isinstance(timings, dict) else None
+        ),
+        "route_latency_ms": (
+            routing.get("route_latency_ms")
+            if isinstance(routing, dict)
+            else 0.0
+        ),
+        "wall_total_seconds": (
+            routing.get("wall_total_seconds")
+            if isinstance(routing, dict)
+            else timings.get("total_seconds")
+            if isinstance(timings, dict)
+            else None
+        ),
+    }
+
+
+def summarize_behavior(records: list[dict[str, Any]]) -> dict[str, Any]:
+    transitions = Counter(
+        (
+            str(row["baseline"]["retrieval_route"]),
+            str(row["candidate"]["retrieval_route"]),
+        )
+        for row in records
+    )
+    return {
+        "top1_changed_count": sum(
+            row["baseline"]["top1_item_id"]
+            != row["candidate"]["top1_item_id"]
+            for row in records
+        ),
+        "acceptance_changed_count": sum(
+            row["baseline"]["accepted"] != row["candidate"]["accepted"]
+            for row in records
+        ),
+        "executed_branches_changed_count": sum(
+            row["baseline"]["executed_branches"]
+            != row["candidate"]["executed_branches"]
+            for row in records
+        ),
+        "exploratory_changed_count": sum(
+            row["baseline"]["exploratory_query"]
+            != row["candidate"]["exploratory_query"]
+            for row in records
+        ),
+        "route_transition_counts": {
+            f"{source}->{target}": count
+            for (source, target), count in sorted(transitions.items())
+        },
+    }
 
 
 def summarize_source_neighbor(
@@ -197,6 +286,8 @@ def main() -> int:
                 "candidate_effective_route": candidate.get("retrieval_route"),
                 "baseline_source_rank": source_rank(baseline, source_item_id),
                 "candidate_source_rank": source_rank(candidate, source_item_id),
+                "baseline": retrieval_snapshot(baseline),
+                "candidate": retrieval_snapshot(candidate),
                 "candidate_payload": (
                     str(candidate_path.resolve().relative_to(ROOT))
                     if candidate_path is not None
@@ -229,6 +320,7 @@ def main() -> int:
                 changed_records, "candidate_source_rank"
             ),
         },
+        "behavior": summarize_behavior(records),
         "records": records,
     }
     from ocr_vlm_retrieval.runtime.cache import write_json_atomic

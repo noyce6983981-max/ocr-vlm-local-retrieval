@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prompt-lookup-num-tokens", type=int, default=5)
     parser.add_argument("--load-in-4bit", action="store_true")
     parser.add_argument("--cache-entries", type=int, default=1024)
+    parser.add_argument("--eager-warmup", action="store_true")
     return parser.parse_args()
 
 
@@ -105,6 +106,10 @@ def main() -> None:
     if not 1 <= args.port <= 65535:
         raise ValueError("--port must be between 1 and 65535")
     router = build_router(args)
+    if args.eager_warmup:
+        warmup_query = "找一张标题写着年度报告并带蓝色图表的页面"
+        route_payload(router, warmup_query)
+        print("V19 intent model warmup complete.")
     server = ThreadingHTTPServer((args.host, args.port), handler_for(router))
     print(f"V19 intent routing service: http://{args.host}:{args.port}")
     print("The model loads lazily on the first ambiguous query.")

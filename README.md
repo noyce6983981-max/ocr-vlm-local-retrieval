@@ -25,6 +25,10 @@ V18.1新增“确定性高置信直通 + 歧义查询调用本地Qwen3-1.7B + JS
 
 该成绩只证明**查询路由改善**。V18冻结下游回归中的正例Hit@1/3/10与强负例FAR@1/3/10均未退化，但尚未证明新的端到端检索Top-1增益；达到该目标后再升级正式V19。完整边界与Bootstrap区间见`records/experiments/retrieval_v19_one_shot_holdout_2026-08-11.md`。
 
+后续开发默认采用安全干预边界：`off`保持冻结V18；`shadow`只记录候选路线；`guarded`禁止事实型查询切换为探索拒答、禁止删除V18必要证据分支，并拒绝无法提取精确词的`entity_exact`；裸`active`只允许受控诊断。新的V19研究主指标改为同查询A/B的E2E Top-1、Recall@3、强负例FAR、正确拒答率和wall-clock P95，协议草案见`records/experiments/retrieval_v19_selective_intervention_protocol_draft_2026-08-12.md`。
+
+新的端到端数据草案使用50个来源家族、每家族4种查询角色，共200条；开发与最终留出各25个家族。生成器会排除既有V18来源及其近邻组，所有正式草案和人工修正只保存在Git忽略的`records/private/`。人工审核、开发集诊断、参数锁与最终一次性授权相互独立；当前没有V19端到端性能结论，也禁止重新使用旧V18/V19一次性留出集调参。
+
 V17 现为上一稳定研究版本。其一次性 40 条留出结果与公开复算仍保留在 `records/experiments/retrieval_v17_independent_holdout_2026-08-08.md`、`records/experiments/V17_HYPOTHESIS_DISPOSITION.md` 和标签 `v17.0.1`，历史结果不回写。
 
 此前 V16 使用与历史目标零重叠、路线均衡的 50 条校准查询选择配置，并在锁定配置后首次运行另一组 50 条来源核验独立留出查询：

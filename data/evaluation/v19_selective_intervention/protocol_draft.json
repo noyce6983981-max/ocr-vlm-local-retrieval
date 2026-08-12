@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-selective-intervention-e2e",
+  "status": "draft_not_frozen_human_review_required",
+  "created_date": "2026-08-12",
+  "research_question": "When does changing frozen V18 execution produce net end-to-end retrieval benefit without increasing false acceptance or latency beyond the release budget?",
+  "frozen_baseline": "v18.1.0 frozen V18 execution path",
+  "candidate": "guarded semantic evidence plus selective intervention",
+  "target_query_count": 200,
+  "family_count": 50,
+  "queries_per_family": 4,
+  "query_roles": [
+    "answerable_positive",
+    "paraphrase_positive",
+    "single_condition_hard_negative",
+    "unanswerable_neighbor"
+  ],
+  "content_strata": {
+    "ocr_literal_lookup": 6,
+    "pure_visual": 6,
+    "layout_table": 6,
+    "entity_identifier": 6,
+    "visual_compositional": 7,
+    "text_visual_compositional": 7,
+    "topic_discovery": 6,
+    "relationship_scene": 6
+  },
+  "primary_metrics": [
+    "e2e_top1_accuracy",
+    "recall_at_3",
+    "hard_negative_far",
+    "correct_rejection_rate",
+    "warm_e2e_p95"
+  ],
+  "diagnostic_metrics": [
+    "semantic_route_accuracy",
+    "route_macro_f1",
+    "llm_call_rate",
+    "intervention_rate",
+    "guard_reason_counts"
+  ],
+  "release_gates": {
+    "e2e_top1_delta_min": 0.05,
+    "recall_at_3_delta_min": 0.05,
+    "hard_negative_far_delta_max": 0.0,
+    "correct_rejection_delta_min": 0.0,
+    "warm_e2e_p95_ratio_max": 1.1,
+    "factual_to_discovery_applied_count_max": 0,
+    "entity_exact_without_strict_term_max": 0
+  },
+  "statistics": {
+    "paired_bootstrap_iterations": 10000,
+    "resampling_unit": "query_family",
+    "confidence_level": 0.95
+  },
+  "governance": {
+    "existing_v18_holdout_reuse_for_tuning": false,
+    "existing_v19_route_holdout_rerun": false,
+    "human_review_required_before_freeze": true,
+    "parameter_lock_before_final_holdout": true,
+    "final_holdout_runs": 1
+  }
+}

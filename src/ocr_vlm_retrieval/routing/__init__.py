@@ -12,6 +12,13 @@ from ocr_vlm_retrieval.routing.hybrid_router import (
     HybridDecision,
     HybridRouter,
 )
+from ocr_vlm_retrieval.routing.intervention import (
+    INTENT_ROUTING_MODES,
+    IntentRoutingMode,
+    TransitionDecision,
+    guard_v18_transition,
+    validate_intent_routing_mode,
+)
 from ocr_vlm_retrieval.routing.llm_router import (
     IntentBackend,
     LLMDecision,
@@ -36,8 +43,10 @@ __all__ = [
     "CachedIntentBackend",
     "HybridDecision",
     "HybridRouter",
+    "INTENT_ROUTING_MODES",
     "IntentBackend",
     "IntentEvidence",
+    "IntentRoutingMode",
     "IntentSchemaError",
     "LLMDecision",
     "LLMRouter",
@@ -46,6 +55,9 @@ __all__ = [
     "RuleRouter",
     "SYSTEM_PROMPT",
     "TransformersIntentBackend",
+    "TransitionDecision",
     "build_intent_messages",
+    "guard_v18_transition",
     "map_evidence_to_route",
+    "validate_intent_routing_mode",
 ]

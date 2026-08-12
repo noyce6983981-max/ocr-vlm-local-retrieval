@@ -68,6 +68,7 @@ def test_service_payload_keeps_route_provenance() -> None:
     assert payload["source"] == "llm"
     assert payload["llm_invoked"] is True
     assert payload["rule_route"] == "mixed"
+    assert isinstance(payload["route_latency_ms"], float)
 
 
 def test_service_response_contract_rejects_unknown_source() -> None:
@@ -94,6 +95,18 @@ def test_client_normalizes_query_and_validates_success(monkeypatch) -> None:
                 "llm_invoked": True,
                 "fallback_error_type": None,
                 "guard_reason": None,
+                "rule_route": "mixed",
+                "rule_reason_codes": ["rule_route_mixed"],
+                "backend_name": "stub-visual",
+                "evidence": {
+                    "needs_literal_text": False,
+                    "needs_visual_semantics": True,
+                    "needs_layout_structure": False,
+                    "needs_exact_entity": False,
+                    "needs_topic_discovery": False,
+                    "is_compositional": False,
+                },
+                "route_latency_ms": 12.5,
             }
         )
 
@@ -108,6 +121,11 @@ def test_client_normalizes_query_and_validates_success(monkeypatch) -> None:
     )
     assert decision.route == "visual_discovery"
     assert decision.llm_invoked is True
+    assert decision.rule_route == "mixed"
+    assert decision.rule_reason_codes == ("rule_route_mixed",)
+    assert decision.backend_name == "stub-visual"
+    assert decision.evidence is not None
+    assert decision.route_latency_ms == 12.5
     assert captured["timeout"] == 1.25
     http_request = captured["request"]
     assert isinstance(http_request, request.Request)
@@ -134,6 +152,11 @@ def test_client_decision_mapping_keeps_audit_fields() -> None:
         "fallback_error_type": None,
         "guard_reason": "preserve_visual_route",
         "llm_invoked": True,
+        "rule_route": None,
+        "rule_reason_codes": [],
+        "backend_name": None,
+        "evidence": None,
+        "route_latency_ms": None,
     }
 
 
@@ -164,7 +187,7 @@ def test_loopback_server_and_client_complete_real_http_round_trip() -> None:
     assert decision.llm_invoked is True
 
 
-def test_service_failure_falls_back_to_calibrated_rule(monkeypatch) -> None:
+def test_service_failure_falls_back_to_frozen_legacy_rule(monkeypatch) -> None:
     def unavailable(*args: object, **kwargs: object) -> object:
         raise error.URLError("offline")
 
@@ -172,14 +195,53 @@ def test_service_failure_falls_back_to_calibrated_rule(monkeypatch) -> None:
         "ocr_vlm_retrieval.routing.service_client.request.urlopen",
         unavailable,
     )
+    query = "材料中有没有ZX-410？"
     decision = request_v19_route_with_fallback(
         "http://127.0.0.1:1",
-        "材料中有没有ZX-410？",
+        query,
         timeout_seconds=0.01,
     )
-    assert decision.route == "entity_exact"
+    legacy = RuleRouter.legacy().route(query)
+    assert decision.route == legacy.route
+    assert decision.rule_route == legacy.route
     assert decision.source == "rule_fallback"
     assert decision.fallback_error_type == "ConnectionError"
+
+
+def test_server_side_rule_fallback_is_also_restored_to_frozen_v18(
+    monkeypatch,
+) -> None:
+    query = "材料中有没有ZX-410？"
+
+    def respond(http_request: object, timeout: float) -> FakeResponse:
+        del http_request, timeout
+        return FakeResponse(
+            {
+                "route": "entity_exact",
+                "source": "rule_fallback",
+                "llm_invoked": True,
+                "fallback_error_type": "RuntimeError",
+                "rule_route": "entity_exact",
+                "rule_reason_codes": ["calibrated_recovery"],
+                "backend_name": "stub",
+                "evidence": None,
+                "route_latency_ms": 20.0,
+            }
+        )
+
+    monkeypatch.setattr(
+        "ocr_vlm_retrieval.routing.service_client.request.urlopen",
+        respond,
+    )
+    decision = request_v19_route_with_fallback(
+        "http://127.0.0.1:8765",
+        query,
+    )
+    legacy = RuleRouter.legacy().route(query)
+    assert decision.route == legacy.route
+    assert decision.rule_route == legacy.route
+    assert decision.guard_reason == "restore_frozen_v18_after_service_fallback"
+    assert decision.llm_invoked is True
 
 
 def test_live_search_v19_flag_is_disabled_by_default() -> None:

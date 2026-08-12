@@ -100,17 +100,19 @@ def test_internal_site_renders_retrieval_truth_workflow() -> None:
 
 
 def test_v19_ui_runtime_is_disabled_by_default(monkeypatch) -> None:
+    monkeypatch.delenv("OCR_VLM_INTENT_ROUTING_MODE", raising=False)
     monkeypatch.delenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", raising=False)
     monkeypatch.delenv("OCR_VLM_V19_INTENT_ROUTING_URL", raising=False)
     monkeypatch.delenv("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS", raising=False)
     assert v19_intent_runtime_settings() == (
-        False,
+        "off",
         "http://127.0.0.1:8765",
         2.0,
     )
 
 
 def test_v19_ui_runtime_requires_explicit_environment_flag(monkeypatch) -> None:
+    monkeypatch.delenv("OCR_VLM_INTENT_ROUTING_MODE", raising=False)
     monkeypatch.setenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", "true")
     monkeypatch.setenv(
         "OCR_VLM_V19_INTENT_ROUTING_URL",
@@ -118,7 +120,13 @@ def test_v19_ui_runtime_requires_explicit_environment_flag(monkeypatch) -> None:
     )
     monkeypatch.setenv("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS", "1.75")
     assert v19_intent_runtime_settings() == (
-        True,
+        "guarded",
         "http://127.0.0.1:8877",
         1.75,
     )
+
+
+def test_v19_ui_runtime_accepts_shadow_mode(monkeypatch) -> None:
+    monkeypatch.setenv("OCR_VLM_INTENT_ROUTING_MODE", "shadow")
+    monkeypatch.delenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", raising=False)
+    assert v19_intent_runtime_settings()[0] == "shadow"

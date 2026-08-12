@@ -114,8 +114,7 @@ from scripts.taxonomy import (
     parse_quality_tags,
 )
 from scripts.v18_1_live_search import (
-    optional_v19_route,
-    resolve_v18_1_search_intent,
+    INTENT_ROUTING_MODES,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -167,11 +166,23 @@ BLIND_MODEL_HARD_QUEUE_PATH = (
 )
 
 
-def v19_intent_runtime_settings() -> tuple[bool, str, float]:
-    """Read the explicit, default-off V19 service settings for the UI."""
+def v19_intent_runtime_settings() -> tuple[str, str, float]:
+    """Read the explicit, default-off routing mode for the UI."""
 
-    enabled = os.getenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", "").strip().lower()
-    is_enabled = enabled in {"1", "true", "yes", "on"}
+    mode = os.getenv("OCR_VLM_INTENT_ROUTING_MODE", "").strip().lower()
+    if not mode:
+        legacy_enabled = os.getenv(
+            "OCR_VLM_ENABLE_V19_INTENT_ROUTING", ""
+        ).strip().lower()
+        mode = (
+            "guarded"
+            if legacy_enabled in {"1", "true", "yes", "on"}
+            else "off"
+        )
+    if mode not in INTENT_ROUTING_MODES:
+        raise ValueError(
+            "OCR_VLM_INTENT_ROUTING_MODE must be off, shadow, guarded or active"
+        )
     service_url = os.getenv(
         "OCR_VLM_V19_INTENT_ROUTING_URL",
         "http://127.0.0.1:8765",
@@ -182,7 +193,7 @@ def v19_intent_runtime_settings() -> tuple[bool, str, float]:
     timeout_seconds = float(raw_timeout)
     if timeout_seconds <= 0:
         raise ValueError("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS must be positive")
-    return is_enabled, service_url, timeout_seconds
+    return mode, service_url, timeout_seconds
 
 
 QUALITY_GATE_PATH = (
@@ -558,23 +569,16 @@ def execute_live_search(
     rerank_top_k: int = 0,
 ) -> dict[str, Any]:
     normalized_query = " ".join(query.split())
-    v19_enabled, v19_service_url, v19_timeout_seconds = (
+    intent_routing_mode, v19_service_url, v19_timeout_seconds = (
         v19_intent_runtime_settings()
     )
-    v19_decision = optional_v19_route(
-        enabled=v19_enabled,
-        service_url=v19_service_url,
-        query=normalized_query,
-        timeout_seconds=v19_timeout_seconds,
-    )
-    route_override = v19_decision.route if v19_decision is not None else None
     revision = library_revision(library_dir)
     cache_key = query_key(normalized_query, revision)
     suffix = f"_{method_key}"
     if rerank_top_k:
         suffix += f"_rerank{rerank_top_k}"
-    if v19_enabled:
-        suffix += "_v19"
+    if intent_routing_mode != "off":
+        suffix += f"_intent_{intent_routing_mode}"
     output_path = (
         LIVE_CACHE_DIR
         / library_id
@@ -583,29 +587,35 @@ def execute_live_search(
     final_cache_hit = False
     if output_path.is_file():
         try:
-            expected_route, _, expected_visual_query, _ = (
-                resolve_v18_1_search_intent(
-                    method_key,
-                    normalized_query,
-                    route_override,
-                )
+            expected_route, _, expected_visual_query, _ = resolve_search_intent(
+                method_key,
+                normalized_query,
             )
             cached_payload = json.loads(
                 output_path.read_text(encoding="utf-8")
             )
-            final_cache_hit = (
+            routing_audit = cached_payload.get("v18_1_intent_routing", {})
+            common_cache_match = (
                 cached_payload.get("search_policy_version")
                 == SEARCH_POLICY_VERSION
                 and cached_payload.get("retrieval_config_revision")
                 == retrieval_config_revision()
                 and cached_payload.get("requested_method") == method_key
-                and cached_payload.get("retrieval_route")
-                == expected_route
-                and cached_payload.get(
-                    "visual_query", normalized_query
-                )
-                == expected_visual_query
             )
+            if intent_routing_mode == "off":
+                final_cache_hit = (
+                    common_cache_match
+                    and cached_payload.get("retrieval_route") == expected_route
+                    and cached_payload.get("visual_query", normalized_query)
+                    == expected_visual_query
+                )
+            else:
+                final_cache_hit = (
+                    common_cache_match
+                    and isinstance(routing_audit, dict)
+                    and routing_audit.get("routing_mode")
+                    == intent_routing_mode
+                )
         except (json.JSONDecodeError, OSError):
             final_cache_hit = False
     started = time.perf_counter()
@@ -627,7 +637,7 @@ def execute_live_search(
             PROJECT_ROOT
             / (
                 "scripts/v18_1_live_search.py"
-                if v19_enabled
+                if intent_routing_mode != "off"
                 else "scripts/live_search.py"
             )
         ),
@@ -641,10 +651,11 @@ def execute_live_search(
         "--method",
         method_key,
     ]
-    if v19_enabled:
+    if intent_routing_mode != "off":
         command.extend(
             [
-                "--enable-v19-intent-routing",
+                "--intent-routing-mode",
+                intent_routing_mode,
                 "--v19-intent-routing-url",
                 v19_service_url,
                 "--v19-intent-timeout-seconds",
@@ -670,7 +681,8 @@ def execute_live_search(
         time.perf_counter() - started, 3
     )
     result["_ui_text_runtime_status"] = text_runtime_status
-    result["_ui_v19_intent_routing_enabled"] = v19_enabled
+    result["_ui_intent_routing_mode"] = intent_routing_mode
+    result["_ui_v19_intent_routing_enabled"] = intent_routing_mode != "off"
     return result
 
 
