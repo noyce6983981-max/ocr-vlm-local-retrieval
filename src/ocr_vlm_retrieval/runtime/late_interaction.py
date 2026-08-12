@@ -19,12 +19,16 @@ def _pid_is_running(pid: int) -> bool:
         import ctypes
 
         query_limited_information = 0x1000
-        handle = ctypes.windll.kernel32.OpenProcess(
+        windll = getattr(ctypes, "windll", None)
+        if windll is None:  # pragma: no cover - defensive Windows guard
+            return False
+        kernel32 = windll.kernel32
+        handle = kernel32.OpenProcess(
             query_limited_information, False, pid
         )
         if not handle:
             return False
-        ctypes.windll.kernel32.CloseHandle(handle)
+        kernel32.CloseHandle(handle)
         return True
     try:
         os.kill(pid, 0)
