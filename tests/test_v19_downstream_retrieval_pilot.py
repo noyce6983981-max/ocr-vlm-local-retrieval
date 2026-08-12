@@ -13,9 +13,7 @@ from scripts.run_v19_downstream_retrieval_pilot import (
 def test_source_rank_uses_only_accepted_quality_ranking() -> None:
     payload = {
         "rankings": {"quality_hybrid": [{"item_id": "a"}, {"item_id": "b"}]},
-        "low_confidence_rankings": {
-            "quality_hybrid": [{"item_id": "rejected"}]
-        },
+        "low_confidence_rankings": {"quality_hybrid": [{"item_id": "rejected"}]},
     }
     assert source_rank(payload, "b") == 2
     assert source_rank(payload, "rejected") is None
@@ -83,10 +81,11 @@ def test_e2e_summary_uses_acceptance_and_any_false_accept() -> None:
             "gold_answerable": True,
             "query_role": "answerable_positive",
             "source_item_id": "target",
+            "gold_relevant_item_ids": ["target", "also-relevant"],
             "result": {
                 "accepted": True,
-                "top1_item_id": "target",
-                "top3_item_ids": ["target"],
+                "top1_item_id": "also-relevant",
+                "top3_item_ids": ["also-relevant"],
                 "wall_total_seconds": 1.0,
             },
         },
@@ -114,7 +113,8 @@ def test_e2e_summary_uses_acceptance_and_any_false_accept() -> None:
         },
     ]
     summary = summarize_e2e(records, "result")
-    assert summary["e2e_top1"] == 1.0
+    assert summary["positive_top1_accuracy"] == 1.0
+    assert summary["end_to_end_accuracy"] == 2 / 3
     assert summary["recall_at_3"] == 1.0
     assert summary["negative_far"] == 0.5
     assert summary["hard_negative_far"] == 1.0
@@ -152,6 +152,4 @@ def test_behavior_summary_detects_ranking_acceptance_and_policy_changes() -> Non
     assert summary["top1_changed_count"] == 0
     assert summary["acceptance_changed_count"] == 1
     assert summary["exploratory_changed_count"] == 1
-    assert summary["route_transition_counts"] == {
-        "mixed->visual_discovery": 1
-    }
+    assert summary["route_transition_counts"] == {"mixed->visual_discovery": 1}

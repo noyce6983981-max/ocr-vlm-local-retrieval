@@ -44,9 +44,7 @@ DEFAULT_OUTPUT = (
 def query_text(row: dict[str, Any]) -> str:
     """Read both legacy pilot rows and reviewed V19 E2E rows."""
 
-    return " ".join(
-        str(row.get("query") or row.get("query_text") or "").split()
-    )
+    return " ".join(str(row.get("query") or row.get("query_text") or "").split())
 
 
 def development_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -107,16 +105,29 @@ def route_rows(
             extract_strict_entity_term=live_search.extract_strict_entity_term,
             required_search_branches=live_search.required_search_branches,
         )
+        source_item_id = row.get("source_item_id") or row.get("target_item_id")
+        gold_relevant_item_ids = [
+            str(item_id)
+            for item_id in row.get("gold_relevant_item_ids", [])
+            if str(item_id).strip()
+        ]
+        if (
+            bool(row.get("gold_answerable"))
+            and source_item_id
+            and str(source_item_id) not in gold_relevant_item_ids
+        ):
+            gold_relevant_item_ids.append(str(source_item_id))
         assignments.append(
             {
                 "query_id": str(row["query_id"]),
                 "query": query,
                 "query_role": row.get("query_role"),
-                "source_item_id": (
-                    row.get("source_item_id") or row.get("target_item_id")
-                ),
+                "source_item_id": source_item_id,
                 "neighbor_item_id": row.get("neighbor_item_id"),
                 "gold_answerable": row.get("gold_answerable"),
+                "gold_relevant_item_ids": gold_relevant_item_ids,
+                "family_id": row.get("family_id"),
+                "split": row.get("split"),
                 "content_stratum": row.get("content_stratum"),
                 "route_latency_ms": round(latency_ms, 3),
                 "legacy_route": baseline_decision.route,
@@ -174,10 +185,7 @@ def main() -> int:
         if args.limit < 1:
             raise ValueError("limit must be positive")
         rows = rows[: args.limit]
-    if (
-        args.expected_query_count is not None
-        and len(rows) != args.expected_query_count
-    ):
+    if args.expected_query_count is not None and len(rows) != args.expected_query_count:
         raise ValueError(
             "selected query count differs from --expected-query-count: "
             f"{len(rows)} != {args.expected_query_count}"
@@ -196,9 +204,7 @@ def main() -> int:
     assignments, latencies = route_rows(rows, hybrid_router, baseline_router)
     invoked_count = sum(row["llm_invoked"] for row in assignments)
     changed_count = sum(row["route_changed"] for row in assignments)
-    guarded_changed_count = sum(
-        row["guarded_route_changed"] for row in assignments
-    )
+    guarded_changed_count = sum(row["guarded_route_changed"] for row in assignments)
     fallback_count = sum(
         row["decision_source"] == "rule_fallback" for row in assignments
     )

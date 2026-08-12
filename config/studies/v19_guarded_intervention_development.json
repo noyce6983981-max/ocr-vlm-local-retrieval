@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-selective-intervention-development-v2",
+  "status": "development_candidate_not_frozen",
+  "baseline": {
+    "method_id": "V18-L1",
+    "selector": "max_verifier_score",
+    "top_k": 3,
+    "full_query_threshold": 0.63
+  },
+  "intervention_policy": {
+    "full_query_threshold": 0.63,
+    "score_gain_threshold": 0.05,
+    "selection_margin_threshold": 0.03,
+    "relation_margin_threshold": 0.015,
+    "minimum_requirement_count": 2
+  },
+  "invariants": [
+    "development_only",
+    "accepted_V18_L1_decisions_are_never_replaced",
+    "all_mandatory_requirements_must_pass",
+    "a_contrastive_relation_requirement_must_pass",
+    "holdout_access_forbidden_before_method_lock"
+  ],
+  "promotion_gate": {
+    "minimum_end_to_end_gain": 0.05,
+    "minimum_recall_at_3_gain": 0.05,
+    "maximum_hard_negative_far_gain": 0.0,
+    "maximum_negative_far_gain": 0.0,
+    "maximum_latency_ratio": 1.1
+  }
+}

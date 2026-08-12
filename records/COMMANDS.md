@@ -218,6 +218,28 @@ $env:OCR_VLM_LIBRARY_ROOT = "$PWD"
 
 若任何来源对在网页中标记为“后续替换”，编译器会直接阻断。编译通过后的下一步仍只能先跑development分区的同查询A/B诊断；候选参数锁定后，最终holdout只允许一次授权运行。
 
+### V19 development真实基线、保守干预与Top-20复核
+
+以下命令只读取已审核数据的`development`分区。第一条按冻结V18 L1方法
+复现Top-3最高验证分与0.63阈值；第二条评估“保持V18默认、只救回高置信
+拒绝样本”的保守候选：
+
+```powershell
+.\.venv-vl\Scripts\python.exe scripts\score_v19_v18_l1_development.py
+.\.venv\Scripts\python.exe scripts\evaluate_v19_guarded_intervention.py
+```
+
+当前100条development复现结果为V18 L1 E2E 49%，保守候选50%，FAR
+不增加但收益尚未达到发布门槛。下列命令生成并启动Top-20多相关性复核；
+候选次序已盲化，审核页不显示方法、分数和原始排名：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_v19_development_top20_review_pool.py
+.\.venv\Scripts\python.exe -m streamlit run scripts\v19_development_top20_review_app.py --server.port 8523
+```
+
+审核结果仍只用于development标签完善，不会创建方法锁、留出授权或最终结论。
+
 ## 独立盲测
 
 日常采集请在8501主站选择“独立盲测”；冻结和人工相关性审核请在8502选择“独立盲测审核”。冻结后也可以用命令行断点生成候选：

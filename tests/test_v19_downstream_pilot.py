@@ -61,6 +61,9 @@ def test_reviewed_e2e_rows_use_query_text_and_target_item() -> None:
                 "target_item_id": "item-2",
                 "neighbor_item_id": "item-3",
                 "gold_answerable": True,
+                "gold_relevant_item_ids": ["item-2", "item-4"],
+                "family_id": "family-1",
+                "split": "development",
                 "content_stratum": "text_visual_compositional",
             }
         ],
@@ -71,6 +74,9 @@ def test_reviewed_e2e_rows_use_query_text_and_target_item() -> None:
     assert assignments[0]["source_item_id"] == "item-2"
     assert assignments[0]["neighbor_item_id"] == "item-3"
     assert assignments[0]["gold_answerable"] is True
+    assert assignments[0]["gold_relevant_item_ids"] == ["item-2", "item-4"]
+    assert assignments[0]["family_id"] == "family-1"
+    assert assignments[0]["split"] == "development"
     assert assignments[0]["route_latency_ms"] >= 0.0
 
 

@@ -18,12 +18,8 @@ DEFAULT_ASSIGNMENTS = (
     / "outputs/evaluation/v19/downstream_pilot"
     / "v18_calibration_route_assignments.json"
 )
-DEFAULT_BASELINE_DIR = (
-    ROOT / "outputs/evaluation/v18/calibration/retrieval/raw"
-)
-DEFAULT_OUTPUT_DIR = (
-    ROOT / "outputs/evaluation/v19/downstream_pilot/retrieval/raw"
-)
+DEFAULT_BASELINE_DIR = ROOT / "outputs/evaluation/v18/calibration/retrieval/raw"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/evaluation/v19/downstream_pilot/retrieval/raw"
 DEFAULT_REPORT = (
     ROOT / "outputs/evaluation/v19/downstream_pilot/retrieval_comparison.json"
 )
@@ -57,31 +53,33 @@ def retrieval_snapshot(payload: dict[str, Any]) -> dict[str, Any]:
     rankings = ranking_ids(payload)
     acceptance = payload.get("acceptance", {})
     decision = (
-        acceptance.get("quality_hybrid")
-        if isinstance(acceptance, dict)
-        else None
+        acceptance.get("quality_hybrid") if isinstance(acceptance, dict) else None
     )
     timings = payload.get("timings", {})
     routing = payload.get("v18_1_intent_routing", {})
     return {
         "top1_item_id": rankings[0] if rankings else None,
         "top3_item_ids": rankings[:3],
-        "accepted": (
-            decision.get("accepted") if isinstance(decision, dict) else None
-        ),
+        "accepted": (decision.get("accepted") if isinstance(decision, dict) else None),
         "acceptance_reason": (
             decision.get("reason") if isinstance(decision, dict) else None
         ),
         "acceptance_signal_name": (
-            decision.get("signal_name")
-            if isinstance(decision, dict)
-            else None
+            decision.get("signal_name") if isinstance(decision, dict) else None
         ),
         "acceptance_signal": (
             decision.get("signal") if isinstance(decision, dict) else None
         ),
         "acceptance_threshold": (
             decision.get("threshold") if isinstance(decision, dict) else None
+        ),
+        "attribute_coverage_guard_applied": (
+            bool(decision.get("attribute_coverage_guard_applied"))
+            if isinstance(decision, dict)
+            else False
+        ),
+        "upstream_gate_passed": (
+            decision.get("upstream_gate_passed") if isinstance(decision, dict) else None
         ),
         "executed_branches": payload.get("executed_branches"),
         "exploratory_query": payload.get("exploratory_query"),
@@ -90,9 +88,7 @@ def retrieval_snapshot(payload: dict[str, Any]) -> dict[str, Any]:
             timings.get("total_seconds") if isinstance(timings, dict) else None
         ),
         "route_latency_ms": (
-            routing.get("route_latency_ms")
-            if isinstance(routing, dict)
-            else 0.0
+            routing.get("route_latency_ms") if isinstance(routing, dict) else 0.0
         ),
         "wall_total_seconds": (
             routing.get("wall_total_seconds")
@@ -114,8 +110,7 @@ def summarize_behavior(records: list[dict[str, Any]]) -> dict[str, Any]:
     )
     return {
         "top1_changed_count": sum(
-            row["baseline"]["top1_item_id"]
-            != row["candidate"]["top1_item_id"]
+            row["baseline"]["top1_item_id"] != row["candidate"]["top1_item_id"]
             for row in records
         ),
         "acceptance_changed_count": sum(
@@ -188,9 +183,7 @@ def percentile(values: list[float], probability: float) -> float:
     return ordered[index]
 
 
-def summarize_e2e(
-    records: list[dict[str, Any]], snapshot_field: str
-) -> dict[str, Any]:
+def summarize_e2e(records: list[dict[str, Any]], snapshot_field: str) -> dict[str, Any]:
     positives = [row for row in records if bool(row.get("gold_answerable"))]
     negatives = [row for row in records if not bool(row.get("gold_answerable"))]
     hard_negatives = [
@@ -199,9 +192,7 @@ def summarize_e2e(
         if row.get("query_role") == "single_condition_hard_negative"
     ]
     neighbor_negatives = [
-        row
-        for row in negatives
-        if row.get("query_role") == "unanswerable_neighbor"
+        row for row in negatives if row.get("query_role") == "unanswerable_neighbor"
     ]
 
     def accepted(row: dict[str, Any]) -> bool:
@@ -210,13 +201,23 @@ def summarize_e2e(
     def rate(numerator: int, denominator: int) -> float:
         return numerator / denominator if denominator else 0.0
 
+    def relevant_ids(row: dict[str, Any]) -> set[str]:
+        explicit = {
+            str(item_id)
+            for item_id in row.get("gold_relevant_item_ids", [])
+            if str(item_id).strip()
+        }
+        if explicit:
+            return explicit
+        source = str(row.get("source_item_id") or "").strip()
+        return {source} if source else set()
+
     positive_top1 = sum(
-        accepted(row)
-        and row[snapshot_field].get("top1_item_id") == row["source_item_id"]
+        accepted(row) and row[snapshot_field].get("top1_item_id") in relevant_ids(row)
         for row in positives
     )
     positive_recall3 = sum(
-        row["source_item_id"] in row[snapshot_field].get("top3_item_ids", [])
+        bool(relevant_ids(row) & set(row[snapshot_field].get("top3_item_ids", [])))
         for row in positives
     )
     negative_false_accepts = sum(accepted(row) for row in negatives)
@@ -230,18 +231,18 @@ def summarize_e2e(
     return {
         "answerable_count": len(positives),
         "negative_count": len(negatives),
-        "e2e_top1": rate(positive_top1, len(positives)),
+        "positive_top1_accuracy": rate(positive_top1, len(positives)),
+        "end_to_end_accuracy": rate(
+            positive_top1 + len(negatives) - negative_false_accepts,
+            len(records),
+        ),
         "recall_at_3": rate(positive_recall3, len(positives)),
         "negative_correct_reject_rate": rate(
             len(negatives) - negative_false_accepts, len(negatives)
         ),
         "negative_far": rate(negative_false_accepts, len(negatives)),
-        "hard_negative_far": rate(
-            hard_negative_false_accepts, len(hard_negatives)
-        ),
-        "neighbor_negative_far": rate(
-            neighbor_false_accepts, len(neighbor_negatives)
-        ),
+        "hard_negative_far": rate(hard_negative_false_accepts, len(hard_negatives)),
+        "neighbor_negative_far": rate(neighbor_false_accepts, len(neighbor_negatives)),
         "warm_wall_p95_seconds": percentile(wall_seconds, 0.95),
     }
 
@@ -379,7 +380,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--materialize-baseline",
         action="store_true",
-        help="Create missing frozen-V18 payloads from precomputed caches.",
+        help=(
+            "Create missing legacy quality-hybrid payloads from precomputed "
+            "caches. This is not the V18 L1 verifier baseline."
+        ),
     )
     parser.add_argument("--baseline-suffix", default="_v18_frozen")
     return parser.parse_args()
@@ -393,9 +397,7 @@ def main() -> int:
     if args.limit_changed is not None:
         if args.limit_changed < 1:
             raise ValueError("limit-changed must be positive")
-        selected_ids = {
-            row["query_id"] for row in changed[: args.limit_changed]
-        }
+        selected_ids = {row["query_id"] for row in changed[: args.limit_changed]}
     else:
         selected_ids = {row["query_id"] for row in changed}
 
@@ -469,6 +471,11 @@ def main() -> int:
     changed_records = [row for row in records if row["query_id"] in selected_ids]
     report = {
         "study_id": "v19-local-llm-structured-intent-routing",
+        "baseline_method": "legacy_quality_hybrid_attribute_scaffold",
+        "baseline_warning": (
+            "These retrieval payloads run with rerank_top_k=0 and therefore "
+            "must not be described as the frozen V18 L1 verifier method."
+        ),
         "split": route_payload.get("split"),
         "eligible_for_v19_final_claim": False,
         "query_count": len(records),
@@ -498,8 +505,8 @@ def main() -> int:
     print(
         "V19 downstream retrieval pilot: "
         f"n={len(records)}, changed={len(changed_records)}, "
-        "positive_top1_delta="
-        f"{source_delta['positive_source_hit_at_1']:.4f}, "
+        "end_to_end_delta="
+        f"{e2e_delta['end_to_end_accuracy']:.4f}, "
         "hard_negative_far1_delta="
         f"{source_delta['hard_negative_source_far_at_1']:.4f}"
     )
