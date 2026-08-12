@@ -24,9 +24,6 @@ from ocr_vlm_retrieval.gating.ocr_literals import (  # noqa: E402
     OcrLiteralGroup,
 )
 from ocr_vlm_retrieval.gating.literal_evidence import (  # noqa: E402
-    ENTITY_IDENTIFIER_STRATUM,
-    OCR_LITERAL_STRATUM,
-    TOPIC_DISCOVERY_STRATUM,
     literal_override_is_eligible,
     select_literal_candidate,
 )
@@ -53,6 +50,7 @@ DEFAULT_OUTPUT = (
     / "development_colqwen2_literal_evidence_override.json"
 )
 
+
 def summarize_by_stratum(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     strata = sorted({str(row.get("content_stratum", "unknown")) for row in results})
     return {
@@ -61,6 +59,20 @@ def summarize_by_stratum(results: Sequence[Mapping[str, Any]]) -> dict[str, Any]
         )
         for stratum in strata
     }
+
+
+def positive_recall_at_k(results: Sequence[Mapping[str, Any]], *, cutoff: int) -> float:
+    positives = [row for row in results if bool(row.get("gold_answerable"))]
+    if not positives:
+        return 0.0
+    hits = sum(
+        bool(
+            {str(item_id) for item_id in row.get("candidate_item_ids", [])[:cutoff]}
+            & {str(item_id) for item_id in row.get("gold_relevant_item_ids", [])}
+        )
+        for row in positives
+    )
+    return hits / len(positives)
 
 
 def _decision_is_correct(row: Mapping[str, Any]) -> bool:
@@ -101,11 +113,7 @@ def paired_family_bootstrap(
     rng = random.Random(seed)
     deltas: list[float] = []
     for _ in range(samples):
-        sampled_pairs = [
-            pair
-            for _ in family_rows
-            for pair in rng.choice(family_rows)
-        ]
+        sampled_pairs = [pair for _ in family_rows for pair in rng.choice(family_rows)]
         delta = sum(
             int(candidate_correct) - int(baseline_correct)
             for baseline_correct, candidate_correct in sampled_pairs
@@ -168,14 +176,6 @@ def main() -> int:
     for baseline in baseline_payload.get("results", []):
         query_id = str(baseline["query_id"])
         retrieval_row = retrieval_by_id[query_id]
-        content_stratum = str(baseline.get("content_stratum", ""))
-        if content_stratum not in {
-            OCR_LITERAL_STRATUM,
-            TOPIC_DISCOVERY_STRATUM,
-            ENTITY_IDENTIFIER_STRATUM,
-        }:
-            candidate_results.append({**baseline, "decision_source": "v18_l1"})
-            continue
         item_ids = [
             str(item_id)
             for item_id in retrieval_row.get("ranking_item_ids", [])[: args.top_k]
@@ -201,7 +201,7 @@ def main() -> int:
             )
             for group in decision["constraint_groups"]
         )
-        eligible = literal_override_is_eligible(content_stratum, groups)
+        eligible = literal_override_is_eligible(str(retrieval_row["query"]), groups)
         if not eligible:
             candidate_results.append({**baseline, "decision_source": "v18_l1"})
             decisions.append(
@@ -241,12 +241,19 @@ def main() -> int:
         )
     baseline_summary = summarize(baseline_payload["results"])
     candidate_summary = summarize(candidate_results)
+    baseline_summary["positive_recall_at_3"] = positive_recall_at_k(
+        baseline_payload["results"], cutoff=3
+    )
+    candidate_summary["positive_recall_at_3"] = positive_recall_at_k(
+        candidate_results, cutoff=3
+    )
     delta = {
         key: round(float(candidate_summary[key]) - float(baseline_summary[key]), 8)
         for key in (
             "positive_selected_relevant",
             "negative_correct_reject_rate",
             "end_to_end_accuracy",
+            "positive_recall_at_3",
             "false_accept_rate",
             "false_reject_rate",
         )
@@ -261,25 +268,21 @@ def main() -> int:
             "ocr_min_confidence": args.ocr_min_confidence,
             "ocr_fuzzy_threshold": args.ocr_fuzzy_threshold,
             "date_match_policy": "exact_variant_only",
-            "eligible_strata": [
-                OCR_LITERAL_STRATUM,
-                TOPIC_DISCOVERY_STRATUM,
-                ENTITY_IDENTIFIER_STRATUM,
-            ],
-            "topic_policy": (
-                "named Latin or translated entity required; structured year may be "
-                "an additional mandatory condition"
+            "eligibility_input": "query_text_only",
+            "eligibility_policy": (
+                "exact Chinese name/entity; high-precision date, phone suffix, or "
+                "translation alias; or an explicit 浏览 request with a named literal"
             ),
-            "entity_policy": (
-                "all constraints must be exact Chinese person or organization names"
-            ),
+            "forbidden_runtime_inputs": ["content_stratum", "gold_answerable"],
         },
         "baseline": baseline_summary,
         "candidate": candidate_summary,
         "delta": delta,
         "promotion_check": {
-            "minimum_e2e_gain": 0.03,
-            "e2e_gain_passed": delta["end_to_end_accuracy"] >= 0.03,
+            "minimum_e2e_gain": 0.05,
+            "minimum_recall_at_3_gain": 0.05,
+            "e2e_gain_passed": delta["end_to_end_accuracy"] >= 0.05,
+            "recall_at_3_gain_passed": delta["positive_recall_at_3"] >= 0.05,
             "far_non_inferior": delta["false_accept_rate"] <= 0.0,
             "positive_non_inferior": delta["positive_selected_relevant"] >= 0.0,
         },

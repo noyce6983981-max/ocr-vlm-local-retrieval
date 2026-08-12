@@ -14,31 +14,39 @@ from ocr_vlm_retrieval.gating.ocr_literals import (
 OCR_LITERAL_STRATUM = "ocr_literal_lookup"
 TOPIC_DISCOVERY_STRATUM = "topic_discovery"
 ENTITY_IDENTIFIER_STRATUM = "entity_identifier"
-TOPIC_ALLOWED_SOURCES = frozenset(
-    {"latin_phrase", "structured_year", "translation_alias"}
+EXACT_ENTITY_SOURCES = frozenset({"chinese_name", "chinese_entity"})
+HIGH_PRECISION_LITERAL_SOURCES = frozenset(
+    {"structured_date", "phone_suffix", "translation_alias"}
 )
 TOPIC_NAMED_SOURCES = frozenset({"latin_phrase", "translation_alias"})
-ENTITY_EXACT_SOURCES = frozenset({"chinese_name", "chinese_entity"})
 
 
 def literal_override_is_eligible(
-    content_stratum: str,
+    query: str,
     groups: Sequence[OcrLiteralGroup],
 ) -> bool:
-    """Restrict literal acceptance to routes with a high-precision contract."""
+    """Decide from deployable query evidence, never evaluation metadata.
+
+    ``content_stratum`` used to be supplied by the benchmark authoring record.
+    That label is unavailable for a live query, so it must not control runtime
+    behavior.  The frozen contract below uses only text visible to the system:
+
+    * exact Chinese person or organization names;
+    * dates, phone suffixes, and curated translation aliases; or
+    * an explicit discovery request (``浏览``) with a named literal.
+
+    Standalone amounts and arbitrary Latin words are deliberately insufficient
+    because they also occur frequently in visual/layout queries.
+    """
 
     if not groups:
         return False
-    if content_stratum == OCR_LITERAL_STRATUM:
-        return True
     sources = {group.source for group in groups}
-    if content_stratum == ENTITY_IDENTIFIER_STRATUM:
-        return sources.issubset(ENTITY_EXACT_SOURCES)
-    if content_stratum != TOPIC_DISCOVERY_STRATUM:
-        return False
-    return sources.issubset(TOPIC_ALLOWED_SOURCES) and bool(
-        sources.intersection(TOPIC_NAMED_SOURCES)
-    )
+    if sources.intersection(EXACT_ENTITY_SOURCES):
+        return True
+    if sources.intersection(HIGH_PRECISION_LITERAL_SOURCES):
+        return True
+    return "浏览" in query and bool(sources.intersection(TOPIC_NAMED_SOURCES))
 
 
 def select_literal_candidate(

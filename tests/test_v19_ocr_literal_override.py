@@ -36,20 +36,35 @@ def test_literal_override_rejects_partial_near_neighbor() -> None:
 def test_topic_override_requires_a_named_literal() -> None:
     named = extract_ocr_literal_groups("浏览1959年联邦贸易委员会的资料。")
     year_only = extract_ocr_literal_groups("找2001年的内部邮件。")
-    assert literal_override_is_eligible("topic_discovery", named) is True
-    assert literal_override_is_eligible("topic_discovery", year_only) is False
+    assert literal_override_is_eligible("浏览1959年联邦贸易委员会的资料。", named)
+    assert not literal_override_is_eligible("找2001年的内部邮件。", year_only)
 
 
 def test_literal_override_does_not_leak_to_visual_routes() -> None:
-    groups = extract_ocr_literal_groups("找带有 KOOL Naturals 标志的绿色汽车。")
-    assert literal_override_is_eligible("visual_compositional", groups) is False
+    query = "找带有 KOOL Naturals 标志的绿色汽车。"
+    groups = extract_ocr_literal_groups(query)
+    assert not literal_override_is_eligible(query, groups)
 
 
 def test_entity_override_accepts_only_exact_chinese_entities() -> None:
-    chinese = extract_ocr_literal_groups("哪一页记录了患者赵海鹏？")
-    english = extract_ocr_literal_groups("查找姓名为 Ronald S. Milstein 的记录。")
-    assert literal_override_is_eligible("entity_identifier", chinese) is True
-    assert literal_override_is_eligible("entity_identifier", english) is False
+    chinese_query = "哪一页记录了患者赵海鹏？"
+    english_query = "查找姓名为 Ronald S. Milstein 的记录。"
+    chinese = extract_ocr_literal_groups(chinese_query)
+    english = extract_ocr_literal_groups(english_query)
+    assert literal_override_is_eligible(chinese_query, chinese)
+    assert not literal_override_is_eligible(english_query, english)
+
+
+def test_eligibility_does_not_depend_on_benchmark_stratum() -> None:
+    query = "找编号为17、日期为1997年7月31日的进展报告。"
+    groups = extract_ocr_literal_groups(query)
+    assert literal_override_is_eligible(query, groups)
+
+
+def test_arbitrary_layout_literals_do_not_activate_override() -> None:
+    query = "找同时包含 Phone、Fax 和 Email 字段的双语表单。"
+    groups = extract_ocr_literal_groups(query)
+    assert not literal_override_is_eligible(query, groups)
 
 
 def test_paired_bootstrap_preserves_query_families() -> None:
@@ -65,8 +80,7 @@ def test_paired_bootstrap_preserves_query_families() -> None:
         for query in range(1, 5)
     ]
     candidate = [
-        {**row, "selected_item_id": "gold", "accepted": True}
-        for row in baseline
+        {**row, "selected_item_id": "gold", "accepted": True} for row in baseline
     ]
     result = paired_family_bootstrap(baseline, candidate, samples=100, seed=7)
     assert result["family_count"] == 2
