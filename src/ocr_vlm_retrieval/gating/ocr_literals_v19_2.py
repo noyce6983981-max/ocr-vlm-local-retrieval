@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 from ocr_vlm_retrieval.gating.candidate_verification import normalize_ocr_text
@@ -13,8 +13,27 @@ from ocr_vlm_retrieval.gating.ocr_literals_v19_1 import (
     extract_v19_1_literal_groups,
 )
 
-EXPLICIT_CONDITION_INTENT = re.compile(r"(?:必须包含|同时包含)")
-QUOTED_VALUE = re.compile(r"[“\"]([^”\"]{2,80})[”\"]")
+EXPLICIT_CONDITION_INTENT = re.compile(
+    r"(?:必须包含|同时包含|同时写有|同时核验|同页出现|同时出现|不可缺少|缺一项都不要|"
+    r"同时能看到|都出现在同一页|均可在该页找到)"
+)
+QUOTED_VALUE_PATTERNS = (
+    re.compile(r"“([^”]{2,80})”"),
+    re.compile(r'"([^"\r\n]{2,80})"'),
+    re.compile(r"「([^」]{2,80})」"),
+    re.compile(r"【([^】]{2,80})】"),
+)
+
+
+def quoted_values(query: str) -> list[str]:
+    """Extract supported quote pairs in their original query order."""
+
+    matches: list[tuple[int, str]] = []
+    for pattern in QUOTED_VALUE_PATTERNS:
+        matches.extend(
+            (match.start(), match.group(1)) for match in pattern.finditer(query)
+        )
+    return [value for _, value in sorted(matches)]
 
 
 def extract_v19_2_literal_groups(query: str) -> tuple[OcrLiteralGroup, ...]:
@@ -24,7 +43,7 @@ def extract_v19_2_literal_groups(query: str) -> tuple[OcrLiteralGroup, ...]:
     if EXPLICIT_CONDITION_INTENT.search(query):
         explicit.extend(
             OcrLiteralGroup(value.strip(), (value.strip(),), "explicit_required")
-            for value in QUOTED_VALUE.findall(query)
+            for value in quoted_values(query)
             if value.strip()
         )
     if len(explicit) >= 2:
@@ -79,3 +98,21 @@ def evaluate_v19_2_literal_groups(
         and matched_count == len(collected_groups),
         "evidence": evidence,
     }
+
+
+def complete_explicit_evidence_item_ids(
+    groups: Sequence[OcrLiteralGroup],
+    lines_by_item: Mapping[str, Sequence[str]],
+) -> list[str]:
+    """Return pages satisfying every explicit condition as a normalized phrase."""
+
+    if len(groups) < 2 or any(group.source != "explicit_required" for group in groups):
+        return []
+    targets = [normalize_ocr_text(group.label) for group in groups]
+    if any(not target for target in targets):
+        return []
+    return [
+        str(item_id)
+        for item_id, lines in lines_by_item.items()
+        if all(target in normalize_ocr_text(" ".join(lines)) for target in targets)
+    ]

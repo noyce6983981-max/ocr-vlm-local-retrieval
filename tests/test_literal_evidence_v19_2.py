@@ -6,6 +6,7 @@ from ocr_vlm_retrieval.gating.literal_evidence_v19_2 import (
     v19_2_override_eligibility,
 )
 from ocr_vlm_retrieval.gating.ocr_literals_v19_2 import (
+    complete_explicit_evidence_item_ids,
     extract_v19_2_literal_groups,
 )
 
@@ -73,3 +74,51 @@ def test_explicit_conjunction_does_not_fuzzy_accept_near_neighbor() -> None:
         fuzzy_threshold=0.84,
     )
     assert decision["selected_item_id"] == "exact"
+
+
+def test_natural_conjunction_variants_preserve_two_condition_contract() -> None:
+    queries = (
+        "帮我找同时写有“Alpha Project”和“Budget 2026”的那一页。",
+        "请定位一份资料，其中“Alpha Project”与“Budget 2026”必须在同页出现。",
+        "页面需要同时出现“Alpha Project”；另一个不可缺少的内容是“Budget 2026”。",
+        "我只要同时能看到“Alpha Project”以及“Budget 2026”的资料，缺一项都不要。",
+    )
+    for query in queries:
+        groups = extract_v19_2_literal_groups(query)
+        assert [group.label for group in groups] == ["Alpha Project", "Budget 2026"]
+        assert v19_2_override_eligibility(query)["eligible"] is True
+
+
+def test_multiple_quote_styles_preserve_query_order() -> None:
+    queries = (
+        "同页出现「Alpha Project」和「Budget 2026」。",
+        "同时核验【Alpha Project】以及【Budget 2026】。",
+    )
+    for query in queries:
+        assert [group.label for group in extract_v19_2_literal_groups(query)] == [
+            "Alpha Project",
+            "Budget 2026",
+        ]
+
+
+def test_complete_explicit_evidence_promotes_only_same_page_match() -> None:
+    groups = extract_v19_2_literal_groups(
+        "找同时写有“Alpha Project”和“Budget 2026”的页面。"
+    )
+    matches = complete_explicit_evidence_item_ids(
+        groups,
+        {
+            "partial_a": ["Alpha Project"],
+            "partial_b": ["Budget 2026"],
+            "complete": ["Alpha Project", "Budget 2026"],
+        },
+    )
+    assert matches == ["complete"]
+
+
+def test_complete_explicit_evidence_rejects_empty_normalized_condition() -> None:
+    groups = extract_v19_2_literal_groups('必须包含“++”并同时包含“Invoice 42”')
+
+    assert complete_explicit_evidence_item_ids(
+        groups, {"page": ["Invoice 42"]}
+    ) == []

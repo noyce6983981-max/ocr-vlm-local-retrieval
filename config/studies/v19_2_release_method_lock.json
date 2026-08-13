@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "release": "v19.0.0",
+  "status": "frozen_before_publication",
+  "frozen_at": "2026-08-13T18:38:12+08:00",
+  "selected_method": {
+    "name": "complete_evidence_first_then_colqwen2_top10_verification",
+    "top_k": 10,
+    "ocr_min_confidence": 0.35,
+    "ocr_fuzzy_threshold": 0.92,
+    "explicit_required_match": "normalized_exact_phrase",
+    "fallback_method": "quality_hybrid"
+  },
+  "selection_evidence": {
+    "machine_development": {
+      "source_family_count": 12,
+      "query_count": 48,
+      "source_overlap_with_prior_studies": 0,
+      "end_to_end_correct": 48,
+      "hard_negative_far": 0.0,
+      "raw_colqwen2_positive_recall_at_3": 0.9166666666666666,
+      "evidence_first_positive_recall_at_1": 1.0
+    },
+    "human_reviewed_development_regression": {
+      "query_count": 48,
+      "end_to_end_correct": 48,
+      "hard_negative_count": 12,
+      "hard_negative_false_accept_count": 0,
+      "eligible_for_final_claim": false
+    },
+    "rejected_ablation": {
+      "name": "condition_query_rank_aggregation",
+      "selected_retrieval_method": "full_query",
+      "reason": "No condition-level aggregation improved positive Recall@3."
+    }
+  },
+  "locked_post_selection_stress": [
+    {
+      "round": 5,
+      "query_count": 48,
+      "raw_colqwen2_positive_recall_at_1": 0.8333333333333334,
+      "raw_colqwen2_positive_recall_at_3": 0.875,
+      "evidence_first_positive_recall_at_1": 1.0,
+      "end_to_end_correct": 48,
+      "hard_negative_far": 0.0,
+      "assignments_sha256": "51ac0b7e759b7ef5d6f537eab7feb69ab6401f787eb03cd8e044f17e2e74b967",
+      "raw_retrieval_sha256": "4528de6f0b1b29b9c54d57e9d7c0cf9221ccddcfdb0e2907f13ce2faa5210aee",
+      "evidence_first_sha256": "5f40eb531691ffa9823751ea84bb3e5a32785d99ccbb8aa30504175f19c630eb",
+      "end_to_end_sha256": "c5179b0bef3de05b836ce05ff8877839d24b069114e0127fe0680e35780db450"
+    },
+    {
+      "round": 6,
+      "query_count": 48,
+      "raw_colqwen2_positive_recall_at_1": 0.875,
+      "raw_colqwen2_positive_recall_at_3": 0.9583333333333334,
+      "evidence_first_positive_recall_at_1": 1.0,
+      "end_to_end_correct": 48,
+      "hard_negative_far": 0.0,
+      "assignments_sha256": "e2c6ce41fc9a813d3f6b995e1684842283664a747949e35f518d1aacd71f6ebe",
+      "raw_retrieval_sha256": "5c953a68caf31e97f3eb66609e4a3d7bedebcf55b5e84787d0567e8c617cc4d3",
+      "evidence_first_sha256": "03cd89c9b428e16da9dd7dc8155aa4d5a4801c5d6c646dbfe224c7b4c78e98af",
+      "end_to_end_sha256": "7aed6b9eaf061de6791deb9980d8c81423bbac0b6dae0dcf6bd5ab540ce23618"
+    }
+  ],
+  "runtime_smoke": {
+    "positive_accepted": true,
+    "positive_seconds": 0.625,
+    "negative_rejected": true,
+    "negative_seconds": 0.612,
+    "model_loaded": false,
+    "route": "full_corpus_exact_condition_evidence"
+  },
+  "input_hashes": {
+    "machine_development_assignments": "968f101f4f37c1baa8b13e21f18e56214eea6cb167949bf3041c56ee0e7f8f8c",
+    "machine_development_raw_retrieval": "987eff0aba851ce4d5463498df258f9a98fca2f37d341aae25fb609d51aca856",
+    "machine_development_evidence_first": "a233569a08a620e17300f9151b48a1143c5f079333da61cdf483bbdc70b76296",
+    "condition_aggregation_ablation": "82694898aacd9e65fbfbd5c09b76a918477eb9ef7869a2a94fa6e6a3b8fc6d6b",
+    "human_reviewed_development_assignments": "33b352050139480a027b30800e0cc8ccfc88cdee67fe4bbbad2e23d3c147eeb8",
+    "human_reviewed_development_retrieval": "2b88e0c3ccea1dc74f662f4cfc41aef65f8d794c84c402098eb59f6fa613aaca"
+  },
+  "method_file_hashes": {
+    "config/v19_runtime.json": "2b372b48d8167137fa974d28f550f5ffa82b430b98dfa16f498f5d74dc43b315",
+    "config/studies/v19_2_automatic_optimization.json": "4673d5c5c0b02cf3e482863e301ecf13840c005220492f25516bd88dfaab394e",
+    "src/ocr_vlm_retrieval/gating/ocr_literals_v19_2.py": "8ae7379a08ffa508d1501073a401f3baa16a76b5219c1fae8d747ab28f3d728b",
+    "src/ocr_vlm_retrieval/gating/literal_evidence_v19_2.py": "16f48e7920b9e6fdeab9775f86ea7f9c32857c30e3ca59275f5a05b36ddb76c2",
+    "src/ocr_vlm_retrieval/runtime/v19_condition_runtime.py": "863e3bba0367c46723f32899560e9348ad963961cf853174781b054d159c3e35",
+    "scripts/v19_live_search.py": "b7113fbb73dc2b05542d2cc9d92ef6735ee2d6a1a5cd0fc45349de3ad8dff722"
+  },
+  "governance": {
+    "human_review_used_for_machine_stress": false,
+    "v19_1_final_holdout_rerun": false,
+    "v19_1_final_holdout_rescored": false,
+    "future_holdout_opened": false,
+    "eligible_for_new_independent_human_claim": false,
+    "claim_boundary": "Machine-authored development and locked syntax stress results support an engineering release only, not a new independent human holdout claim."
+  }
+}

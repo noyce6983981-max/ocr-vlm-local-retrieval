@@ -30,6 +30,19 @@
       "maximum_ocr_fuzzy_threshold"
     ]
   },
+  "retrieval_aggregation_grid": [
+    "full_query",
+    "condition_min_rank",
+    "condition_mean_rank",
+    "full_25_condition_min_75",
+    "full_25_condition_mean_75"
+  ],
+  "retrieval_aggregation_selection": [
+    "maximum_positive_recall_at_3",
+    "maximum_positive_recall_at_1",
+    "maximum_mrr",
+    "configured_method_order"
+  ],
   "automatic_stop_conditions": {
     "minimum_end_to_end_accuracy": 0.8,
     "minimum_topic_positive_selected_relevant": 0.7,

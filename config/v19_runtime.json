@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "release": "v19.0.0",
+  "status": "frozen_engineering_release",
+  "method": "complete_evidence_first_then_colqwen2_top10_verification",
+  "top_k": 10,
+  "ocr_min_confidence": 0.35,
+  "ocr_fuzzy_threshold": 0.92,
+  "explicit_required_match": "normalized_exact_phrase",
+  "complete_evidence_promotion": true,
+  "fallback_method": "quality_hybrid",
+  "runtime_inputs": [
+    "query_text",
+    "colqwen2_page_index",
+    "candidate_ocr"
+  ],
+  "forbidden_runtime_inputs": [
+    "benchmark_stratum",
+    "gold_answerable",
+    "gold_relevant_item_ids"
+  ],
+  "claim_boundary": "V19 development and automatic stress results are not an independent final human holdout."
+}
