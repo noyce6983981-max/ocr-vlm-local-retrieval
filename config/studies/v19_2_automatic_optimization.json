@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-2-automatic-condition-aggregation",
+  "status": "automatic_development_only",
+  "research_question": "Can query-text-only adaptive condition aggregation preserve exact-field rejection while reducing topic-query false rejection?",
+  "data_policy": {
+    "human_review_required": false,
+    "machine_evidence_contract_required": true,
+    "exclude_v18_sources": true,
+    "exclude_v19_sources": true,
+    "exclude_v19_1_sources": true,
+    "v19_1_holdout_reuse_for_scoring": false,
+    "future_holdout_opened": false
+  },
+  "development_family_counts": {
+    "ocr_literal_lookup": 6,
+    "entity_identifier": 5,
+    "topic_discovery": 1
+  },
+  "queries_per_family": 4,
+  "optimization_grid": {
+    "top_k": [1, 3, 5, 10],
+    "ocr_fuzzy_threshold": [0.84, 0.88, 0.92, 0.96],
+    "selection_order": [
+      "meet_all_stop_conditions",
+      "maximum_end_to_end_accuracy",
+      "minimum_hard_negative_far",
+      "maximum_positive_selected_relevant",
+      "minimum_top_k",
+      "maximum_ocr_fuzzy_threshold"
+    ]
+  },
+  "automatic_stop_conditions": {
+    "minimum_end_to_end_accuracy": 0.8,
+    "minimum_topic_positive_selected_relevant": 0.7,
+    "maximum_hard_negative_far": 0.2,
+    "minimum_positive_recall_at_3": 0.9
+  },
+  "claim_boundary": "Machine-authored and machine-validated development results are diagnostic only and are not a human gold standard."
+}
