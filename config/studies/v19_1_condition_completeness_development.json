@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "v19-1-condition-completeness-development-v1",
-  "status": "development_only_not_frozen",
+  "status": "human_reviewed_development_complete_ready_for_method_lock",
   "predecessor": "v19-colqwen2-literal-evidence-e2e",
   "research_question": "Can structured OCR field parsing and necessary-condition completeness recover positive evidence without sacrificing the hard-negative FAR reduction observed in V19?",
   "hypotheses_from_predecessor_holdout": [

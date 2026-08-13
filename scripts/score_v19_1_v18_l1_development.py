@@ -1,4 +1,4 @@
-"""Score frozen V18 L1 on V19.1 machine-draft development only."""
+"""Score frozen V18 L1 on V19.1 development only."""
 
 from __future__ import annotations
 
@@ -39,6 +39,12 @@ DEFAULT_ASSIGNMENTS = EVALUATION_ROOT / "development_assignments_machine.json"
 DEFAULT_RETRIEVAL_DIR = EVALUATION_ROOT / "retrieval/development_v18_frozen"
 DEFAULT_LIBRARY = ROOT / "outputs/user_library"
 DEFAULT_OUTPUT = EVALUATION_ROOT / "development_v18_l1_top3_machine.json"
+DEVELOPMENT_SPLITS = frozenset(
+    {
+        "v19_1_machine_draft_development_only",
+        "v19_1_human_reviewed_development_only",
+    }
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -68,8 +74,8 @@ def build_tasks(
     library_dir: Path,
     top_k: int,
 ) -> list[dict[str, Any]]:
-    if payload.get("split") != "v19_1_machine_draft_development_only":
-        raise ValueError("V18 L1 may score V19.1 machine-draft development only")
+    if payload.get("split") not in DEVELOPMENT_SPLITS:
+        raise ValueError("V18 L1 may score V19.1 development only")
     manifest = manifest_index(library_dir)
     tasks: list[dict[str, Any]] = []
     for assignment in payload.get("assignments", []):
@@ -102,6 +108,7 @@ def run(args: argparse.Namespace) -> int:
     if args.top_k != 3 or args.threshold != 0.63:
         raise ValueError("frozen V18 L1 requires top_k=3 and threshold=0.63")
     assignment_payload = read_json(args.assignments)
+    split = str(assignment_payload.get("split", ""))
     source_sha256 = _source_sha256(args.assignments)
     tasks = build_tasks(
         assignment_payload,
@@ -167,11 +174,19 @@ def run(args: argparse.Namespace) -> int:
             args.output,
             {
                 "status": (
-                    "machine_draft_development_diagnostic_only"
+                    (
+                        "human_reviewed_development_diagnostic_only"
+                        if split == "v19_1_human_reviewed_development_only"
+                        else "machine_draft_development_diagnostic_only"
+                    )
                     if len(ordered) == len(tasks)
-                    else "partial_machine_draft_development_diagnostic_only"
+                    else (
+                        "partial_human_reviewed_development_diagnostic_only"
+                        if split == "v19_1_human_reviewed_development_only"
+                        else "partial_machine_draft_development_diagnostic_only"
+                    )
                 ),
-                "split": "v19_1_machine_draft_development_only",
+                "split": split,
                 "eligible_for_promotion": False,
                 "holdout_opened": False,
                 "method": "frozen_v18_L1_max_verifier_score",

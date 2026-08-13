@@ -1,4 +1,4 @@
-"""Evaluate ColQwen2 on V19.1 machine-draft development only."""
+"""Evaluate ColQwen2 on V19.1 development only."""
 
 from __future__ import annotations
 
@@ -34,6 +34,12 @@ DEFAULT_ASSIGNMENTS = EVALUATION_ROOT / "development_assignments_machine.json"
 DEFAULT_MODEL = ROOT / "models/colqwen2-v1.0-hf"
 DEFAULT_INDEX = ROOT / "outputs/user_library/colqwen2_v1_index"
 DEFAULT_OUTPUT = EVALUATION_ROOT / "development_colqwen2_machine.json"
+DEVELOPMENT_SPLITS = frozenset(
+    {
+        "v19_1_machine_draft_development_only",
+        "v19_1_human_reviewed_development_only",
+    }
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -51,8 +57,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def _query_rows(payload: Mapping[str, Any]) -> list[dict[str, Any]]:
-    if payload.get("split") != "v19_1_machine_draft_development_only":
-        raise ValueError("ColQwen2 may read V19.1 machine-draft development only")
+    if payload.get("split") not in DEVELOPMENT_SPLITS:
+        raise ValueError("ColQwen2 may read V19.1 development only")
     rows = [dict(row) for row in payload.get("assignments", [])]
     if len(rows) != 48:
         raise ValueError(f"expected 48 development rows, got {len(rows)}")
@@ -77,6 +83,7 @@ def run(args: argparse.Namespace) -> int:
         raise ValueError("stored-top-k must be positive and throttle nonnegative")
     assignment_payload = read_json(args.assignments)
     queries = _query_rows(assignment_payload)
+    split = str(assignment_payload["split"])
     receipt = read_json(args.index_dir / "index_receipt.json")
     if receipt.get("status") != "complete" or receipt.get("failed_item_count") != 0:
         raise ValueError("a complete failure-free ColQwen2 index is required")
@@ -178,9 +185,13 @@ def run(args: argparse.Namespace) -> int:
         )
     summary = positive_retrieval_summary(results)
     payload = {
-        "status": "machine_draft_development_diagnostic_only",
+        "status": (
+            "human_reviewed_development_diagnostic_only"
+            if split == "v19_1_human_reviewed_development_only"
+            else "machine_draft_development_diagnostic_only"
+        ),
         "method": "colqwen2_v1_multivector_late_interaction",
-        "split": "v19_1_machine_draft_development_only",
+        "split": split,
         "eligible_for_promotion": False,
         "holdout_opened": False,
         "source_assignment_sha256": hashlib.sha256(

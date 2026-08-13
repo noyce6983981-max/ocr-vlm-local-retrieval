@@ -1,4 +1,4 @@
-"""Audit frozen V18 retrieval recall on V19.1 machine-draft development."""
+"""Audit frozen V18 retrieval recall on V19.1 development."""
 
 from __future__ import annotations
 
@@ -37,6 +37,12 @@ DEFAULT_OUTPUT = (
     / "outputs/evaluation/v19_1/condition_completeness"
     / "development_v18_retrieval_audit.json"
 )
+DEVELOPMENT_SPLITS = frozenset(
+    {
+        "v19_1_machine_draft_development_only",
+        "v19_1_human_reviewed_development_only",
+    }
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,8 +78,9 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
 def main() -> int:
     args = parse_args()
     payload = read_json(args.assignments)
-    if payload.get("split") != "v19_1_machine_draft_development_only":
-        raise ValueError("audit may read V19.1 machine-draft development only")
+    split = str(payload.get("split", ""))
+    if split not in DEVELOPMENT_SPLITS:
+        raise ValueError("audit may read V19.1 development only")
     rows: list[dict[str, Any]] = []
     for assignment in payload.get("assignments", []):
         query_id = str(assignment["query_id"])
@@ -100,8 +107,12 @@ def main() -> int:
     for row in rows:
         by_stratum_rows[str(row["content_stratum"])].append(row)
     result = {
-        "status": "machine_draft_development_diagnostic_only",
-        "split": "v19_1_machine_draft_development_only",
+        "status": (
+            "human_reviewed_development_diagnostic_only"
+            if split == "v19_1_human_reviewed_development_only"
+            else "machine_draft_development_diagnostic_only"
+        ),
+        "split": split,
         "eligible_for_promotion": False,
         "holdout_opened": False,
         "summary": _summary(rows),

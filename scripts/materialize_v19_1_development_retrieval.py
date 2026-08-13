@@ -1,4 +1,4 @@
-"""Materialize frozen V18 retrieval pools for V19.1 machine-draft development."""
+"""Materialize frozen V18 retrieval pools for V19.1 development."""
 
 from __future__ import annotations
 
@@ -26,6 +26,12 @@ DEFAULT_OUTPUT_DIR = (
     / "outputs/evaluation/v19_1/condition_completeness/retrieval"
     / "development_v18_frozen"
 )
+DEVELOPMENT_SPLITS = frozenset(
+    {
+        "v19_1_machine_draft_development_only",
+        "v19_1_human_reviewed_development_only",
+    }
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     payload = read_json(args.assignments)
-    if payload.get("split") != "v19_1_machine_draft_development_only":
+    if payload.get("split") not in DEVELOPMENT_SPLITS:
         raise ValueError("retrieval materialization may read V19.1 development only")
     assignments = list(payload.get("assignments", []))
     if len(assignments) != 48:
@@ -66,6 +72,7 @@ def main() -> int:
         json.dumps(
             {
                 "status": "complete_development_only",
+                "split": payload["split"],
                 "query_count": len(assignments),
                 "holdout_opened": False,
                 "output_dir": str(args.output_dir),

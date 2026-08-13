@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "v19-1-condition-completeness-e2e",
-  "status": "draft_not_frozen_human_review_required",
+  "status": "development_human_review_complete_ready_for_method_lock",
   "created_date": "2026-08-13",
   "research_question": "Can structured OCR fields and a complete necessary-condition contract improve open-set retrieval without sacrificing positive selection?",
   "frozen_baseline": "v18.1.0 frozen V18 execution path",

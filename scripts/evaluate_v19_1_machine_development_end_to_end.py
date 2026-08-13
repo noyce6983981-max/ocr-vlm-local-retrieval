@@ -1,4 +1,4 @@
-"""Evaluate V19.1 complete evidence on machine-draft development only."""
+"""Evaluate V19.1 complete evidence on an approved development payload."""
 
 from __future__ import annotations
 
@@ -36,6 +36,12 @@ DEFAULT_BASELINE = EVALUATION_ROOT / "development_v18_l1_top3_machine.json"
 DEFAULT_RETRIEVAL = EVALUATION_ROOT / "development_colqwen2_machine.json"
 DEFAULT_OCR_ROOT = ROOT / "outputs/user_library/ocr/json"
 DEFAULT_OUTPUT = EVALUATION_ROOT / "development_v19_1_e2e_machine.json"
+DEVELOPMENT_SPLITS = frozenset(
+    {
+        "v19_1_machine_draft_development_only",
+        "v19_1_human_reviewed_development_only",
+    }
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -76,11 +82,11 @@ def main() -> int:
         raise ValueError("top-k must be positive")
     baseline_payload = read_json(args.baseline)
     retrieval_payload = read_json(args.retrieval)
-    expected_split = "v19_1_machine_draft_development_only"
-    if baseline_payload.get("split") != expected_split:
-        raise ValueError("baseline must be V19.1 machine-draft development")
+    expected_split = str(baseline_payload.get("split", ""))
+    if expected_split not in DEVELOPMENT_SPLITS:
+        raise ValueError("baseline must be V19.1 development")
     if retrieval_payload.get("split") != expected_split:
-        raise ValueError("retrieval must be V19.1 machine-draft development")
+        raise ValueError("baseline and retrieval development splits must match")
     baseline_source_sha256 = str(
         baseline_payload.get("source_assignment_sha256", "")
     )
@@ -170,7 +176,11 @@ def main() -> int:
     reason_counts = Counter(str(row["reason"]) for row in decisions)
     source_counts = Counter(str(row["decision_source"]) for row in candidate_results)
     result = {
-        "status": "machine_draft_development_diagnostic_only",
+        "status": (
+            "human_reviewed_development_diagnostic_only"
+            if expected_split == "v19_1_human_reviewed_development_only"
+            else "machine_draft_development_diagnostic_only"
+        ),
         "method": "v19_1_colqwen2_top3_complete_literal_evidence",
         "split": expected_split,
         "eligible_for_promotion": False,

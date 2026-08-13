@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from ocr_vlm_retrieval.gating.literal_evidence_v19_1 import (
     select_v19_1_literal_candidate,
     v19_1_override_eligibility,
@@ -7,6 +9,10 @@ from ocr_vlm_retrieval.gating.literal_evidence_v19_1 import (
 from ocr_vlm_retrieval.gating.ocr_literals_v19_1 import (
     extract_v19_1_literal_groups,
     parsed_ocr_dates,
+)
+from scripts.recertify_v19_1_reviewed_development_results import (
+    CONTRACT_FIELDS,
+    assert_contract_equivalent,
 )
 
 
@@ -199,3 +205,32 @@ def test_hyphenated_term_preserves_attribute_binding() -> None:
     )
     assert negative["accepted"] is False
     assert positive["accepted"] is True
+
+
+def _recertification_row() -> dict[str, object]:
+    row: dict[str, object] = {field: f"value-{field}" for field in CONTRACT_FIELDS}
+    row.update(
+        {
+            "gold_answerable": True,
+            "gold_relevant_item_ids": ["item-1"],
+            "review_status": "human_approved_development_family",
+            "reviewer_id": "reviewer_01",
+        }
+    )
+    return row
+
+
+def test_reviewed_result_recertification_requires_exact_contract() -> None:
+    machine = _recertification_row()
+    reviewed = {**machine}
+    assert_contract_equivalent({"q1": machine}, {"q1": reviewed})
+    reviewed["query"] = "changed query"
+    with pytest.raises(ValueError, match="query"):
+        assert_contract_equivalent({"q1": machine}, {"q1": reviewed})
+
+
+def test_reviewed_result_recertification_requires_human_approval() -> None:
+    machine = _recertification_row()
+    reviewed = {**machine, "review_status": "machine_draft_pending_human_review"}
+    with pytest.raises(ValueError, match="not human approved"):
+        assert_contract_equivalent({"q1": machine}, {"q1": reviewed})
