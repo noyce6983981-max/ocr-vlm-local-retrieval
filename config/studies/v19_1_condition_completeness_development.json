@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-1-condition-completeness-development-v1",
+  "status": "human_reviewed_development_complete_ready_for_method_lock",
+  "predecessor": "v19-colqwen2-literal-evidence-e2e",
+  "research_question": "Can structured OCR field parsing and necessary-condition completeness recover positive evidence without sacrificing the hard-negative FAR reduction observed in V19?",
+  "hypotheses_from_predecessor_holdout": [
+    "date evidence should compare parsed year-month-day components rather than raw OCR strings",
+    "a literal override must be disabled when a high-risk query condition was not extracted"
+  ],
+  "candidate": {
+    "retrieval": "frozen ColQwen2 v1 full-library Top-3",
+    "fallback": "frozen V18 L1",
+    "runtime_inputs": ["query_text", "candidate_ocr"],
+    "forbidden_runtime_inputs": ["content_stratum", "gold_answerable", "gold_relevant_item_ids"],
+    "structured_date_policy": "parse components then require exact year-month-day equality",
+    "structured_identifier_policy": "exact token boundary and at least one additional extracted condition",
+    "condition_completeness_policy": "fallback when a date, identifier, phone suffix, or organization marker is not represented by an extracted constraint"
+  },
+  "data_governance": {
+    "v19_one_shot_holdout_reuse_for_tuning": false,
+    "v19_one_shot_holdout_rerun": false,
+    "old_v19_development_use": "diagnostic_only_not_eligible_for_promotion",
+    "new_source_family_review_required": true,
+    "new_method_lock_required_before_new_holdout": true
+  },
+  "promotion_gates": {
+    "minimum_end_to_end_gain_vs_v18": 0.05,
+    "minimum_recall_at_3_gain_vs_v18": 0.05,
+    "maximum_hard_negative_far_gain_vs_v18": 0.0,
+    "minimum_positive_selected_relevant_gain_vs_v19": 0.0
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-1-condition-completeness-e2e",
+  "status": "locked_after_human_reviewed_development_before_holdout",
+  "locked_at_utc": "2026-08-13T05:36:08.100134+00:00",
+  "selection_commit_sha": "032904de7c236787f96c93c6e4062d24f6f296a1",
+  "holdout_scored": false,
+  "holdout_ocr_opened_before_lock": false,
+  "reviewed_development_family_count": 12,
+  "reviewed_development_query_count": 48,
+  "reviewed_development_query_sha256": "33b352050139480a027b30800e0cc8ccfc88cdee67fe4bbbad2e23d3c147eeb8",
+  "development_review_sha256": "38ef58cf3ce7bdf7e45b70ded6478ad60c6fce74812868f00b7c34f53d2fc3c7",
+  "selected_method": "colqwen2_top3_complete_necessary_condition_evidence",
+  "selected_parameters": {
+    "top_k": 3,
+    "ocr_min_confidence": 0.35,
+    "ocr_fuzzy_threshold": 0.88,
+    "eligibility_input": "query_text_only",
+    "runtime_inputs": [
+      "query_text",
+      "candidate_ocr"
+    ],
+    "forbidden_runtime_inputs": [
+      "content_stratum",
+      "gold_answerable",
+      "gold_relevant_item_ids"
+    ],
+    "selection_policy": "first ColQwen2 candidate satisfying every extracted necessary condition; reject when none match",
+    "incomplete_extraction_policy": "disable V19.1 override when a high-risk query marker lacks an extracted condition"
+  },
+  "selected_development_metrics": {
+    "v18": {
+      "query_count": 48,
+      "positive_count": 24,
+      "negative_count": 24,
+      "positive_selected_relevant": 0.5416666666666666,
+      "negative_correct_reject_rate": 0.4583333333333333,
+      "end_to_end_accuracy": 0.5,
+      "false_accept_rate": 0.5416666666666667,
+      "false_reject_rate": 0.4583333333333333,
+      "empty_candidate_count": 0,
+      "positive_recall_at_3": 0.875
+    },
+    "v19": {
+      "query_count": 48,
+      "positive_count": 24,
+      "negative_count": 24,
+      "positive_selected_relevant": 0.6666666666666666,
+      "negative_correct_reject_rate": 0.6666666666666666,
+      "end_to_end_accuracy": 0.6666666666666666,
+      "false_accept_rate": 0.33333333333333337,
+      "false_reject_rate": 0.3333333333333333,
+      "empty_candidate_count": 0,
+      "positive_recall_at_3": 0.9583333333333334
+    },
+    "v19_1": {
+      "query_count": 48,
+      "positive_count": 24,
+      "negative_count": 24,
+      "positive_selected_relevant": 1.0,
+      "negative_correct_reject_rate": 1.0,
+      "end_to_end_accuracy": 1.0,
+      "false_accept_rate": 0.0,
+      "false_reject_rate": 0.0,
+      "empty_candidate_count": 0,
+      "positive_recall_at_3": 1.0
+    }
+  },
+  "promotion_gates": {
+    "e2e_gain_vs_v18": true,
+    "recall_at_3_gain_vs_v18": true,
+    "far_non_inferior_vs_v18": true,
+    "positive_non_inferior_vs_v19": true,
+    "e2e_improved_vs_v19": true
+  },
+  "retrieval": {
+    "model": "vidore/colqwen2-v1.0-hf",
+    "method": "multi_vector_maxsim_late_interaction",
+    "indexed_page_count": 1482,
+    "storage_dtype": "float16",
+    "embedding_dimension": 128,
+    "candidate_top_k": 3
+  },
+  "governance_disclosure": "The method was selected using 12 human-reviewed development families. The disjoint V19.1 holdout OCR and queries were not opened before this lock. No locked rule, parameter, model, or index may change afterward.",
+  "locked_files": {
+    "config/studies/v19_1_condition_completeness_development.json": "616647adf9e0e4537b59919170bd8aa6331b908ee9a33c54c33c96111d21b33b",
+    "data/evaluation/v19_1_condition_completeness/protocol_draft.json": "a51183cac5f12660392e06841a70493e56b341a090e971060c4bbe4c406eb36c",
+    "scripts/evaluate_v19_colqwen2_development.py": "6cdb7672a710eef7eae8a7ec8e69268f2180e516747df70e793498e9652957e0",
+    "scripts/evaluate_v19_1_colqwen2_development.py": "99d831c9f313274d7d869f9a950a32b486cc4579e4e07d7f06f6d20abaec7862",
+    "scripts/evaluate_v19_1_machine_development_end_to_end.py": "0d12cd76c2a0e7159f5154b8284e85228ad42c652bdbe3031166104efe2682f4",
+    "scripts/evaluate_v19_predecessor_on_v19_1_development.py": "f7de60cfd40fd3d03dcd8f606b9fb4ff02834555aa188a76e246883840e814a5",
+    "scripts/score_v19_1_v18_l1_development.py": "388fdf4a90ccf4e1564d8892aeb6a767edbcac10ff80e2612d014f38301624d8",
+    "scripts/recertify_v19_1_reviewed_development_results.py": "96e338081576324f0c7ed6b4c7a9f7e765f652b5492749025f92bef685d925a2",
+    "scripts/freeze_v19_1_method.py": "e5f862da4b29cbcb5b2d51622a78fcce00edcc445e63fa8ec772ff2053f88dcc",
+    "src/ocr_vlm_retrieval/gating/candidate_verification.py": "0a04ce47114c5e3d0cb99a6f468e5bb4d73abb3775bf9eda37eff26078a697de",
+    "src/ocr_vlm_retrieval/gating/ocr_literals.py": "7cbd4eada07e1a3602a579ccfe86a9a6e0dd3772023d25a53cbad56c30989689",
+    "src/ocr_vlm_retrieval/gating/ocr_literals_v19_1.py": "ab6f5df0516198234bb1e3353a564f1034e64f28d560208488ffb45b4b3dca14",
+    "src/ocr_vlm_retrieval/gating/literal_evidence_v19_1.py": "60f0ee1f7a7490dc90a4b288a1ef0e20b6989b256d16c5ba4c47a12065dd1b41",
+    "src/ocr_vlm_retrieval/runtime/late_interaction.py": "896a8bb559ad1018c4d7a80c17a2e7c6f472fe89fad30bf27f42ec39a77610ba",
+    "records/private/v19_1/condition_completeness/source_families_draft.jsonl": "8f17638722904fd4c565933eed71c22b0323d2eed733402a0d1e88fa4e53d064",
+    "records/private/v19_1/condition_completeness/source_family_selection_receipt.json": "722d08de60e202ddadebca9b0cd52b8561214d8c74fdc5e05b188e8d6d94d91a",
+    "records/private/v19_1/condition_completeness/reviewer_01_development_query_reviews.jsonl": "38ef58cf3ce7bdf7e45b70ded6478ad60c6fce74812868f00b7c34f53d2fc3c7",
+    "outputs/evaluation/v19_1/condition_completeness/development_assignments_human_reviewed.json": "33b352050139480a027b30800e0cc8ccfc88cdee67fe4bbbad2e23d3c147eeb8",
+    "outputs/evaluation/v19_1/condition_completeness/development_v18_l1_top3_human_reviewed.json": "f1fbfacd2cb79044e38500f51b63981903000242ee145b78a8e0a2c80a76d94c",
+    "outputs/evaluation/v19_1/condition_completeness/development_colqwen2_human_reviewed.json": "2b88e0c3ccea1dc74f662f4cfc41aef65f8d794c84c402098eb59f6fa613aaca",
+    "outputs/evaluation/v19_1/condition_completeness/development_v19_predecessor_human_reviewed.json": "0ee26abe2e24d6c4d218aaf0bcdd861d2307440d31c660186fe0024a617a4757",
+    "outputs/evaluation/v19_1/condition_completeness/development_v19_1_e2e_human_reviewed.json": "938eb09dd1525f95dbdad1c851df76e15ef4e67723cde37f3bdda82caead698f",
+    "outputs/user_library/colqwen2_v1_index/index_receipt.json": "9265daa82a60cf1fc7f459d124ca8be48d5d4b3919e63f428de9c8692e851515",
+    "outputs/user_library/manifest.jsonl": "f491d9992259eb16982503ff4b7641b5aaacb879a3ce8ffd1787a26b3729d9e6",
+    "models/colqwen2-v1.0-hf/config.json": "2fd851f549b55214a59f4d5772e42cd542f89148226cf44dfb5d986c9fb122e6"
+  }
+}

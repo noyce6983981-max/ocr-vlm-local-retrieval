@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import html
 import json
 import os
@@ -114,8 +115,7 @@ from scripts.taxonomy import (
     parse_quality_tags,
 )
 from scripts.v18_1_live_search import (
-    optional_v19_route,
-    resolve_v18_1_search_intent,
+    INTENT_ROUTING_MODES,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -167,11 +167,23 @@ BLIND_MODEL_HARD_QUEUE_PATH = (
 )
 
 
-def v19_intent_runtime_settings() -> tuple[bool, str, float]:
-    """Read the explicit, default-off V19 service settings for the UI."""
+def v19_intent_runtime_settings() -> tuple[str, str, float]:
+    """Read the explicit, default-off routing mode for the UI."""
 
-    enabled = os.getenv("OCR_VLM_ENABLE_V19_INTENT_ROUTING", "").strip().lower()
-    is_enabled = enabled in {"1", "true", "yes", "on"}
+    mode = os.getenv("OCR_VLM_INTENT_ROUTING_MODE", "").strip().lower()
+    if not mode:
+        legacy_enabled = os.getenv(
+            "OCR_VLM_ENABLE_V19_INTENT_ROUTING", ""
+        ).strip().lower()
+        mode = (
+            "guarded"
+            if legacy_enabled in {"1", "true", "yes", "on"}
+            else "off"
+        )
+    if mode not in INTENT_ROUTING_MODES:
+        raise ValueError(
+            "OCR_VLM_INTENT_ROUTING_MODE must be off, shadow, guarded or active"
+        )
     service_url = os.getenv(
         "OCR_VLM_V19_INTENT_ROUTING_URL",
         "http://127.0.0.1:8765",
@@ -182,7 +194,7 @@ def v19_intent_runtime_settings() -> tuple[bool, str, float]:
     timeout_seconds = float(raw_timeout)
     if timeout_seconds <= 0:
         raise ValueError("OCR_VLM_V19_INTENT_TIMEOUT_SECONDS must be positive")
-    return is_enabled, service_url, timeout_seconds
+    return mode, service_url, timeout_seconds
 
 
 QUALITY_GATE_PATH = (
@@ -221,6 +233,7 @@ LIVE_METHOD_LABELS = {
     "visual": "图片语义搜索",
     "quality_hybrid": "智能混合搜索（快速）",
     "reranker": "多模态完整核验（较慢）",
+    "v19_condition": "V19必要条件证据优先",
 }
 BLIND_EXPECTATION_LABELS = {
     "不确定，让后续审核决定": "unsure",
@@ -550,6 +563,15 @@ def ensure_persistent_text_component(
     return "resident_model"
 
 
+def v19_runtime_revision() -> str:
+    """Version the optional V19 cache independently from frozen V18."""
+
+    path = PROJECT_ROOT / "config/v19_runtime.json"
+    if not path.is_file():
+        return "missing"
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+
+
 def execute_live_search(
     query: str,
     library_id: str,
@@ -558,23 +580,59 @@ def execute_live_search(
     rerank_top_k: int = 0,
 ) -> dict[str, Any]:
     normalized_query = " ".join(query.split())
-    v19_enabled, v19_service_url, v19_timeout_seconds = (
+    intent_routing_mode, v19_service_url, v19_timeout_seconds = (
         v19_intent_runtime_settings()
     )
-    v19_decision = optional_v19_route(
-        enabled=v19_enabled,
-        service_url=v19_service_url,
-        query=normalized_query,
-        timeout_seconds=v19_timeout_seconds,
-    )
-    route_override = v19_decision.route if v19_decision is not None else None
     revision = library_revision(library_dir)
     cache_key = query_key(normalized_query, revision)
+    if method_key == "v19_condition":
+        output_path = (
+            LIVE_CACHE_DIR
+            / library_id
+            / f"{cache_key}_v19_condition_{v19_runtime_revision()}.json"
+        )
+        previous_mtime_ns = (
+            output_path.stat().st_mtime_ns if output_path.is_file() else None
+        )
+        started = time.perf_counter()
+        completed = subprocess.run(
+            [
+                str(PROJECT_ROOT / ".venv-vl/Scripts/python.exe"),
+                str(PROJECT_ROOT / "scripts/v19_live_search.py"),
+                normalized_query,
+                "--library-dir",
+                str(library_dir),
+                "--output",
+                str(output_path),
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=180,
+            check=False,
+        )
+        if completed.returncode != 0:
+            detail = (completed.stderr or completed.stdout)[-1800:]
+            raise RuntimeError(detail)
+        result = json.loads(output_path.read_text(encoding="utf-8"))
+        result["_ui_cache_hit"] = (
+            previous_mtime_ns is not None
+            and output_path.stat().st_mtime_ns == previous_mtime_ns
+        )
+        result["_ui_response_seconds"] = round(
+            time.perf_counter() - started, 3
+        )
+        result["_ui_text_runtime_status"] = "not_needed"
+        result["_ui_intent_routing_mode"] = "v19_selective_intervention"
+        result["_ui_v19_intent_routing_enabled"] = True
+        return result
     suffix = f"_{method_key}"
     if rerank_top_k:
         suffix += f"_rerank{rerank_top_k}"
-    if v19_enabled:
-        suffix += "_v19"
+    if intent_routing_mode != "off":
+        suffix += f"_intent_{intent_routing_mode}"
     output_path = (
         LIVE_CACHE_DIR
         / library_id
@@ -583,29 +641,35 @@ def execute_live_search(
     final_cache_hit = False
     if output_path.is_file():
         try:
-            expected_route, _, expected_visual_query, _ = (
-                resolve_v18_1_search_intent(
-                    method_key,
-                    normalized_query,
-                    route_override,
-                )
+            expected_route, _, expected_visual_query, _ = resolve_search_intent(
+                method_key,
+                normalized_query,
             )
             cached_payload = json.loads(
                 output_path.read_text(encoding="utf-8")
             )
-            final_cache_hit = (
+            routing_audit = cached_payload.get("v18_1_intent_routing", {})
+            common_cache_match = (
                 cached_payload.get("search_policy_version")
                 == SEARCH_POLICY_VERSION
                 and cached_payload.get("retrieval_config_revision")
                 == retrieval_config_revision()
                 and cached_payload.get("requested_method") == method_key
-                and cached_payload.get("retrieval_route")
-                == expected_route
-                and cached_payload.get(
-                    "visual_query", normalized_query
-                )
-                == expected_visual_query
             )
+            if intent_routing_mode == "off":
+                final_cache_hit = (
+                    common_cache_match
+                    and cached_payload.get("retrieval_route") == expected_route
+                    and cached_payload.get("visual_query", normalized_query)
+                    == expected_visual_query
+                )
+            else:
+                final_cache_hit = (
+                    common_cache_match
+                    and isinstance(routing_audit, dict)
+                    and routing_audit.get("routing_mode")
+                    == intent_routing_mode
+                )
         except (json.JSONDecodeError, OSError):
             final_cache_hit = False
     started = time.perf_counter()
@@ -627,7 +691,7 @@ def execute_live_search(
             PROJECT_ROOT
             / (
                 "scripts/v18_1_live_search.py"
-                if v19_enabled
+                if intent_routing_mode != "off"
                 else "scripts/live_search.py"
             )
         ),
@@ -641,10 +705,11 @@ def execute_live_search(
         "--method",
         method_key,
     ]
-    if v19_enabled:
+    if intent_routing_mode != "off":
         command.extend(
             [
-                "--enable-v19-intent-routing",
+                "--intent-routing-mode",
+                intent_routing_mode,
                 "--v19-intent-routing-url",
                 v19_service_url,
                 "--v19-intent-timeout-seconds",
@@ -670,7 +735,8 @@ def execute_live_search(
         time.perf_counter() - started, 3
     )
     result["_ui_text_runtime_status"] = text_runtime_status
-    result["_ui_v19_intent_routing_enabled"] = v19_enabled
+    result["_ui_intent_routing_mode"] = intent_routing_mode
+    result["_ui_v19_intent_routing_enabled"] = intent_routing_mode != "off"
     return result
 
 
@@ -847,7 +913,8 @@ def render_live_search(
         st.write(
             "系统先判断查询需要精确证据、主题浏览还是视觉发现，"
             "再按需组合语义、关键词和视觉召回；选择完整核验时，"
-            "会对候选页面做第二次多模态重排。"
+            "会对候选页面做第二次多模态重排。V19模式仅在能够完整"
+            "抽取必要条件时介入，并要求全部条件在同一候选页成立。"
         )
     query = st.text_input(
         "输入检索问题",
@@ -951,6 +1018,19 @@ def render_live_search(
             f"本次耗时 {result['_ui_response_seconds']:.1f} 秒"
         )
     ranking = result["rankings"][method_key]
+    v19_runtime = result.get("v19_condition_runtime", {})
+    if method_key == "v19_condition":
+        if v19_runtime.get("intervened"):
+            st.info(
+                "V19已启用：显式条件先检索全库同页OCR证据；其余受支持"
+                "条件使用ColQwen2召回Top-10后验证。任何必要条件缺失"
+                "都会拒答。"
+            )
+        else:
+            st.info(
+                "本次查询不满足V19选择性介入条件，已保留稳定检索结果。"
+                f"原因：{v19_runtime.get('reason', '未形成完整条件契约')}。"
+            )
     decision = result.get("acceptance", {}).get(method_key)
     if decision:
         route_label = (
@@ -970,6 +1050,7 @@ def render_live_search(
             "visual": "视觉语义",
             "color": "颜色特征",
             "reranker": "多模态重排",
+            "condition_evidence": "必要条件同页验证",
         }
         active_branches = [
             label
@@ -1053,6 +1134,16 @@ def render_live_search(
                 if row.get("reranker_score") is not None:
                     st.caption(
                         f"多模态重排 {row['reranker_score']:.3f}"
+                    )
+                if method_key == "v19_condition" and row.get(
+                    "v19_constraint_count"
+                ):
+                    st.caption(
+                        "必要条件覆盖："
+                        f"{row.get('v19_matched_constraint_count', 0)}/"
+                        f"{row.get('v19_constraint_count', 0)} · "
+                        "原始召回名次 "
+                        f"{row.get('v19_original_retrieval_rank', '-')}"
                     )
 
 

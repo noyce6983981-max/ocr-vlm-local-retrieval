@@ -2,7 +2,15 @@
 
 面向通用个人图片与文档的本地多模态检索原型：将图片、ZIP、PDF、DOCX和PPTX统一转换为页面，结合OCR文本、视觉语言向量、OCR质量门控与视觉语言重排，完成自然语言到资料页面的检索。项目强调本地隐私、分库隔离、证据溯源和人工质量裁决，不依赖商业大模型API。
 
-## 最新独立评测：V18
+## 当前工程版本：V19
+
+V19把复合查询中的“必要条件必须在同一页成立”做成选择性检索路线。对于能够从查询文本中提取至少两个显式必要条件的请求，系统先在全库OCR中查找完整同页证据；没有完整精确证据时保守拒答。其他受支持的实体/主题契约使用ColQwen2多向量晚交互召回Top-10后再核验；未形成完整条件契约的普通查询自动回退到稳定的V18 `quality_hybrid`链路，不改变既有行为。
+
+开发阶段使用12个全新来源家族、48条机器生成正例/近邻强负例，且与V18、V19和V19.1来源页零重叠。冻结方法后又运行两轮未参与选型的句式压力测试，共96条查询：两轮的端到端正确率均为48/48、强负例FAR均为0；原始ColQwen2正例R@3分别为87.5%和95.83%，完整证据优先后R@1/R@3/R@10均为100%。显式条件的本机全库快路径正例与拒答烟雾测试分别耗时0.625秒和0.612秒，约为先前8.8秒模型冷路径的1/14。
+
+这些数字是**机器构造、机器核验的开发与锁定压力测试**，不是新的真人独立留出结果，也不证明视觉对象、颜色或关系条件已获得同等提升。项目最新的独立真人评测仍是下述V18；V19作为工程正式版发布，研究结论仍遵守这一边界。方法、失败消融、哈希和限制见`records/experiments/retrieval_v19_2_automatic_optimization_2026-08-13.md`与`config/studies/v19_2_release_method_lock.json`。
+
+## 最新独立真人评测：V18
 
 V18 在冻结方法后只运行一次 80 条查询、40 个来源配对组的真人留出集。校准选择的 L1 `max_verifier_score` 使用 Qwen3-VL-Reranker-2B 验证 Top-3，并以 0.63 为接受阈值；留出标签没有参与调参。
 
@@ -21,9 +29,13 @@ V18 在冻结方法后只运行一次 80 条查询、40 个来源配对组的真
 
 V18.1新增“确定性高置信直通 + 歧义查询调用本地Qwen3-1.7B + JSON Schema校验 + 确定性映射 + 异常回退”的可选混合路由。LLM只输出检索所需的证据类型，不控制检索权重、拒答阈值或最终答案；产品和CPU演示默认保持关闭。
 
-内部研究协议沿用已经冻结的V19编号以保持哈希与一次性留出审计连续，但本次GitHub版本仅发布为**v18.1.0工程预览**，不提前占用正式V19。120条一次性路由留出查询上，B2.1的Accuracy为62.50%、Macro-F1为62.86%，相对旧规则分别提升25.00和25.50个百分点；LLM调用率33.33%，路由P95为1399.5 ms。30%家族由两名不同审核者独立复核，原始一致率100%、Cohen's κ=1.000。
+该阶段最终以**v18.1.0工程预览**发布。120条一次性路由留出查询上，B2.1的Accuracy为62.50%、Macro-F1为62.86%，相对旧规则分别提升25.00和25.50个百分点；LLM调用率33.33%，路由P95为1399.5 ms。30%家族由两名不同审核者独立复核，原始一致率100%、Cohen's κ=1.000。
 
-该成绩只证明**查询路由改善**。V18冻结下游回归中的正例Hit@1/3/10与强负例FAR@1/3/10均未退化，但尚未证明新的端到端检索Top-1增益；达到该目标后再升级正式V19。完整边界与Bootstrap区间见`records/experiments/retrieval_v19_one_shot_holdout_2026-08-11.md`。
+该成绩只证明**查询路由改善**。V18冻结下游回归中的正例Hit@1/3/10与强负例FAR@1/3/10均未退化，但当时尚未证明新的端到端检索Top-1增益，因此没有直接升级V19。完整边界与Bootstrap区间见`records/experiments/retrieval_v19_one_shot_holdout_2026-08-11.md`。
+
+后续开发默认采用安全干预边界：`off`保持冻结V18；`shadow`只记录候选路线；`guarded`禁止事实型查询切换为探索拒答、禁止删除V18必要证据分支，并拒绝无法提取精确词的`entity_exact`；裸`active`只允许受控诊断。新的V19研究主指标改为同查询A/B的E2E Top-1、Recall@3、强负例FAR、正确拒答率和wall-clock P95，协议草案见`records/experiments/retrieval_v19_selective_intervention_protocol_draft_2026-08-12.md`。
+
+新的端到端数据草案使用50个来源家族、每家族4种查询角色，共200条；开发与最终留出各25个家族。生成器会排除既有V18来源及其近邻组，所有正式草案和人工修正只保存在Git忽略的`records/private/`。人工审核、开发集诊断、参数锁与最终一次性授权相互独立；V19发布没有重新使用旧V18/V19一次性留出集调参，也没有把机器压力测试冒充真人最终评测。
 
 V17 现为上一稳定研究版本。其一次性 40 条留出结果与公开复算仍保留在 `records/experiments/retrieval_v17_independent_holdout_2026-08-08.md`、`records/experiments/V17_HYPOTHESIS_DISPOSITION.md` 和标签 `v17.0.1`，历史结果不回写。
 
@@ -285,8 +297,8 @@ python scripts/minimal_repro.py evaluate --backend cpu
 V18.0.1 起提供不含模型权重和内部资料库的轻量容器；V18.1仍保持CPU规则模式，不把可选意图模型塞进镜像：
 
 ```bash
-docker pull ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.1.0
-docker run --rm --network none ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v18.1.0
+docker pull ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v19.0.0
+docker run --rm --network none ghcr.io/noyce6983981-max/ocr-vlm-local-retrieval-demo:v19.0.0
 ```
 
 容器会在无网络、非 root 用户环境中生成 40 页资料库，构建 BM25 索引，运行正例及强负例查询，并严格对比冻结结果。结果不一致时进程返回非零状态。该镜像验证公开 CPU 工程链路，不复现 PaddleOCR 或 Qwen3-VL 推理质量，也不包含 V18 私有真人留出评测数据。

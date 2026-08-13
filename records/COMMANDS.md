@@ -167,26 +167,78 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\fetch_qwen3_vl
 V18.1默认不改变现有检索。需要试用时，先在独立模型环境启动只监听本机的常驻服务：
 
 ```powershell
-.\.venv-vl\Scripts\python.exe scripts\v19_intent_server.py
+.\.venv-vl\Scripts\python.exe scripts\v19_intent_server.py --eager-warmup
 ```
 
-另开终端，对单次检索显式打开开关：
+另开终端，研发期间优先使用只记录、不干预结果的 shadow 模式：
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\v18_1_live_search.py "我记得有张照片里厨师正把锅抛起，旁边有火苗" --enable-v19-intent-routing
+.\.venv\Scripts\python.exe scripts\v18_1_live_search.py "我记得有张照片里厨师正把锅抛起，旁边有火苗" --intent-routing-mode shadow
 ```
 
-服务地址默认是`http://127.0.0.1:8765`。服务离线、超时或响应不合法时，检索仍会使用冻结的Guard3确定性规则完成路由；CPU演示容器和普通检索保持关闭状态。`--retrieval-route`显式研究覆盖的优先级高于服务开关。
+服务地址默认是`http://127.0.0.1:8765`。模式包括`off/shadow/guarded/active`，默认`off`；旧的`--enable-v19-intent-routing`兼容开关现在等价于更保守的`guarded`。服务离线、超时或响应不合法时严格回到冻结V18规则。`active`仅用于受控诊断，不作为日常默认。
 
 若要让Streamlit软件使用同一可选路由服务，在启动主站的终端中显式设置环境变量：
 
 ```powershell
-$env:OCR_VLM_ENABLE_V19_INTENT_ROUTING = "1"
+$env:OCR_VLM_INTENT_ROUTING_MODE = "shadow"
 $env:OCR_VLM_V19_INTENT_ROUTING_URL = "http://127.0.0.1:8765"
 .\.venv\Scripts\python.exe -m streamlit run app.py
 ```
 
-不设置该变量或设置为`0`时，软件保持原有确定性路由。启用后的结果使用独立`_v19`缓存后缀，不会与默认检索缓存混用。
+不设置该变量时，软件保持原有确定性路由。不同模式使用独立缓存，不会与默认检索缓存混用。可使用下列命令检查并发延迟和回退率：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\benchmark_v18_1_router.py --concurrency 1 2 4 --requests 100
+```
+
+## V19 端到端选择性干预数据草案
+
+以下步骤建立一套全新的来源绑定数据，不重跑或覆盖既有V18/V19一次性留出集。先从本地公开资料库抽取50个目标页/近邻页家族；生成器会排除V18的80个来源及其整个近邻组：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\prepare_v19_selective_intervention_review.py --library-root "$PWD"
+.\.venv\Scripts\python.exe scripts\generate_v19_selective_intervention_query_drafts.py
+```
+
+第二条命令要求私有目录中已存在人工或模型辅助起草的`query_draft_catalog.json`；该目录随Git忽略，不随公开仓库发布。本轮50组、200条草案已在本地生成，状态仍为待人工审核。
+
+启动审核页。浏览位置会逐页原子落盘，退出或换页不会丢进度；发现错误时修改并点击保存。所有记录都位于Git忽略的`records/private/v19/selective_intervention/`，未完整浏览50组前不能总确认：
+
+```powershell
+$env:OCR_VLM_LIBRARY_ROOT = "$PWD"
+.\.venv\Scripts\python.exe -m streamlit run scripts\v19_selective_intervention_review_app.py --server.port 8522
+```
+
+完整浏览并总确认后，只编译人工审核版本，不冻结、不运行检索：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\compile_v19_selective_intervention_review.py --reviewer-id reviewer_01
+```
+
+若任何来源对在网页中标记为“后续替换”，编译器会直接阻断。编译通过后的下一步仍只能先跑development分区的同查询A/B诊断；候选参数锁定后，最终holdout只允许一次授权运行。
+
+### V19 development真实基线、保守干预与Top-20复核
+
+以下命令只读取已审核数据的`development`分区。第一条按冻结V18 L1方法
+复现Top-3最高验证分与0.63阈值；第二条评估“保持V18默认、只救回高置信
+拒绝样本”的保守候选：
+
+```powershell
+.\.venv-vl\Scripts\python.exe scripts\score_v19_v18_l1_development.py
+.\.venv\Scripts\python.exe scripts\evaluate_v19_guarded_intervention.py
+```
+
+当前100条development复现结果为V18 L1 E2E 49%，保守候选50%，FAR
+不增加但收益尚未达到发布门槛。下列命令生成并启动Top-20多相关性复核；
+候选次序已盲化，审核页不显示方法、分数和原始排名：
+
+```powershell
+.\.venv\Scripts\python.exe scripts\build_v19_development_top20_review_pool.py
+.\.venv\Scripts\python.exe -m streamlit run scripts\v19_development_top20_review_app.py --server.port 8523
+```
+
+审核结果仍只用于development标签完善，不会创建方法锁、留出授权或最终结论。
 
 ## 独立盲测
 

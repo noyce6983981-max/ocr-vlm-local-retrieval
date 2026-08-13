@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-colqwen2-literal-evidence-development-v1",
+  "status": "frozen_before_holdout",
+  "split": "development_only",
+  "holdout_access": "forbidden_before_method_lock",
+  "retrieval": {
+    "model": "vidore/colqwen2-v1.0-hf",
+    "model_config_sha256": "2fd851f549b55214a59f4d5772e42cd542f89148226cf44dfb5d986c9fb122e6",
+    "method": "multi_vector_maxsim_late_interaction",
+    "indexed_page_count": 1482,
+    "storage_dtype": "float16",
+    "embedding_dimension": 128,
+    "candidate_top_k": 3
+  },
+  "literal_evidence": {
+    "ocr_minimum_confidence": 0.35,
+    "fuzzy_threshold": 0.88,
+    "structured_values_require_exact_match": true,
+    "eligibility_input": "query_text_only",
+    "eligibility_policy": "exact Chinese name/entity; high-precision date, phone suffix, or translation alias; or an explicit 浏览 request with a named literal",
+    "forbidden_runtime_inputs": [
+      "content_stratum",
+      "gold_answerable"
+    ],
+    "fallback_policy": "keep_frozen_v18_l1"
+  },
+  "development_metrics": {
+    "positive_recall_at_1": 0.70,
+    "positive_recall_at_3": 0.92,
+    "positive_recall_at_10": 0.96,
+    "end_to_end_accuracy": 0.61,
+    "positive_selected_relevant": 0.50,
+    "positive_recall_at_3": 0.76,
+    "positive_recall_at_3_delta": 0.08,
+    "negative_correct_reject_rate": 0.72,
+    "false_accept_rate": 0.28,
+    "paired_family_bootstrap_e2e_delta_ci95": [0.05, 0.20],
+    "full_index_warm_retrieval_p50_ms": 70.290,
+    "full_index_warm_retrieval_p95_ms": 73.383,
+    "full_index_warm_retrieval_maximum_ms": 76.794,
+    "query_phase_peak_gpu_gib": 4.356
+  },
+  "promotion_state": {
+    "quality_gate_passed_on_development": true,
+    "retrieval_latency_gate_passed_on_development": true,
+    "complete_software_e2e_latency_measured": false,
+    "method_frozen": true,
+    "eligible_for_final_claim": false
+  }
+}

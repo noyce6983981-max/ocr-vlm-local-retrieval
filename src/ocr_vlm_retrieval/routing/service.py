@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 from ocr_vlm_retrieval.routing.hybrid_router import HybridRouter
@@ -13,7 +14,9 @@ def route_payload(router: HybridRouter, query: str) -> dict[str, Any]:
     normalized = " ".join(query.split())
     if not normalized:
         raise ValueError("query must not be empty")
+    started = time.perf_counter()
     decision = router.route(normalized)
+    route_latency_ms = round((time.perf_counter() - started) * 1000, 3)
     return {
         "route": decision.route,
         "source": decision.source,
@@ -30,4 +33,5 @@ def route_payload(router: HybridRouter, query: str) -> dict[str, Any]:
             if decision.llm is not None
             else None
         ),
+        "route_latency_ms": route_latency_ms,
     }

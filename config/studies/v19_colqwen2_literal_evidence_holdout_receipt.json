@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-colqwen2-literal-evidence-e2e",
+  "status": "one_shot_holdout_complete_release_gates_failed",
+  "completed_at_utc": "2026-08-13T03:42:28.383605+00:00",
+  "method_lock_sha256": "411704c3728718afc0da77eb97581a9392c621a7dc55b2359ff8d61a9e30dd70",
+  "private_result_sha256": "abfe58abb046d48610c2ab03e2eba0e26a45a20327695221abbbd0e8f934e934",
+  "query_count": 100,
+  "query_family_count": 25,
+  "override_eligible_query_count": 14,
+  "baseline": {
+    "end_to_end_accuracy": 0.54,
+    "positive_selected_relevant": 0.40,
+    "positive_recall_at_3": 0.76,
+    "negative_correct_reject_rate": 0.68,
+    "false_accept_rate": 0.32,
+    "hard_negative_false_accept_rate": 0.44
+  },
+  "candidate": {
+    "end_to_end_accuracy": 0.57,
+    "positive_selected_relevant": 0.38,
+    "positive_recall_at_3": 0.76,
+    "negative_correct_reject_rate": 0.76,
+    "false_accept_rate": 0.24,
+    "hard_negative_false_accept_rate": 0.32
+  },
+  "delta": {
+    "end_to_end_accuracy": 0.03,
+    "positive_selected_relevant": -0.02,
+    "positive_recall_at_3": 0.00,
+    "negative_correct_reject_rate": 0.08,
+    "false_accept_rate": -0.08,
+    "hard_negative_false_accept_rate": -0.12
+  },
+  "paired_family_bootstrap": {
+    "samples": 10000,
+    "observed_end_to_end_delta": 0.03,
+    "confidence_interval_95": [0.00, 0.06],
+    "improved_query_count": 5,
+    "regressed_query_count": 2
+  },
+  "release_gates": {
+    "end_to_end_gain_at_least_0_05": false,
+    "recall_at_3_gain_at_least_0_05": false,
+    "hard_negative_far_non_inferior": true,
+    "correct_rejection_non_inferior": true,
+    "warm_e2e_p95_ratio_at_most_1_10": true,
+    "runtime_eligibility_is_query_text_only": true
+  },
+  "all_release_gates_passed": false,
+  "release_decision": "retain_as_research_result_do_not_promote_over_v18_1",
+  "governance_disclosure": "The method was committed and hash-locked before scoring. Holdout text was administratively visible during the pre-freeze protocol audit, so this split is family-independent and one-shot but not claimed as fully blind."
+}
