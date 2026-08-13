@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "study_id": "v19-1-condition-completeness-e2e",
+  "status": "draft_not_frozen_human_review_required",
+  "created_date": "2026-08-13",
+  "research_question": "Can structured OCR fields and a complete necessary-condition contract improve open-set retrieval without sacrificing positive selection?",
+  "frozen_baseline": "v18.1.0 frozen V18 execution path",
+  "predecessor_diagnostic": "V19 ColQwen2 Top-3 plus deterministic literal evidence",
+  "candidate": "V19.1 complete literal evidence with structured date and identifier parsing",
+  "target_query_count": 96,
+  "family_count": 24,
+  "queries_per_family": 4,
+  "query_roles": [
+    "answerable_positive",
+    "paraphrase_positive",
+    "single_condition_hard_negative",
+    "unanswerable_neighbor"
+  ],
+  "content_strata": {
+    "ocr_literal_lookup": 10,
+    "pure_visual": 0,
+    "layout_table": 0,
+    "entity_identifier": 8,
+    "visual_compositional": 0,
+    "text_visual_compositional": 0,
+    "topic_discovery": 6,
+    "relationship_scene": 0
+  },
+  "split_policy": "source-family-disjoint 12 development / 12 holdout",
+  "primary_metrics": [
+    "e2e_top1_accuracy",
+    "positive_selected_relevant",
+    "recall_at_3",
+    "hard_negative_far",
+    "correct_rejection_rate"
+  ],
+  "release_gates": {
+    "e2e_top1_delta_min_vs_v18": 0.05,
+    "recall_at_3_delta_min_vs_v18": 0.05,
+    "hard_negative_far_delta_max_vs_v18": 0.0,
+    "positive_selected_relevant_delta_min_vs_v19": 0.0
+  },
+  "statistics": {
+    "paired_bootstrap_iterations": 10000,
+    "resampling_unit": "query_family",
+    "confidence_level": 0.95
+  },
+  "governance": {
+    "v18_evaluation_source_family_reuse": false,
+    "v19_evaluation_source_family_reuse": false,
+    "v19_holdout_reuse_for_tuning": false,
+    "v19_holdout_rerun": false,
+    "human_review_required_before_freeze": true,
+    "parameter_lock_before_final_holdout": true,
+    "final_holdout_runs": 1
+  }
+}
